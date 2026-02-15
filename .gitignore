@@ -19,6 +19,8 @@ target/
 *.iml
 *.ipr
 
+Academic-Management-System.postman_collection.json
+Academic-Management-System.postman_environment.json
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
