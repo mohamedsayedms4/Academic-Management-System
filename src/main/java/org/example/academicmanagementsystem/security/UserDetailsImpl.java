@@ -20,6 +20,7 @@ public class UserDetailsImpl implements UserDetails {
     private String email;
     private String password;
     private UserRole role;
+    private String fullName;
     private Boolean active;
 
     public static UserDetailsImpl build(User user) {
@@ -29,6 +30,7 @@ public class UserDetailsImpl implements UserDetails {
                 user.getEmail(),
                 user.getPassword(),
                 user.getRole(),
+                user.getFullName(),
                 user.getActive());
     }
 

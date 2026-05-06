@@ -46,6 +46,7 @@ public class AuthService {
                 .id(userDetails.getId())
                 .username(userDetails.getUsername())
                 .role(userDetails.getRole())
+                .fullName(userDetails.getFullName())
                 .expiresIn(tokenProvider.getExpirationTime())
                 .build();
     }
