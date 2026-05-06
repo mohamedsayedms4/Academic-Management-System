@@ -24,24 +24,11 @@ public class Round extends BaseEntity {
     @Column(nullable = false)
     private LocalDate endDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "diploma_id")
-    private Diploma diploma;
-
-    @Column(nullable = false)
-    private Integer totalStudents; // السعة القصوى
-
-    @Column(nullable = false)
-    private Integer currentEnrollment = 0;
-
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal installmentAmount;
+    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RoundDiploma> roundDiplomas;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RoundStatus status = RoundStatus.ACTIVE;
 
-    // Relations
-    @OneToMany(mappedBy = "round")
-    private List<Student> students;
 }

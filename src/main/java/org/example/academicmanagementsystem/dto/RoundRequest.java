@@ -6,8 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.academicmanagementsystem.model.RoundStatus;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -17,9 +17,6 @@ public class RoundRequest {
     private String name;
     private LocalDate startDate;
     private LocalDate endDate;
-    private Long diplomaId;
-    private Integer totalStudents;
-    private Integer currentEnrollment;
-    private BigDecimal installmentAmount;
+    private List<RoundDiplomaRequest> diplomas;
     private RoundStatus status;
 }

@@ -71,8 +71,8 @@
                 </div>
             </header>
 
-            <!-- Page Content -->
-            <div class="page-content" id="content-area">
+            <!-- Dashboard Page Content -->
+            <div class="page-content active-page" id="dashboard-view">
                 <div class="content-header">
                     <div class="header-titles">
                         <h1>Home</h1>
@@ -135,6 +135,133 @@
                     <button class="page-btn">8</button>
                     <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
                 </div>
+            </div>
+
+            <!-- Add New Diploma Page Content -->
+            <div class="page-content" id="add-diploma-view" style="display: none;">
+                <div class="breadcrumb">
+                    <span>Diplomas</span> <i class="fas fa-chevron-right"></i> <span class="active">Add New diploma</span>
+                </div>
+                
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Add New Diploma</h1>
+                    </div>
+                </div>
+
+                <form id="form-add-diploma" class="modern-form">
+                    <!-- Section 1: Diploma Information -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">1</span>
+                            <h3>Diploma Information</h3>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Diploma name*</label>
+                                <select id="input-diploma-id" required>
+                                    <option value="">Select Diploma</option>
+                                    <!-- Diplomas will be loaded here -->
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Diploma round*</label>
+                                <select id="input-round-id" required>
+                                    <option value="">Select Diploma round</option>
+                                    <!-- Rounds will be loaded here -->
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Diploma Instructure*</label>
+                                <select id="input-instructor-id" required>
+                                    <option value="">Select Diploma Instructure</option>
+                                    <!-- Instructors will be loaded here -->
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Diploma price*</label>
+                                <input type="number" id="input-total-price" placeholder="Enter Diploma price" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Start date*</label>
+                                <div class="date-input-wrapper">
+                                    <input type="date" id="input-start-date" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>End date*</label>
+                                <div class="date-input-wrapper">
+                                    <input type="date" id="input-end-date" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Total Students*</label>
+                                <input type="number" id="input-total-students" placeholder="Enter Capacity" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Payment Plan -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">2</span>
+                            <h3>Payment Plan</h3>
+                        </div>
+                        
+                        <div class="alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Enter the percentage for each installment. The amount will be calculated automatically.
+                        </div>
+
+                        <div class="installments-container">
+                            <table class="installments-table">
+                                <thead>
+                                    <tr>
+                                        <th>Installment</th>
+                                        <th>Percentage (%)</th>
+                                        <th>Amount (EGP)</th>
+                                        <th>Due Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="installments-tbody">
+                                    <!-- Installment rows -->
+                                    <tr class="installment-row">
+                                        <td>1st Installment</td>
+                                        <td><input type="number" class="inst-percent" value="25"></td>
+                                        <td><input type="number" class="inst-amount" placeholder="0"></td>
+                                        <td><input type="date" class="inst-date"></td>
+                                        <td><button type="button" class="btn-delete-inst"><i class="fas fa-trash"></i></button></td>
+                                    </tr>
+                                    <tr class="installment-row">
+                                        <td>2nd Installment</td>
+                                        <td><input type="number" class="inst-percent" value="25"></td>
+                                        <td><input type="number" class="inst-amount" placeholder="0"></td>
+                                        <td><input type="date" class="inst-date"></td>
+                                        <td><button type="button" class="btn-delete-inst"><i class="fas fa-trash"></i></button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <button type="button" class="btn-add-installment" id="btn-add-inst">
+                                <i class="fas fa-plus"></i> Add installment
+                            </button>
+                            <span class="inst-limit-note">You can add up to 4 installments</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" id="btn-cancel-add">Cancel</button>
+                        <button type="submit" class="btn-save">Save</button>
+                    </div>
+                </form>
             </div>
         </main>
     </div>

@@ -1,7 +1,7 @@
 package org.example.academicmanagementsystem.repository;
 
 import org.example.academicmanagementsystem.model.PaymentStatus;
-import org.example.academicmanagementsystem.model.Round;
+import org.example.academicmanagementsystem.model.RoundDiploma;
 import org.example.academicmanagementsystem.model.Student;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,15 +17,15 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
     Optional<Student> findByPhone(String phone);
 
-    List<Student> findByRound(Round round);
+    List<Student> findByRoundDiploma(RoundDiploma roundDiploma);
 
-    Page<Student> findByRound(Round round, Pageable pageable);
+    Page<Student> findByRoundDiploma(RoundDiploma roundDiploma, Pageable pageable);
 
     List<Student> findByPaymentStatus(PaymentStatus status);
 
     @Query("SELECT s FROM Student s WHERE s.remainingAmount > 0")
     List<Student> findStudentsWithOutstandingBalance();
 
-    @Query("SELECT s FROM Student s WHERE s.round = :round ORDER BY s.enrollmentDate DESC")
-    List<Student> findRecentStudentsByRound(Round round, Pageable pageable);
+    @Query("SELECT s FROM Student s WHERE s.roundDiploma = :roundDiploma ORDER BY s.enrollmentDate DESC")
+    List<Student> findRecentStudentsByRoundDiploma(RoundDiploma roundDiploma, Pageable pageable);
 }

@@ -28,8 +28,8 @@ public class Student extends BaseEntity {
     private String email;
 
     @ManyToOne
-    @JoinColumn(name = "round_id", nullable = false)
-    private Round round;
+    @JoinColumn(name = "round_diploma_id", nullable = false)
+    private RoundDiploma roundDiploma;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalFees;

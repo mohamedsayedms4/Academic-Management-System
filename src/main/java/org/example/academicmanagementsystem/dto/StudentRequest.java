@@ -15,6 +15,6 @@ public class StudentRequest {
     private String name;
     private String phone;
     private String email;
-    private Long roundId;
+    private Long roundDiplomaId;
     private BigDecimal totalFees;
 }

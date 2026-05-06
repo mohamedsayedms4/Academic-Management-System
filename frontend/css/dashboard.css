@@ -442,3 +442,198 @@ body {
     color: var(--text-muted);
     padding: 0 5px;
 }
+
+/* Form Styles */
+.breadcrumb {
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.breadcrumb .active {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.breadcrumb i {
+    font-size: 10px;
+    margin: 0 8px;
+}
+
+.modern-form {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: var(--shadow);
+}
+
+.form-section {
+    margin-bottom: 35px;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.section-number {
+    background-color: var(--primary-color);
+    color: #000;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.section-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.form-group input, .form-group select {
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus, .form-group select:focus {
+    border-color: var(--primary-color);
+}
+
+.alert-info {
+    background-color: #E3F2FD;
+    color: #1976D2;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.installments-container {
+    background-color: #F9FAFB;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.installments-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.installments-table th {
+    text-align: left;
+    padding: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.installments-table td {
+    padding: 10px;
+}
+
+.installments-table input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.btn-delete-inst {
+    background: none;
+    border: none;
+    color: var(--error-color);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 5px;
+    transition: opacity 0.2s;
+}
+
+.btn-delete-inst:hover {
+    opacity: 0.7;
+}
+
+.btn-add-installment {
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.inst-limit-note {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 10px;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn-save {
+    background-color: var(--primary-color);
+    color: #000;
+    border: none;
+    padding: 12px 40px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-save:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.btn-cancel {
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    padding: 12px 40px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}

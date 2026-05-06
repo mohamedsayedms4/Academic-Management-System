@@ -7,7 +7,7 @@ import org.example.academicmanagementsystem.mapper.PaymentMapper;
 import org.example.academicmanagementsystem.mapper.StudentMapper;
 import org.example.academicmanagementsystem.model.*;
 import org.example.academicmanagementsystem.repository.PaymentRepository;
-import org.example.academicmanagementsystem.repository.RoundRepository;
+import org.example.academicmanagementsystem.repository.RoundDiplomaRepository;
 import org.example.academicmanagementsystem.repository.StudentRepository;
 import org.example.academicmanagementsystem.service.StudentService;
 import org.springframework.data.domain.Page;
@@ -16,21 +16,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class StudentServiceImpl implements StudentService {
 
     private final StudentRepository studentRepository;
-    private final RoundRepository roundRepository;
+    private final RoundDiplomaRepository roundDiplomaRepository;
     private final PaymentRepository paymentRepository;
     private final StudentMapper studentMapper;
     private final PaymentMapper paymentMapper;
@@ -42,13 +40,13 @@ public class StudentServiceImpl implements StudentService {
             throw new IllegalArgumentException("StudentRequest is null");
         }
 
-        // Validate and get round
-        Round round = roundRepository.findById(studentRequest.getRoundId())
-                .orElseThrow(() -> new RuntimeException("Round not found with id: " + studentRequest.getRoundId()));
+        // Validate and get roundDiploma
+        RoundDiploma roundDiploma = roundDiplomaRepository.findById(studentRequest.getRoundDiplomaId())
+                .orElseThrow(() -> new RuntimeException("RoundDiploma not found with id: " + studentRequest.getRoundDiplomaId()));
 
-        // Check if round has capacity
-        if (round.getCurrentEnrollment() >= round.getTotalStudents()) {
-            throw new RuntimeException("Round is full. Cannot enroll more students.");
+        // Check if roundDiploma has capacity
+        if (roundDiploma.getCurrentEnrollment() >= roundDiploma.getTotalStudents()) {
+            throw new RuntimeException("This diploma batch is full. Cannot enroll more students.");
         }
 
         // Check if phone already exists
@@ -62,19 +60,19 @@ public class StudentServiceImpl implements StudentService {
         student.setName(studentRequest.getName());
         student.setPhone(studentRequest.getPhone());
         student.setEmail(studentRequest.getEmail());
-        student.setRound(round);
+        student.setRoundDiploma(roundDiploma);
         student.setTotalFees(studentRequest.getTotalFees());
         student.setPaidAmount(BigDecimal.ZERO);
         student.setRemainingAmount(studentRequest.getTotalFees());
         student.setPaymentStatus(PaymentStatus.PENDING);
         student.setEnrollmentDate(LocalDateTime.now());
 
-        // Increment round's current enrollment
-        round.setCurrentEnrollment(round.getCurrentEnrollment() + 1);
+        // Increment roundDiploma's current enrollment
+        roundDiploma.setCurrentEnrollment(roundDiploma.getCurrentEnrollment() + 1);
 
-        // Save student and update round
+        // Save student and update roundDiploma
         Student savedStudent = studentRepository.save(student);
-        roundRepository.save(round);
+        roundDiplomaRepository.save(roundDiploma);
 
         return studentMapper.toStudentResponse(savedStudent);
     }
@@ -100,15 +98,15 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public Page<StudentResponse> getStudentsByRound(Long roundId, Pageable pageable) {
-        if (Objects.isNull(roundId) || Objects.isNull(pageable)) {
-            throw new IllegalArgumentException("RoundId or Pageable is null");
+    public Page<StudentResponse> getStudentsByRound(Long roundDiplomaId, Pageable pageable) {
+        if (Objects.isNull(roundDiplomaId) || Objects.isNull(pageable)) {
+            throw new IllegalArgumentException("RoundDiplomaId or Pageable is null");
         }
 
-        Round round = roundRepository.findById(roundId)
-                .orElseThrow(() -> new RuntimeException("Round not found with id: " + roundId));
+        RoundDiploma roundDiploma = roundDiplomaRepository.findById(roundDiplomaId)
+                .orElseThrow(() -> new RuntimeException("RoundDiploma not found with id: " + roundDiplomaId));
 
-        return studentRepository.findByRound(round, pageable)
+        return studentRepository.findByRoundDiploma(roundDiploma, pageable)
                 .map(studentMapper::toStudentResponse);
     }
 
@@ -150,37 +148,33 @@ public class StudentServiceImpl implements StudentService {
             throw new IllegalArgumentException("StudentId is null");
         }
 
-        // Get student and round
+        // Get student and roundDiploma
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found with id: " + studentId));
 
-        Round round = student.getRound();
+        RoundDiploma rd = student.getRoundDiploma();
 
-        // Calculate number of installments
-        BigDecimal installmentAmount = round.getInstallmentAmount();
-        BigDecimal totalFees = student.getTotalFees();
-
-        int totalInstallments = totalFees.divide(installmentAmount, 0, RoundingMode.UP).intValue();
-
+        // Use the individual installment dates and amounts from RoundDiploma
+        List<InstallmentPlan.Installment> installments = new ArrayList<>();
+        LocalDate[] dueDates = {
+            rd.getInstallment1Date(),
+            rd.getInstallment2Date(),
+            rd.getInstallment3Date(),
+            rd.getInstallment4Date()
+        };
+        
+        BigDecimal[] installmentAmounts = {
+            rd.getInstallment1Amount(),
+            rd.getInstallment2Amount(),
+            rd.getInstallment3Amount(),
+            rd.getInstallment4Amount()
+        };
+        
         // Get all payments for this student
         List<Payment> payments = paymentRepository.findByStudent(student);
 
-        // Create installment list
-        List<InstallmentPlan.Installment> installments = new ArrayList<>();
-        LocalDate currentDueDate = round.getStartDate();
-
-        for (int i = 1; i <= totalInstallments; i++) {
-            BigDecimal amount = installmentAmount;
-
-            // Last installment might be different to cover exact total
-            if (i == totalInstallments) {
-                BigDecimal sumOfPreviousInstallments = installmentAmount
-                        .multiply(BigDecimal.valueOf(totalInstallments - 1));
-                amount = totalFees.subtract(sumOfPreviousInstallments);
-            }
-
-            // Check if this installment is paid
-            final int installmentNumber = i;
+        for (int i = 0; i < 4; i++) {
+            final int installmentNumber = i + 1;
             Optional<Payment> installmentPayment = payments.stream()
                     .filter(p -> p.getInstallmentNumber() != null && p.getInstallmentNumber() == installmentNumber)
                     .findFirst();
@@ -188,25 +182,20 @@ public class StudentServiceImpl implements StudentService {
             boolean isPaid = installmentPayment.isPresent();
             LocalDateTime paidDate = installmentPayment.map(Payment::getPaymentDate).orElse(null);
 
-            // Add installment to list
             installments.add(InstallmentPlan.Installment.builder()
-                    .installmentNumber(i)
-                    .amount(amount)
-                    .dueDate(currentDueDate)
+                    .installmentNumber(installmentNumber)
+                    .amount(installmentAmounts[i] != null ? installmentAmounts[i] : BigDecimal.ZERO)
+                    .dueDate(dueDates[i])
                     .isPaid(isPaid)
                     .paidDate(paidDate)
                     .build());
-
-            // Increment due date by 30 days for next installment
-            currentDueDate = currentDueDate.plusDays(30);
         }
 
         return InstallmentPlan.builder()
                 .studentId(student.getId())
                 .studentName(student.getName())
-                .totalFees(totalFees)
-                .installmentAmount(installmentAmount)
-                .totalInstallments(totalInstallments)
+                .totalFees(student.getTotalFees())
+                .totalInstallments(4)
                 .installments(installments)
                 .build();
     }
