@@ -13,7 +13,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 @RequiredArgsConstructor
@@ -32,11 +34,16 @@ public class DataSeeder {
     private final FollowUpRepository followUpRepository;
     private final DiplomaRepository diplomaRepository;
     private final AttendanceRepository attendanceRepository;
+    private final DiplomaV2Repository diplomaV2Repository;
+    private final RoundV2Repository roundV2Repository;
     private final PasswordEncoder passwordEncoder;
 
     @Bean
     public CommandLineRunner seedDatabase() {
         return args -> {
+            // Seed V2 Data (Independent check inside method)
+            seedV2Data();
+
             // Check if data already exists
             if (userRepository.count() > 0) {
                 log.info("Database already contains data. Skipping seeding.");
@@ -440,5 +447,30 @@ public class DataSeeder {
         attendance.setCheckOutTime(out);
         attendance.setTotalHours(hours);
         return attendance;
+    }
+
+    private void seedV2Data() {
+        if (diplomaV2Repository.count() > 0) return;
+
+        List<DiplomaV2> diplomas = new ArrayList<>();
+        diplomas.add(new DiplomaV2("BIM Architecture diploma"));
+        diplomas.add(new DiplomaV2("Interior Design & Decoration - Offline"));
+        diplomas.add(new DiplomaV2("Interior Design & Decoration - Online"));
+        diplomas.add(new DiplomaV2("Full Stack Development"));
+        diplomas = diplomaV2Repository.saveAll(diplomas);
+
+        RoundV2 round9 = new RoundV2();
+        round9.setName("Round 9");
+        round9.setStartDate(LocalDate.of(2026, 4, 12));
+        round9.setEndDate(LocalDate.of(2026, 8, 12));
+        round9.setDiplomas(new HashSet<>(diplomas.subList(0, 3)));
+        roundV2Repository.save(round9);
+
+        RoundV2 round10 = new RoundV2();
+        round10.setName("Round 10");
+        round10.setStartDate(LocalDate.of(2026, 5, 20));
+        round10.setEndDate(LocalDate.of(2026, 9, 20));
+        round10.setDiplomas(new HashSet<>(List.of(diplomas.get(3))));
+        roundV2Repository.save(round10);
     }
 }

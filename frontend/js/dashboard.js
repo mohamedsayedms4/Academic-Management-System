@@ -74,7 +74,7 @@ function showView(viewId) {
 
 async function loadRounds() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/rounds?size=10', {
+        const response = await fetch('http://localhost:8080/api/v2/rounds?size=10', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -83,7 +83,6 @@ async function loadRounds() {
         if (!response.ok) throw new Error('Failed to fetch rounds');
 
         const data = await response.json();
-        // Spring Data JPA Page object returns results in 'content'
         renderDashboardTable(data.content || []);
     } catch (error) {
         console.error('Error loading rounds:', error);
@@ -155,18 +154,18 @@ function renderDashboardTable(rounds) {
         `;
         tbody.appendChild(groupRow);
 
-        // Render each diploma within the round
+        // Render each diploma name within the round (Simplified for V2)
         if (round.diplomas && round.diplomas.length > 0) {
-            round.diplomas.forEach(rd => {
+            round.diplomas.forEach(d => {
                 const diplomaRow = document.createElement('tr');
                 diplomaRow.innerHTML = `
                     <td></td>
-                    <td>${rd.diploma ? rd.diploma.name : 'N/A'}</td>
-                    <td>${rd.totalStudents}</td>
-                    <td>${renderInstallmentCell(rd.installment1Date)}</td>
-                    <td>${renderInstallmentCell(rd.installment2Date)}</td>
-                    <td>${renderInstallmentCell(rd.installment3Date)}</td>
-                    <td>${renderInstallmentCell(rd.installment4Date)}</td>
+                    <td>${d.name}</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
                 `;
                 tbody.appendChild(diplomaRow);
             });
@@ -437,7 +436,7 @@ async function loadInstructorsForForm() {
 
 async function loadRoundsList() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/rounds?size=10', {
+        const response = await fetch('http://localhost:8080/api/v2/rounds?size=10', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!response.ok) throw new Error('Failed to fetch rounds');
@@ -456,7 +455,7 @@ function renderRoundsListTable(rounds) {
         const row = document.createElement('tr');
         
         const diplomasList = (round.diplomas || [])
-            .map(rd => rd.diploma ? rd.diploma.name : 'N/A')
+            .map(d => d.name)
             .join('<br>');
 
         row.innerHTML = `
@@ -479,28 +478,23 @@ function initAddRoundForm() {
     const form = document.getElementById('form-add-round');
     const btnCancel = document.getElementById('btn-cancel-round');
 
-    btnCancel.onclick = () => showView('dashboard-view');
+    btnCancel.onclick = () => showView('rounds-list-view');
 
     form.onsubmit = async (e) => {
         e.preventDefault();
         
-        const selectedDiplomas = Array.from(document.getElementById('input-round-diplomas').selectedOptions)
-            .map(opt => ({
-                diplomaId: opt.value,
-                totalStudents: 30, // Default capacity
-                totalPrice: 0, // Placeholder
-                startDate: document.getElementById('input-round-start-date').value,
-                endDate: document.getElementById('input-round-start-date').value // Placeholder
-            }));
+        const selectedDiplomaIds = Array.from(document.getElementById('input-round-diplomas').selectedOptions)
+            .map(opt => opt.value);
 
         const payload = {
             name: document.getElementById('input-round-name').value,
             startDate: document.getElementById('input-round-start-date').value,
-            diplomas: selectedDiplomas
+            endDate: document.getElementById('input-round-end-date').value,
+            diplomaIds: selectedDiplomaIds
         };
 
         try {
-            const response = await fetch('http://localhost:8080/api/v1/rounds', {
+            const response = await fetch('http://localhost:8080/api/v2/rounds', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -511,8 +505,8 @@ function initAddRoundForm() {
 
             if (response.ok) {
                 alert('Round created successfully!');
-                showView('dashboard-view');
-                loadRounds();
+                showView('rounds-list-view');
+                loadRoundsList();
             } else {
                 const err = await response.json();
                 alert('Error: ' + (err.message || 'Failed to create round'));
@@ -525,7 +519,7 @@ function initAddRoundForm() {
 }
 
 async function loadDiplomasForRoundForm() {
-    const response = await fetch('http://localhost:8080/api/v1/diplomas', {
+    const response = await fetch('http://localhost:8080/api/v2/diplomas', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (response.ok) {
@@ -545,7 +539,7 @@ async function deleteRound(id) {
     if (!confirm('Are you sure you want to delete this round?')) return;
     
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/rounds/${id}`, {
+        const response = await fetch(`http://localhost:8080/api/v2/rounds/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
