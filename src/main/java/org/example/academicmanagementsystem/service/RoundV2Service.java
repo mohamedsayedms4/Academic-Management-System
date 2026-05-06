@@ -12,5 +12,6 @@ public interface RoundV2Service {
     RoundResponseV2 updateRound(Long id, RoundRequestV2 request);
     RoundResponseV2 getRound(Long id);
     Page<RoundResponseV2> getAllRounds(Pageable pageable);
+    List<RoundResponseV2> getAllRoundsList();
     void deleteRound(Long id);
 }

@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v2/rounds")
 @RequiredArgsConstructor
@@ -35,6 +37,11 @@ public class RoundV2Controller {
     @GetMapping
     public ResponseEntity<Page<RoundResponseV2>> getAllRounds(Pageable pageable) {
         return ResponseEntity.ok(roundService.getAllRounds(pageable));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<RoundResponseV2>> getAllRoundsList() {
+        return ResponseEntity.ok(roundService.getAllRoundsList());
     }
 
     @DeleteMapping("/{id}")

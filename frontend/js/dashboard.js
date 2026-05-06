@@ -1127,14 +1127,12 @@ async function initAddStudentForm() {
 
 async function loadOptionsForStudentForm() {
     try {
-        const [roundsRes, diplomasRes, salesRes] = await Promise.all([
+        const [roundsRes, salesRes] = await Promise.all([
             fetch('http://localhost:8080/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
-            fetch('http://localhost:8080/api/v2/diplomas', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
             fetch('http://localhost:8080/api/v1/users', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }) 
         ]);
 
         const rounds = await roundsRes.json();
-        const diplomas = await diplomasRes.json();
         const sales = await salesRes.json();
 
         const roundSelect = document.getElementById('input-student-round');
@@ -1143,11 +1141,36 @@ async function loadOptionsForStudentForm() {
 
         const diplomaSelect = document.getElementById('input-student-diploma');
         diplomaSelect.innerHTML = '<option value="" disabled selected>Select Diploma</option>';
-        diplomas.forEach(d => diplomaSelect.add(new Option(d.name, d.id)));
+        diplomaSelect.disabled = true; // Disable until round is selected
+
+        roundSelect.onchange = async () => {
+            const roundId = roundSelect.value;
+            if (!roundId) return;
+
+            diplomaSelect.innerHTML = '<option value="" disabled selected>Loading diplomas...</option>';
+            diplomaSelect.disabled = true;
+
+            try {
+                const res = await fetch(`http://localhost:8080/api/v2/rounds/${roundId}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (res.ok) {
+                    const round = await res.json();
+                    diplomaSelect.innerHTML = '<option value="" disabled selected>Select Diploma</option>';
+                    round.diplomas.forEach(d => {
+                        diplomaSelect.add(new Option(d.name, d.id));
+                    });
+                    diplomaSelect.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error loading diplomas for round:', error);
+                diplomaSelect.innerHTML = '<option value="" disabled selected>Error loading diplomas</option>';
+            }
+        };
 
         const salesSelect = document.getElementById('input-student-sales');
         salesSelect.innerHTML = '<option value="" disabled selected>Assigned sales</option>';
-        sales.forEach(u => salesSelect.add(new Option(u.name, u.id)));
+        sales.forEach(u => salesSelect.add(new Option(u.fullName, u.id)));
 
     } catch (error) {
         console.error('Error loading options:', error);

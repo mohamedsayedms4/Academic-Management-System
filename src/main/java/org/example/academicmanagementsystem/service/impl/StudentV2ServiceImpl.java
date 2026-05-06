@@ -41,7 +41,7 @@ public class StudentV2ServiceImpl implements StudentV2Service {
             student.setDiploma(diplomaRepository.findById(request.getDiplomaId()).orElse(null));
         }
         if (request.getSalesPersonId() != null) {
-            student.setSalesPerson(userRepository.findById(request.getSalesPersonId().intValue()).orElse(null));
+            student.setSalesPerson(userRepository.findById(request.getSalesPersonId()).orElse(null));
         }
 
         return mapToResponse(studentRepository.save(student));
@@ -99,7 +99,7 @@ public class StudentV2ServiceImpl implements StudentV2Service {
                 .roundName(student.getRound() != null ? student.getRound().getName() : "N/A")
                 .diplomaName(student.getDiploma() != null ? student.getDiploma().getName() : "N/A")
                 .depositAmount(student.getDepositAmount())
-                .salesPersonName(student.getSalesPerson() != null ? student.getSalesPerson().getName() : "N/A")
+                .salesPersonName(student.getSalesPerson() != null ? student.getSalesPerson().getFullName() : "N/A")
                 .discount(student.getDiscount())
                 .status(student.getStatus())
                 .cancellationDate(student.getCancellationDate())

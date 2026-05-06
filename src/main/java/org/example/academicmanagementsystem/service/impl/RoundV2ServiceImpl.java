@@ -77,6 +77,14 @@ public class RoundV2ServiceImpl implements RoundV2Service {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<RoundResponseV2> getAllRoundsList() {
+        return roundRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public void deleteRound(Long id) {
         roundRepository.deleteById(id);
