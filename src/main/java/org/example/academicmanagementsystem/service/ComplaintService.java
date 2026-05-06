@@ -32,7 +32,7 @@ public class ComplaintService {
     public Complaint resolve(Long id, String response, org.example.academicmanagementsystem.model.User resolver) {
         Complaint complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Complaint not found"));
-        complaint.setStatus(ComplaintStatus.RESOLVED);
+        complaint.setStatus(ComplaintStatus.CLOSED);
         complaint.setResponseText(response);
         complaint.setResolvedBy(resolver);
         complaint.setResolvedAt(LocalDateTime.now());
