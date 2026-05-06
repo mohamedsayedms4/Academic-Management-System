@@ -137,8 +137,53 @@
                 </div>
             </div>
 
-            <!-- Add New Diploma Page Content -->
-            <div class="page-content" id="add-diploma-view" style="display: none;">
+            <!-- Rounds List Page Content -->
+            <div class="page-content" id="rounds-list-view" style="display: none;">
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Rounds</h1>
+                        <p>View and manage all rounds, their durations, and linked diplomas.</p>
+                    </div>
+                </div>
+
+                <div class="content-controls">
+                    <div class="filters">
+                        <div class="control-item search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-rounds" placeholder="Search...">
+                        </div>
+                        <div class="control-item select">
+                            <i class="fas fa-graduation-cap"></i>
+                            <select id="filter-round-list-diploma">
+                                <option value="">Diploma</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                    </div>
+                    <button class="btn-save" id="btn-open-add-round"><i class="fas fa-plus"></i> Add New Round</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Round</th>
+                                <th>Start Date</th>
+                                <th>Total Diplomas</th>
+                                <th>Diplomas</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rounds-list-tbody">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination" id="rounds-pagination">
+                    <!-- Pagination buttons -->
+                </div>
+            </div>
                 <div class="breadcrumb">
                     <span>Diplomas</span> <i class="fas fa-chevron-right"></i> <span class="active">Add New diploma</span>
                 </div>
@@ -259,6 +304,54 @@
 
                     <div class="form-actions">
                         <button type="button" class="btn-cancel" id="btn-cancel-add">Cancel</button>
+                        <button type="submit" class="btn-save">Save</button>
+                    </div>
+                </form>
+            </div>
+            <!-- Add New Round Page Content -->
+            <div class="page-content" id="add-round-view" style="display: none;">
+                <div class="breadcrumb">
+                    <span>Rounds</span> <i class="fas fa-chevron-right"></i> <span class="active">Add New round</span>
+                </div>
+                
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Add New Round</h1>
+                    </div>
+                </div>
+
+                <form id="form-add-round" class="modern-form">
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number"><i class="fas fa-layer-group"></i></span>
+                            <h3>Round Information</h3>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Round name*</label>
+                                <input type="text" id="input-round-name" placeholder="Enter Round name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Start date*</label>
+                                <div class="date-input-wrapper">
+                                    <input type="date" id="input-round-start-date" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label>Diplomas in this round*</label>
+                            <select id="input-round-diplomas" multiple required class="multi-select">
+                                <!-- Diplomas will be loaded here -->
+                            </select>
+                            <span class="field-note">Hold Ctrl (Cmd) to select multiple diplomas</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" id="btn-cancel-round">Cancel</button>
                         <button type="submit" class="btn-save">Save</button>
                     </div>
                 </form>

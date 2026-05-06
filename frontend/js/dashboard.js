@@ -26,6 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
         initAddDiplomaForm();
     });
 
+    document.getElementById('nav-rounds').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('add-round-view');
+        initAddRoundForm();
+    });
+
     // Logout logic
     document.getElementById('btn-logout').addEventListener('click', (e) => {
         e.preventDefault();
@@ -51,6 +57,8 @@ function showView(viewId) {
         document.getElementById('nav-home').parentElement.classList.add('active');
     } else if (viewId === 'add-diploma-view') {
         document.getElementById('nav-diplomas').parentElement.classList.add('active');
+    } else if (viewId === 'add-round-view') {
+        document.getElementById('nav-rounds').parentElement.classList.add('active');
     }
 }
 
@@ -402,6 +410,74 @@ async function loadInstructorsForForm() {
             const opt = document.createElement('option');
             opt.value = u.id;
             opt.textContent = u.fullName;
+            select.appendChild(opt);
+        });
+    }
+}
+
+function initAddRoundForm() {
+    loadDiplomasForRoundForm();
+
+    const form = document.getElementById('form-add-round');
+    const btnCancel = document.getElementById('btn-cancel-round');
+
+    btnCancel.onclick = () => showView('dashboard-view');
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const selectedDiplomas = Array.from(document.getElementById('input-round-diplomas').selectedOptions)
+            .map(opt => ({
+                diplomaId: opt.value,
+                totalStudents: 30, // Default capacity
+                totalPrice: 0, // Placeholder
+                startDate: document.getElementById('input-round-start-date').value,
+                endDate: document.getElementById('input-round-start-date').value // Placeholder
+            }));
+
+        const payload = {
+            name: document.getElementById('input-round-name').value,
+            startDate: document.getElementById('input-round-start-date').value,
+            diplomas: selectedDiplomas
+        };
+
+        try {
+            const response = await fetch('http://localhost:8080/api/v1/rounds', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert('Round created successfully!');
+                showView('dashboard-view');
+                loadRounds();
+            } else {
+                const err = await response.json();
+                alert('Error: ' + (err.message || 'Failed to create round'));
+            }
+        } catch (error) {
+            console.error('Error creating round:', error);
+            alert('An error occurred.');
+        }
+    };
+}
+
+async function loadDiplomasForRoundForm() {
+    const response = await fetch('http://localhost:8080/api/v1/diplomas', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    if (response.ok) {
+        const diplomas = await response.json();
+        const select = document.getElementById('input-round-diplomas');
+        select.innerHTML = '';
+        diplomas.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = d.name;
             select.appendChild(opt);
         });
     }

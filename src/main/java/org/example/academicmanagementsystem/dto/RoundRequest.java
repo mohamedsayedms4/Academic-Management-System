@@ -16,7 +16,7 @@ import java.util.List;
 public class RoundRequest {
     private String name;
     private LocalDate startDate;
-    private LocalDate endDate;
+    private LocalDate endDate; // Optional
     private List<RoundDiplomaRequest> diplomas;
     private RoundStatus status;
 }

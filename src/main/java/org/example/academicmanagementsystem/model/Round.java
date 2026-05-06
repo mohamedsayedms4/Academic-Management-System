@@ -3,7 +3,6 @@ package org.example.academicmanagementsystem.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -16,13 +15,12 @@ import java.util.List;
 public class Round extends BaseEntity {
 
     @Column(nullable = false)
-    private String name; // "الراوند الخامس - برمجة"
+    private String name;
 
     @Column(nullable = false)
     private LocalDate startDate;
 
-    @Column(nullable = false)
-    private LocalDate endDate;
+    private LocalDate endDate; // Made optional to match frontend
 
     @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RoundDiploma> roundDiplomas;
