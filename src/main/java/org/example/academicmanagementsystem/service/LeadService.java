@@ -25,7 +25,7 @@ public interface LeadService {
 
     Boolean deleteById(Long id);
 
-    Optional<LeadResponse> update(Lead LeadRequest);
+    Optional<LeadResponse> update(Long id, LeadRequest leadRequest);
 
     Integer count();
 

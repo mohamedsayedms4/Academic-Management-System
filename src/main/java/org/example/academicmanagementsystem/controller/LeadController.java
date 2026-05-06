@@ -72,21 +72,8 @@ public class LeadController {
     public ResponseEntity<LeadResponse> updateLead(
             @PathVariable Long id,
             @RequestBody LeadRequest leadRequest) {
-        return leadService.findById(id)
-                .map(existingLead -> {
-                    // Create Lead entity with updated fields
-                    org.example.academicmanagementsystem.model.Lead leadToUpdate = new org.example.academicmanagementsystem.model.Lead();
-                    leadToUpdate.setId(id);
-                    leadToUpdate.setPhoneNumber(leadRequest.getPhoneNumber());
-                    leadToUpdate.setDiplomaName(leadRequest.getDiplomaName());
-                    leadToUpdate.setModeratorNotes(leadRequest.getModeratorNotes());
-                    leadToUpdate.setStatus(leadRequest.getStatus());
-                    leadToUpdate.setClosureReason(leadRequest.getClosureReason());
-
-                    Optional<LeadResponse> updated = leadService.update(leadToUpdate);
-                    return updated.map(ResponseEntity::ok)
-                            .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
-                })
+        return leadService.update(id, leadRequest)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 

@@ -19,7 +19,7 @@ public class RoundResponse {
     private String name;
     private LocalDate startDate;
     private LocalDate endDate;
-    private String diplomaName;
+    private DiplomaResponse diploma;
     private Integer totalStudents;
     private Integer currentEnrollment;
     private BigDecimal installmentAmount;

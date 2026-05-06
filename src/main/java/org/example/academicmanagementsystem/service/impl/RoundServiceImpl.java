@@ -22,6 +22,7 @@ public class RoundServiceImpl implements RoundService {
 
     private final RoundRepository roundRepository;
     private final RoundMapper roundMapper;
+    private final org.example.academicmanagementsystem.repository.DiplomaRepository diplomaRepository;
 
     @Override
     @Transactional
@@ -31,6 +32,12 @@ public class RoundServiceImpl implements RoundService {
         }
 
         Round round = roundMapper.toRoundEntity(roundRequest);
+
+        // Set Diploma
+        if (roundRequest.getDiplomaId() != null) {
+            round.setDiploma(diplomaRepository.findById(roundRequest.getDiplomaId())
+                    .orElseThrow(() -> new RuntimeException("Diploma not found with id: " + roundRequest.getDiplomaId())));
+        }
 
         // Set default status if not provided
         if (round.getStatus() == null) {
@@ -85,8 +92,9 @@ public class RoundServiceImpl implements RoundService {
                     if (roundRequest.getEndDate() != null) {
                         existingRound.setEndDate(roundRequest.getEndDate());
                     }
-                    if (roundRequest.getDiplomaName() != null) {
-                        existingRound.setDiplomaName(roundRequest.getDiplomaName());
+                    if (roundRequest.getDiplomaId() != null) {
+                        existingRound.setDiploma(diplomaRepository.findById(roundRequest.getDiplomaId())
+                                .orElseThrow(() -> new RuntimeException("Diploma not found with id: " + roundRequest.getDiplomaId())));
                     }
                     if (roundRequest.getTotalStudents() != null) {
                         existingRound.setTotalStudents(roundRequest.getTotalStudents());

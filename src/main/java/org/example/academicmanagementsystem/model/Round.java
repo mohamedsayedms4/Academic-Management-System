@@ -24,8 +24,9 @@ public class Round extends BaseEntity {
     @Column(nullable = false)
     private LocalDate endDate;
 
-    @Column(nullable = false)
-    private String diplomaName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "diploma_id")
+    private Diploma diploma;
 
     @Column(nullable = false)
     private Integer totalStudents; // السعة القصوى

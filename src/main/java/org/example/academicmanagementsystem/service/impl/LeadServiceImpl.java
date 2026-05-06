@@ -164,37 +164,40 @@ public class LeadServiceImpl implements LeadService {
 
     @Override
     @Transactional
-    public Optional<LeadResponse> update(Lead leadToUpdate) {
-        if (Objects.isNull(leadToUpdate) || Objects.isNull(leadToUpdate.getId())) {
-            throw new IllegalArgumentException("Lead or Lead ID is null");
+    public Optional<LeadResponse> update(Long id, LeadRequest leadRequest) {
+        if (Objects.isNull(id) || Objects.isNull(leadRequest)) {
+            throw new IllegalArgumentException("ID or LeadRequest is null");
         }
 
-        return leadRepository.findById(leadToUpdate.getId())
+        return leadRepository.findById(id)
                 .map(existingLead -> {
                     // Update fields
-                    if (leadToUpdate.getFullName() != null) {
-                        existingLead.setFullName(leadToUpdate.getFullName());
+                    if (leadRequest.getFullName() != null) {
+                        existingLead.setFullName(leadRequest.getFullName());
                     }
-                    if (leadToUpdate.getPhoneNumber() != null) {
-                        existingLead.setPhoneNumber(leadToUpdate.getPhoneNumber());
+                    if (leadRequest.getPhoneNumber() != null) {
+                        existingLead.setPhoneNumber(leadRequest.getPhoneNumber());
                     }
-                    if (leadToUpdate.getSource() != null) {
-                        existingLead.setSource(leadToUpdate.getSource());
+                    if (leadRequest.getSource() != null) {
+                        existingLead.setSource(leadRequest.getSource());
                     }
-                    if (leadToUpdate.getDiploma() != null) {
-                        existingLead.setDiploma(leadToUpdate.getDiploma());
+                    if (leadRequest.getDiplomaId() != null) {
+                        existingLead.setDiploma(diplomaRepository.findById(leadRequest.getDiplomaId())
+                                .orElseThrow(() -> new RuntimeException("Diploma not found with id: " + leadRequest.getDiplomaId())));
                     }
-                    if (leadToUpdate.getModeratorNotes() != null) {
-                        existingLead.setModeratorNotes(leadToUpdate.getModeratorNotes());
+                    if (leadRequest.getModeratorNotes() != null) {
+                        existingLead.setModeratorNotes(leadRequest.getModeratorNotes());
                     }
-                    if (leadToUpdate.getStatus() != null) {
-                        existingLead.setStatus(leadToUpdate.getStatus());
+                    if (leadRequest.getStatus() != null) {
+                        existingLead.setStatus(leadRequest.getStatus());
                     }
-                    if (leadToUpdate.getClosureReason() != null) {
-                        existingLead.setClosureReason(leadToUpdate.getClosureReason());
+                    if (leadRequest.getClosureReason() != null) {
+                        existingLead.setClosureReason(leadRequest.getClosureReason());
                     }
-                    if (leadToUpdate.getTeleSales() != null) {
-                        existingLead.setTeleSales(leadToUpdate.getTeleSales());
+                    if (leadRequest.getTeleSalesId() != null) {
+                        User teleSales = userRepository.findById(leadRequest.getTeleSalesId())
+                                .orElseThrow(() -> new RuntimeException("Telesales user not found with id: " + leadRequest.getTeleSalesId()));
+                        existingLead.setTeleSales(teleSales);
                     }
 
                     Lead updatedLead = leadRepository.save(existingLead);

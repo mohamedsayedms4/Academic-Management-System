@@ -19,7 +19,7 @@ public interface RoundRepository extends JpaRepository<Round, Long> {
 
     Page<Round> findRoundsByStatus(RoundStatus status, Pageable pageable);
 
-    List<Round> findByDiplomaName(String diplomaName);
+    List<Round> findByDiploma_Name(String diplomaName);
 
     @Query("SELECT r FROM Round r WHERE r.startDate <= :date AND r.endDate >= :date")
     List<Round> findActiveRoundsOnDate(@Param("date") LocalDate date);

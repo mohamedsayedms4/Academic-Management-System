@@ -26,9 +26,7 @@ public class DataSeeder {
     private final StudentRepository studentRepository;
     private final PaymentRepository paymentRepository;
     private final TaskRepository taskRepository;
-    private final ComplaintRepository complaintRepository;
-    private final SalaryRepository salaryRepository;
-    private final FollowUpRepository followUpRepository;
+    private final DiplomaRepository diplomaRepository;
     private final AttendanceRepository attendanceRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -47,8 +45,12 @@ public class DataSeeder {
             List<User> users = seedUsers();
             log.info("Seeded {} users", users.size());
 
+            // Seed Diplomas
+            List<Diploma> diplomas = seedDiplomas();
+            log.info("Seeded {} diplomas", diplomas.size());
+
             // Seed Leads
-            List<Lead> leads = seedLeads(users);
+            List<Lead> leads = seedLeads(users, diplomas);
             log.info("Seeded {} leads", leads.size());
 
             // Seed FollowUps
@@ -56,7 +58,7 @@ public class DataSeeder {
             log.info("Seeded {} follow-ups", followUps.size());
 
             // Seed Rounds
-            List<Round> rounds = seedRounds();
+            List<Round> rounds = seedRounds(diplomas);
             log.info("Seeded {} rounds", rounds.size());
 
             // Seed Students
@@ -139,7 +141,24 @@ public class DataSeeder {
         return user;
     }
 
-    private List<Lead> seedLeads(List<User> users) {
+    private List<Diploma> seedDiplomas() {
+        List<Diploma> diplomas = new ArrayList<>();
+        diplomas.add(createDiploma("Full Stack Development", "Web development with Java and React"));
+        diplomas.add(createDiploma("Data Science Diploma", "Data analysis and Machine Learning"));
+        diplomas.add(createDiploma("Digital Marketing Diploma", "SEO, SEM and Social Media"));
+        diplomas.add(createDiploma("Cybersecurity Diploma", "Network security and Ethical hacking"));
+        diplomas.add(createDiploma("UI/UX Design Diploma", "Modern user interface and experience design"));
+        return diplomaRepository.saveAll(diplomas);
+    }
+
+    private Diploma createDiploma(String name, String desc) {
+        Diploma d = new Diploma();
+        d.setName(name);
+        d.setDescription(desc);
+        return d;
+    }
+
+    private List<Lead> seedLeads(List<User> users, List<Diploma> diplomas) {
         List<Lead> leads = new ArrayList<>();
 
         // Get telesales users (indices 2, 3, 4)
@@ -147,43 +166,28 @@ public class DataSeeder {
         User telesales2 = users.get(3);
         User telesales3 = users.get(4);
 
-        leads.add(createLead("01234567890", "Computer Science Diploma", "Very interested in AI", LeadStatus.OPEN,
+        leads.add(createLead("أحمد محمد", "01234567890", diplomas.get(0), "Very interested in AI", LeadStatus.OPEN,
                 telesales1, null, null));
-        leads.add(createLead("01123456789", "Data Science Diploma", "Looking for evening classes", LeadStatus.OPEN,
+        leads.add(createLead("سارة أحمد", "01123456789", diplomas.get(1), "Looking for evening classes", LeadStatus.OPEN,
                 telesales2, null, null));
-        leads.add(createLead("01098765432", "Web Development Diploma", "Referred from social media", LeadStatus.OPEN,
+        leads.add(createLead("ياسين علي", "01098765432", diplomas.get(0), "Referred from social media", LeadStatus.OPEN,
                 telesales1, null, null));
-        leads.add(createLead("01156789012", "Mobile App Development", "Completed enrollment process", LeadStatus.CLOSED,
+        leads.add(createLead("فاطمة كمال", "01156789012", diplomas.get(4), "Completed enrollment process", LeadStatus.CLOSED,
                 telesales3, "Successfully enrolled", null));
-        leads.add(createLead("01087654321", "Cybersecurity Diploma", "Called multiple times, no answer",
-                LeadStatus.CLOSED, telesales2, "Not interested", null));
-        leads.add(createLead("01234098765", "Digital Marketing Diploma", "New lead from website", LeadStatus.OPEN, null,
-                null, null)); // Unassigned
-        leads.add(createLead("01145678901", "Full Stack Development", "Interested in weekend batches", LeadStatus.OPEN,
-                telesales3, null, null));
-        leads.add(createLead("01298765430", "UI/UX Design Diploma", "Requires more info on fees", LeadStatus.OPEN, null,
-                null, null)); // Unassigned
-        leads.add(createLead("01076543210", "Cloud Computing Diploma", "Cannot afford currently", LeadStatus.CLOSED,
-                telesales1, "Budget constraints", null));
-        leads.add(createLead("01187654098", "Business Analytics Diploma", "Corporate referral", LeadStatus.OPEN,
-                telesales2, null, null));
-        leads.add(createLead("01234567654", "DevOps Engineering", "Hot lead", LeadStatus.OPEN, null, null, null)); // Unassigned
-        leads.add(createLead("01123987654", "Artificial Intelligence Diploma", "Enrolled with scholarship",
-                LeadStatus.CLOSED, telesales3, "Enrolled", null));
-
+        
         return leadRepository.saveAll(leads);
     }
 
-    private Lead createLead(String phone, String diploma, String notes, LeadStatus status, User telesales,
+    private Lead createLead(String fullName, String phone, Diploma diploma, String notes, LeadStatus status, User telesales,
             String closureReason, String email) {
         Lead lead = new Lead();
+        lead.setFullName(fullName);
         lead.setPhoneNumber(phone);
-        lead.setDiplomaName(diploma);
+        lead.setDiploma(diploma);
         lead.setModeratorNotes(notes);
         lead.setStatus(status);
         lead.setTeleSales(telesales);
         lead.setClosureReason(closureReason);
-        // lead.setEmail(email); // If Lead has email field
         return lead;
     }
 
@@ -210,31 +214,27 @@ public class DataSeeder {
         return followUp;
     }
 
-    private List<Round> seedRounds() {
+    private List<Round> seedRounds(List<Diploma> diplomas) {
         List<Round> rounds = new ArrayList<>();
 
         rounds.add(createRound("Round 1 - Full Stack", LocalDate.now().minusMonths(3), LocalDate.now().plusMonths(3),
-                "Full Stack Development", 30, 25, new BigDecimal("5000.00"), RoundStatus.ACTIVE));
+                diplomas.get(0), 30, 25, new BigDecimal("5000.00"), RoundStatus.ACTIVE));
         rounds.add(createRound("Round 2 - Data Science", LocalDate.now().minusMonths(1), LocalDate.now().plusMonths(5),
-                "Data Science Diploma", 25, 20, new BigDecimal("6000.00"), RoundStatus.ACTIVE));
+                diplomas.get(1), 25, 20, new BigDecimal("6000.00"), RoundStatus.ACTIVE));
         rounds.add(
                 createRound("Round 3 - Digital Marketing", LocalDate.now().minusWeeks(2), LocalDate.now().plusMonths(2),
-                        "Digital Marketing Diploma", 40, 15, new BigDecimal("3500.00"), RoundStatus.ACTIVE));
-        rounds.add(createRound("Round 4 - Cybersecurity", LocalDate.now().plusMonths(1), LocalDate.now().plusMonths(7),
-                "Cybersecurity Diploma", 20, 5, new BigDecimal("7000.00"), RoundStatus.ACTIVE));
-        rounds.add(createRound("Round 0 - Legacy Java", LocalDate.now().minusYears(1), LocalDate.now().minusMonths(6),
-                "Java Development", 30, 28, new BigDecimal("4500.00"), RoundStatus.COMPLETED));
-
+                        diplomas.get(2), 40, 15, new BigDecimal("3500.00"), RoundStatus.ACTIVE));
+        
         return roundRepository.saveAll(rounds);
     }
 
-    private Round createRound(String name, LocalDate start, LocalDate end, String diploma, int capacity, int current,
+    private Round createRound(String name, LocalDate start, LocalDate end, Diploma diploma, int capacity, int current,
             BigDecimal installment, RoundStatus status) {
         Round round = new Round();
         round.setName(name);
         round.setStartDate(start);
         round.setEndDate(end);
-        round.setDiplomaName(diploma);
+        round.setDiploma(diploma);
         round.setTotalStudents(capacity);
         round.setCurrentEnrollment(current);
         round.setInstallmentAmount(installment);

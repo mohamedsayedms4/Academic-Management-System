@@ -17,7 +17,7 @@ public class RoundRequest {
     private String name;
     private LocalDate startDate;
     private LocalDate endDate;
-    private String diplomaName;
+    private Long diplomaId;
     private Integer totalStudents;
     private Integer currentEnrollment;
     private BigDecimal installmentAmount;

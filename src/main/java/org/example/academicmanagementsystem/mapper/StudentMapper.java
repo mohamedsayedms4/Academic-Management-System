@@ -8,7 +8,7 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {DiplomaMapper.class})
 public interface StudentMapper {
 
     @Mapping(target = "round", source = "round")
@@ -18,6 +18,6 @@ public interface StudentMapper {
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "name", source = "name")
-    @Mapping(target = "diplomaName", source = "diplomaName")
+    @Mapping(target = "diplomaName", source = "diploma.name")
     StudentResponse.RoundInfo toRoundInfo(Round round);
 }
