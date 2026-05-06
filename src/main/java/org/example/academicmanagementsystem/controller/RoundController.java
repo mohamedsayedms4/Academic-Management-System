@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -117,5 +118,12 @@ public class RoundController {
         response.put("status", "UP");
         response.put("service", "Round Service");
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}/diplomas")
+    public List<org.example.academicmanagementsystem.dto.RoundDiplomaResponse> getDiplomasByRound(@PathVariable Long id) {
+        return roundService.findById(id)
+                .map(org.example.academicmanagementsystem.dto.RoundResponse::getDiplomas)
+                .orElseThrow(() -> new RuntimeException("Round not found with id: " + id));
     }
 }

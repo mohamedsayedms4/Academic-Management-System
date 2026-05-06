@@ -7,7 +7,7 @@ import org.example.academicmanagementsystem.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;    
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -234,6 +234,24 @@ public class DataSeeder {
         roundDiplomaRepository.saveAll(round9Diplomas);
         round9.setRoundDiplomas(round9Diplomas);
         rounds.add(round9);
+
+        // Round 10
+        Round round10 = new Round();
+        round10.setName("Round 10 - Digital Arts");
+        round10.setStartDate(LocalDate.of(2025, 3, 1));
+        round10.setEndDate(LocalDate.of(2025, 9, 1));
+        round10.setStatus(RoundStatus.ACTIVE);
+        round10 = roundRepository.save(round10);
+
+        List<RoundDiploma> round10Diplomas = new ArrayList<>();
+        round10Diplomas.add(createRoundDiploma(round10, diplomas.get(1), users.get(7), new BigDecimal("15000.00"), 25,
+                new BigDecimal("3750.00"), LocalDate.of(2025, 3, 1), LocalDate.of(2025, 5, 1), LocalDate.of(2025, 7, 1), LocalDate.of(2025, 9, 1)));
+        round10Diplomas.add(createRoundDiploma(round10, diplomas.get(4), users.get(6), new BigDecimal("12000.00"), 20,
+                new BigDecimal("3000.00"), LocalDate.of(2025, 3, 10), LocalDate.of(2025, 5, 10), LocalDate.of(2025, 7, 10), LocalDate.of(2025, 9, 10)));
+        
+        roundDiplomaRepository.saveAll(round10Diplomas);
+        round10.setRoundDiplomas(round10Diplomas);
+        rounds.add(round10);
 
         return rounds;
     }

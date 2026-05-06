@@ -22,12 +22,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('nav-diplomas').addEventListener('click', (e) => {
         e.preventDefault();
+        showView('diplomas-list-view');
+        loadDiplomasList();
+    });
+
+    document.getElementById('btn-open-add-diploma').addEventListener('click', () => {
         showView('add-diploma-view');
         initAddDiplomaForm();
     });
 
     document.getElementById('nav-rounds').addEventListener('click', (e) => {
         e.preventDefault();
+        showView('rounds-list-view');
+        loadRoundsList();
+    });
+
+    document.getElementById('btn-open-add-round').addEventListener('click', () => {
         showView('add-round-view');
         initAddRoundForm();
     });
@@ -55,9 +65,9 @@ function showView(viewId) {
     document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
     if (viewId === 'dashboard-view') {
         document.getElementById('nav-home').parentElement.classList.add('active');
-    } else if (viewId === 'add-diploma-view') {
+    } else if (viewId === 'diplomas-list-view' || viewId === 'add-diploma-view') {
         document.getElementById('nav-diplomas').parentElement.classList.add('active');
-    } else if (viewId === 'add-round-view') {
+    } else if (viewId === 'rounds-list-view' || viewId === 'add-round-view') {
         document.getElementById('nav-rounds').parentElement.classList.add('active');
     }
 }
@@ -90,12 +100,22 @@ async function loadDiplomas() {
 
         if (response.ok) {
             const diplomas = await response.json();
-            const select = document.getElementById('filter-diploma');
+            
+            // Populate Home filter
+            const filterHome = document.getElementById('filter-diploma');
+            filterHome.innerHTML = '<option value="">Diploma</option>';
+            
+            // Populate Rounds list filter
+            const filterList = document.getElementById('filter-round-list-diploma');
+            if (filterList) filterList.innerHTML = '<option value="">Diploma</option>';
+
             diplomas.forEach(d => {
                 const opt = document.createElement('option');
                 opt.value = d.id;
                 opt.textContent = d.name;
-                select.appendChild(opt);
+                
+                filterHome.appendChild(opt.cloneNode(true));
+                if (filterList) filterList.appendChild(opt.cloneNode(true));
             });
         }
     } catch (error) {
@@ -415,6 +435,44 @@ async function loadInstructorsForForm() {
     }
 }
 
+async function loadRoundsList() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v1/rounds?size=10', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch rounds');
+        const data = await response.json();
+        renderRoundsListTable(data.content || []);
+    } catch (error) {
+        console.error('Error loading rounds list:', error);
+    }
+}
+
+function renderRoundsListTable(rounds) {
+    const tbody = document.getElementById('rounds-list-tbody');
+    tbody.innerHTML = '';
+
+    rounds.forEach(round => {
+        const row = document.createElement('tr');
+        
+        const diplomasList = (round.diplomas || [])
+            .map(rd => rd.diploma ? rd.diploma.name : 'N/A')
+            .join('<br>');
+
+        row.innerHTML = `
+            <td>${round.name}</td>
+            <td>${formatDate(round.startDate)}</td>
+            <td>${round.diplomas ? round.diplomas.length : 0}</td>
+            <td class="diplomas-column">${diplomasList}</td>
+            <td class="actions-cell">
+                <button class="btn-action edit" onclick="editRound(${round.id})"><i class="fas fa-pen"></i></button>
+                <button class="btn-action delete" onclick="deleteRound(${round.id})"><i class="fas fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
 function initAddRoundForm() {
     loadDiplomasForRoundForm();
 
@@ -481,4 +539,67 @@ async function loadDiplomasForRoundForm() {
             select.appendChild(opt);
         });
     }
+}
+
+async function deleteRound(id) {
+    if (!confirm('Are you sure you want to delete this round?')) return;
+    
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/rounds/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (response.ok) {
+            loadRoundsList();
+        } else {
+            alert('Failed to delete round');
+        }
+    } catch (error) {
+        console.error('Error deleting round:', error);
+    }
+}
+
+function editRound(id) {
+    alert('Edit functionality coming soon for ID: ' + id);
+}
+
+async function loadDiplomasList() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v1/diplomas', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch diplomas');
+        const diplomas = await response.json();
+        renderDiplomasListTable(diplomas);
+    } catch (error) {
+        console.error('Error loading diplomas list:', error);
+    }
+}
+
+function renderDiplomasListTable(diplomas) {
+    const tbody = document.getElementById('diplomas-list-tbody');
+    tbody.innerHTML = '';
+
+    diplomas.forEach(diploma => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${diploma.name}</td>
+            <td>General</td>
+            <td><span class="status-badge active">Active</span></td>
+            <td class="actions-cell">
+                <button class="btn-action edit" onclick="editDiploma(${diploma.id})"><i class="fas fa-pen"></i></button>
+                <button class="btn-action delete" onclick="deleteDiploma(${diploma.id})"><i class="fas fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function editDiploma(id) {
+    alert('Edit Diploma coming soon for ID: ' + id);
+}
+
+function deleteDiploma(id) {
+    alert('Delete Diploma coming soon for ID: ' + id);
 }
