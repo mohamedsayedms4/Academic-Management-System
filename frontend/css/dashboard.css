@@ -104,6 +104,33 @@ body {
     color: var(--sidebar-active);
 }
 
+/* Submenu */
+.submenu {
+    list-style: none;
+    padding-left: 36px;
+    margin-top: 5px;
+    display: none;
+}
+
+.submenu.show {
+    display: block;
+}
+
+.submenu li {
+    margin-bottom: 2px;
+}
+
+.submenu a {
+    padding: 8px 15px;
+    font-size: 13px;
+    border-radius: 6px;
+}
+
+.submenu a:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--sidebar-active);
+}
+
 .sidebar-footer {
     padding: 20px 15px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
