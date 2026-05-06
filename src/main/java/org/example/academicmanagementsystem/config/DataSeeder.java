@@ -26,6 +26,9 @@ public class DataSeeder {
     private final StudentRepository studentRepository;
     private final PaymentRepository paymentRepository;
     private final TaskRepository taskRepository;
+    private final ComplaintRepository complaintRepository;
+    private final SalaryRepository salaryRepository;
+    private final FollowUpRepository followUpRepository;
     private final DiplomaRepository diplomaRepository;
     private final AttendanceRepository attendanceRepository;
     private final PasswordEncoder passwordEncoder;
