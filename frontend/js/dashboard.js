@@ -463,9 +463,11 @@ function renderRoundsListTable(rounds) {
             <td>${formatDate(round.startDate)}</td>
             <td>${round.diplomas ? round.diplomas.length : 0}</td>
             <td class="diplomas-column">${diplomasList}</td>
-            <td class="actions-cell">
-                <button class="btn-action edit" onclick="editRound(${round.id})"><i class="fas fa-pen"></i></button>
-                <button class="btn-action delete" onclick="deleteRound(${round.id})"><i class="fas fa-trash"></i></button>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="editRound(${round.id})"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteRound(${round.id})"><i class="fas fa-trash"></i></button>
+                </div>
             </td>
         `;
         tbody.appendChild(row);
@@ -483,8 +485,13 @@ function initAddRoundForm() {
     form.onsubmit = async (e) => {
         e.preventDefault();
         
-        const selectedDiplomaIds = Array.from(document.getElementById('input-round-diplomas').selectedOptions)
-            .map(opt => opt.value);
+        const selectedDiplomaIds = Array.from(document.querySelectorAll('.diploma-checkbox:checked'))
+            .map(cb => cb.value);
+
+        if (selectedDiplomaIds.length === 0) {
+            alert('Please select at least one diploma');
+            return;
+        }
 
         const payload = {
             name: document.getElementById('input-round-name').value,
@@ -516,22 +523,78 @@ function initAddRoundForm() {
             alert('An error occurred.');
         }
     };
+
+    // Toggle Dropdown
+    const trigger = document.getElementById('diploma-select-trigger');
+    const dropdown = document.getElementById('diploma-select-dropdown');
+    
+    trigger.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+        trigger.classList.toggle('active');
+    };
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+        dropdown.classList.remove('show');
+        trigger.classList.remove('active');
+    });
+
+    dropdown.onclick = (e) => e.stopPropagation();
+
+    // Search Logic
+    const searchInput = document.getElementById('search-diplomas-input');
+    searchInput.oninput = () => {
+        const term = searchInput.value.toLowerCase();
+        document.querySelectorAll('.option-item').forEach(item => {
+            const text = item.querySelector('span').textContent.toLowerCase();
+            item.style.display = text.includes(term) ? 'flex' : 'none';
+        });
+    };
 }
 
 async function loadDiplomasForRoundForm() {
-    const response = await fetch('http://localhost:8080/api/v2/diplomas', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    });
-    if (response.ok) {
-        const diplomas = await response.json();
-        const select = document.getElementById('input-round-diplomas');
-        select.innerHTML = '';
-        diplomas.forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d.id;
-            opt.textContent = d.name;
-            select.appendChild(opt);
+    try {
+        const response = await fetch('http://localhost:8080/api/v2/diplomas', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
+        if (response.ok) {
+            const diplomas = await response.json();
+            const list = document.getElementById('diploma-options-list');
+            list.innerHTML = '';
+            
+            diplomas.forEach(d => {
+                const item = document.createElement('div');
+                item.className = 'option-item';
+                item.innerHTML = `
+                    <input type="checkbox" class="diploma-checkbox" value="${d.id}" id="dip-${d.id}">
+                    <span>${d.name}</span>
+                `;
+                
+                item.onclick = (e) => {
+                    const cb = item.querySelector('input');
+                    if (e.target !== cb) cb.checked = !cb.checked;
+                    updateSelectedDiplomasText();
+                };
+                
+                list.appendChild(item);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading diplomas for form:', error);
+    }
+}
+
+function updateSelectedDiplomasText() {
+    const checked = document.querySelectorAll('.diploma-checkbox:checked');
+    const textSpan = document.getElementById('selected-diplomas-text');
+    
+    if (checked.length === 0) {
+        textSpan.textContent = 'Select diplomas in this round';
+    } else if (checked.length === 1) {
+        textSpan.textContent = checked[0].parentElement.querySelector('span').textContent;
+    } else {
+        textSpan.textContent = `${checked.length} diplomas selected`;
     }
 }
 
@@ -581,9 +644,11 @@ function renderDiplomasListTable(diplomas) {
             <td>${diploma.name}</td>
             <td>General</td>
             <td><span class="status-badge active">Active</span></td>
-            <td class="actions-cell">
-                <button class="btn-action edit" onclick="editDiploma(${diploma.id})"><i class="fas fa-pen"></i></button>
-                <button class="btn-action delete" onclick="deleteDiploma(${diploma.id})"><i class="fas fa-trash"></i></button>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="editDiploma(${diploma.id})"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteDiploma(${diploma.id})"><i class="fas fa-trash"></i></button>
+                </div>
             </td>
         `;
         tbody.appendChild(row);
