@@ -62,6 +62,47 @@ document.addEventListener('DOMContentLoaded', () => {
         initAddRoundForm();
     });
 
+    // Students Submenu
+    const navStudentsParent = document.getElementById('nav-students-parent');
+    const studentsSubmenu = document.getElementById('students-submenu');
+    if (navStudentsParent) {
+        navStudentsParent.addEventListener('click', (e) => {
+            e.preventDefault();
+            studentsSubmenu.classList.toggle('show');
+            const arrow = navStudentsParent.querySelector('.arrow');
+            if (arrow) {
+                arrow.classList.toggle('fa-chevron-down');
+                arrow.classList.toggle('fa-chevron-right');
+            }
+        });
+    }
+
+    document.getElementById('nav-cancelled-students').addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        showView('cancelled-students-view');
+        loadCancelledStudents();
+    });
+
+    document.getElementById('nav-future-enrollments').addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        showView('future-enrollments-view');
+        loadFutureEnrollments();
+    });
+
+    document.getElementById('btn-add-student-nav').onclick = () => {
+        showView('add-student-view');
+        initAddStudentForm();
+    };
+
+    if (document.getElementById('search-cancelled-students')) {
+        document.getElementById('search-cancelled-students').oninput = () => loadCancelledStudents();
+    }
+    if (document.getElementById('search-future-students')) {
+        document.getElementById('search-future-students').oninput = () => loadFutureEnrollments();
+    }
+
     // Logout logic
     document.getElementById('btn-logout').addEventListener('click', (e) => {
         e.preventDefault();
@@ -948,4 +989,204 @@ async function deleteInstructor(id) {
 
 function editInstructor(id) {
     alert('Edit Instructor Coming Soon!');
+}
+
+// ===============================
+// Students (V2)
+// ===============================
+
+async function loadCancelledStudents(page = 0) {
+    const search = document.getElementById('search-cancelled-students').value;
+    let url = `http://localhost:8080/api/v2/students/cancelled?page=${page}&size=10`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    
+    try {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            renderCancelledStudentsTable(data.content || []);
+            renderPagination('cancelled-students-pagination', data, loadCancelledStudents);
+        }
+    } catch (error) {
+        console.error('Error loading cancelled students:', error);
+    }
+}
+
+function renderCancelledStudentsTable(students) {
+    const tbody = document.getElementById('cancelled-students-tbody');
+    tbody.innerHTML = '';
+    
+    students.forEach(s => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${s.name}</td>
+            <td>${s.phone}</td>
+            <td>${s.roundName}</td>
+            <td>${s.diplomaName}</td>
+            <td>${s.cancellationDate ? new Date(s.cancellationDate).toLocaleDateString() : 'N/A'}</td>
+            <td>${s.cancellationReason || 'N/A'}</td>
+            <td>${s.salesPersonName}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action edit" title="Restore" onclick="restoreStudent(${s.id})"><i class="fas fa-undo"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function loadFutureEnrollments(page = 0) {
+    const search = document.getElementById('search-future-students').value;
+    let url = `http://localhost:8080/api/v2/students/future?page=${page}&size=10`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    
+    try {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            renderFutureEnrollmentsTable(data.content || []);
+            renderPagination('future-students-pagination', data, loadFutureEnrollments);
+        }
+    } catch (error) {
+        console.error('Error loading future enrollments:', error);
+    }
+}
+
+function renderFutureEnrollmentsTable(students) {
+    const tbody = document.getElementById('future-enrollments-tbody');
+    tbody.innerHTML = '';
+    
+    students.forEach(s => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${s.name}</td>
+            <td>${s.phone}</td>
+            <td>${s.roundName}</td>
+            <td>${s.diplomaName}</td>
+            <td>${s.depositAmount}</td>
+            <td>${s.salesPersonName}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action delete" title="Cancel" onclick="cancelStudentPrompt(${s.id})"><i class="fas fa-times-circle"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function initAddStudentForm() {
+    const form = document.getElementById('form-add-student');
+    form.reset();
+    
+    document.getElementById('btn-cancel-student').onclick = () => showView('future-enrollments-view');
+
+    // Load Rounds, Diplomas, and Sales
+    await loadOptionsForStudentForm();
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const payload = {
+            name: document.getElementById('input-student-name').value,
+            email: document.getElementById('input-student-email').value,
+            phone: document.getElementById('input-student-phone').value,
+            notes: document.getElementById('input-student-notes').value,
+            roundId: document.getElementById('input-student-round').value,
+            diplomaId: document.getElementById('input-student-diploma').value,
+            depositAmount: parseFloat(document.getElementById('input-student-deposit').value),
+            salesPersonId: document.getElementById('input-student-sales').value,
+            discount: document.getElementById('input-student-discount').value
+        };
+
+        try {
+            const response = await fetch('http://localhost:8080/api/v2/students/enroll', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert('Student enrolled successfully!');
+                showView('future-enrollments-view');
+                loadFutureEnrollments();
+            }
+        } catch (error) {
+            console.error('Error enrolling student:', error);
+        }
+    };
+}
+
+async function loadOptionsForStudentForm() {
+    try {
+        const [roundsRes, diplomasRes, salesRes] = await Promise.all([
+            fetch('http://localhost:8080/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch('http://localhost:8080/api/v2/diplomas', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch('http://localhost:8080/api/v1/users', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }) 
+        ]);
+
+        const rounds = await roundsRes.json();
+        const diplomas = await diplomasRes.json();
+        const sales = await salesRes.json();
+
+        const roundSelect = document.getElementById('input-student-round');
+        roundSelect.innerHTML = '<option value="" disabled selected>Select Round</option>';
+        rounds.forEach(r => roundSelect.add(new Option(r.name, r.id)));
+
+        const diplomaSelect = document.getElementById('input-student-diploma');
+        diplomaSelect.innerHTML = '<option value="" disabled selected>Select Diploma</option>';
+        diplomas.forEach(d => diplomaSelect.add(new Option(d.name, d.id)));
+
+        const salesSelect = document.getElementById('input-student-sales');
+        salesSelect.innerHTML = '<option value="" disabled selected>Assigned sales</option>';
+        sales.forEach(u => salesSelect.add(new Option(u.name, u.id)));
+
+    } catch (error) {
+        console.error('Error loading options:', error);
+    }
+}
+
+async function restoreStudent(id) {
+    if (confirm('Restore this student enrollment?')) {
+        try {
+            const response = await fetch(`http://localhost:8080/api/v2/students/${id}/restore`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (response.ok) {
+                loadCancelledStudents();
+            }
+        } catch (error) {
+            console.error('Error restoring student:', error);
+        }
+    }
+}
+
+async function cancelStudentPrompt(id) {
+    const reason = prompt('Please enter the reason for cancellation:');
+    if (reason === null) return;
+
+    try {
+        const response = await fetch(`http://localhost:8080/api/v2/students/${id}/cancel`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ reason })
+        });
+        if (response.ok) {
+            loadFutureEnrollments();
+        }
+    } catch (error) {
+        console.error('Error cancelling student:', error);
+    }
 }

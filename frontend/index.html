@@ -494,6 +494,199 @@
                     </div>
                 </form>
             </div>
+
+            <!-- 8. Cancelled Students View -->
+            <div class="page-content" id="cancelled-students-view" style="display: none;">
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Cancelled students</h1>
+                        <p>Track cancelled enrollments and review their details.</p>
+                    </div>
+                </div>
+                <div class="content-controls">
+                    <div class="filters">
+                        <div class="control-item search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-cancelled-students" placeholder="Search...">
+                        </div>
+                        <div class="control-item">
+                            <i class="fas fa-layer-group"></i>
+                            <select id="filter-cancelled-round">
+                                <option value="">Round</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                        <div class="control-item">
+                            <i class="fas fa-graduation-cap"></i>
+                            <select id="filter-cancelled-diploma">
+                                <option value="">Diploma</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                        <div class="control-item">
+                            <i class="fas fa-user-tie"></i>
+                            <select id="filter-cancelled-sales">
+                                <option value="">Sales</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Round</th>
+                                <th>Diploma</th>
+                                <th>Cancellation Date</th>
+                                <th>Reason</th>
+                                <th>Sales</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cancelled-students-tbody">
+                            <!-- Data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="cancelled-students-pagination"></div>
+            </div>
+
+            <!-- 9. Future Enrollments View -->
+            <div class="page-content" id="future-enrollments-view" style="display: none;">
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Future enrollments</h1>
+                        <p>Track students registered for future rounds.</p>
+                    </div>
+                </div>
+                <div class="content-controls">
+                    <div class="filters">
+                        <div class="control-item search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-future-students" placeholder="Search...">
+                        </div>
+                    </div>
+                    <button class="btn-save" id="btn-add-student-nav">
+                        <i class="fas fa-plus"></i> Add New Student
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Round</th>
+                                <th>Diploma</th>
+                                <th>Deposit</th>
+                                <th>Sales</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="future-enrollments-tbody">
+                            <!-- Data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="future-students-pagination"></div>
+            </div>
+
+            <!-- 10. Add New Student View -->
+            <div class="page-content" id="add-student-view" style="display: none;">
+                <div class="breadcrumb">
+                    <span>Future enrollment</span> <i class="fas fa-chevron-right"></i> <span class="active">Add New student</span>
+                </div>
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Add New Student</h1>
+                    </div>
+                </div>
+                <form id="form-add-student" class="modern-form">
+                    <!-- Section 1: Student info -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">1</span>
+                            <h3>Student info</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Student Name*</label>
+                                <input type="text" id="input-student-name" placeholder="Enter Student Name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address*</label>
+                                <input type="email" id="input-student-email" placeholder="Enter Student Email Address" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone number*</label>
+                                <input type="text" id="input-student-phone" placeholder="Enter Student Phone Number" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Notes (Optional)</label>
+                                <input type="text" id="input-student-notes" placeholder="Add any notes or markes">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Enrollment Details -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">2</span>
+                            <h3>Enrollment Details</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Target Round*</label>
+                                <select id="input-student-round" required>
+                                    <option value="" disabled selected>Select Round</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Diploma*</label>
+                                <select id="input-student-diploma" required>
+                                    <option value="" disabled selected>Select Diploma</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Deposit amount*</label>
+                                <input type="number" id="input-student-deposit" placeholder="Enter deposit (e.g 500)" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Brought by sales*</label>
+                                <select id="input-student-sales" required>
+                                    <option value="" disabled selected>Assigned sales</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Pricing Details -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">3</span>
+                            <h3>Pricing Details</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Apply Discount (Optional)</label>
+                                <select id="input-student-discount">
+                                    <option value="No Discount">No Discount</option>
+                                    <option value="Early Bird 10%">Early Bird 10%</option>
+                                    <option value="Scholarship 50%">Scholarship 50%</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" id="btn-cancel-student">Cancel</button>
+                        <button type="submit" class="btn-save">Save</button>
+                    </div>
+                </form>
+            </div>
         </main>
     </div>
 
