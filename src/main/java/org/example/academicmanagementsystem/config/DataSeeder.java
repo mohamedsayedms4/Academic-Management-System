@@ -215,45 +215,52 @@ public class DataSeeder {
 
     private List<Round> seedRounds(List<Diploma> diplomas, List<User> users) {
         List<Round> rounds = new ArrayList<>();
-        User instructor1 = users.get(6); // ليلى يوسف
+        // Round 1 - Full Stack
+        Round round1 = createRound("Round 1 - Full Stack", LocalDate.of(2025, 12, 28));
+        seedRoundDiplomas(round1, List.of(diplomas.get(2)), users);
+        rounds.add(round1);
 
-        // Round 9
-        Round round9 = new Round();
-        round9.setName("Round 9");
-        round9.setStartDate(LocalDate.of(2025, 1, 15));
-        round9.setEndDate(LocalDate.of(2025, 7, 15));
-        round9.setStatus(RoundStatus.ACTIVE);
-        round9 = roundRepository.save(round9);
+        // Round 2 - Data Science
+        Round round2 = createRound("Round 2 - Data Science", LocalDate.of(2026, 2, 28));
+        seedRoundDiplomas(round2, List.of(diplomas.get(3)), users);
+        rounds.add(round2);
 
-        List<RoundDiploma> round9Diplomas = new ArrayList<>();
-        round9Diplomas.add(createRoundDiploma(round9, diplomas.get(0), instructor1, new BigDecimal("16000.00"), 32,
-                new BigDecimal("4000.00"), LocalDate.of(2025, 1, 15), LocalDate.of(2025, 3, 15), LocalDate.of(2025, 5, 15), LocalDate.of(2025, 7, 15)));
-        round9Diplomas.add(createRoundDiploma(round9, diplomas.get(1), instructor1, new BigDecimal("14000.00"), 17,
-                new BigDecimal("3500.00"), LocalDate.of(2025, 1, 20), LocalDate.of(2025, 3, 20), LocalDate.of(2025, 5, 20), LocalDate.of(2025, 7, 20)));
-        
-        roundDiplomaRepository.saveAll(round9Diplomas);
-        round9.setRoundDiplomas(round9Diplomas);
+        // Round 3 - Digital Marketing
+        Round round3 = createRound("Round 3 - Digital Marketing", LocalDate.of(2026, 3, 14));
+        seedRoundDiplomas(round3, List.of(diplomas.get(4)), users);
+        rounds.add(round3);
+
+        // Round 4 - Cybersecurity
+        Round round4 = createRound("Round 4 - Cybersecurity", LocalDate.of(2026, 4, 28));
+        seedRoundDiplomas(round4, List.of(diplomas.get(0), diplomas.get(1)), users);
+        rounds.add(round4);
+
+        // Round 9 - BIM & Design
+        Round round9 = createRound("Round 9 - BIM & Design", LocalDate.of(2025, 1, 15));
+        seedRoundDiplomas(round9, List.of(diplomas.get(0), diplomas.get(1)), users);
         rounds.add(round9);
 
-        // Round 10
-        Round round10 = new Round();
-        round10.setName("Round 10 - Digital Arts");
-        round10.setStartDate(LocalDate.of(2025, 3, 1));
-        round10.setEndDate(LocalDate.of(2025, 9, 1));
-        round10.setStatus(RoundStatus.ACTIVE);
-        round10 = roundRepository.save(round10);
-
-        List<RoundDiploma> round10Diplomas = new ArrayList<>();
-        round10Diplomas.add(createRoundDiploma(round10, diplomas.get(1), users.get(7), new BigDecimal("15000.00"), 25,
-                new BigDecimal("3750.00"), LocalDate.of(2025, 3, 1), LocalDate.of(2025, 5, 1), LocalDate.of(2025, 7, 1), LocalDate.of(2025, 9, 1)));
-        round10Diplomas.add(createRoundDiploma(round10, diplomas.get(4), users.get(6), new BigDecimal("12000.00"), 20,
-                new BigDecimal("3000.00"), LocalDate.of(2025, 3, 10), LocalDate.of(2025, 5, 10), LocalDate.of(2025, 7, 10), LocalDate.of(2025, 9, 10)));
-        
-        roundDiplomaRepository.saveAll(round10Diplomas);
-        round10.setRoundDiplomas(round10Diplomas);
-        rounds.add(round10);
-
         return rounds;
+    }
+
+    private Round createRound(String name, LocalDate startDate) {
+        Round round = new Round();
+        round.setName(name);
+        round.setStartDate(startDate);
+        round.setStatus(RoundStatus.ACTIVE);
+        return roundRepository.save(round);
+    }
+
+    private void seedRoundDiplomas(Round round, List<Diploma> diplomas, List<User> users) {
+        User instructor = users.stream().filter(u -> u.getRole() == UserRole.EMPLOYEE).findFirst().get();
+        List<RoundDiploma> rdList = new ArrayList<>();
+        for (Diploma d : diplomas) {
+            rdList.add(createRoundDiploma(round, d, instructor, new BigDecimal("15000.00"), 30,
+                    new BigDecimal("3750.00"), round.getStartDate(), round.getStartDate().plusMonths(2), 
+                    round.getStartDate().plusMonths(4), round.getStartDate().plusMonths(6)));
+        }
+        roundDiplomaRepository.saveAll(rdList);
+        round.setRoundDiplomas(rdList);
     }
 
     private RoundDiploma createRoundDiploma(Round round, Diploma diploma, User instructor, BigDecimal totalPrice, int capacity, 
