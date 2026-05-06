@@ -36,6 +36,7 @@ public class DataSeeder {
     private final AttendanceRepository attendanceRepository;
     private final DiplomaV2Repository diplomaV2Repository;
     private final RoundV2Repository roundV2Repository;
+    private final InstructorV2Repository instructorV2Repository;
     private final PasswordEncoder passwordEncoder;
 
     @Bean
@@ -472,5 +473,32 @@ public class DataSeeder {
         round10.setEndDate(LocalDate.of(2026, 9, 20));
         round10.setDiplomas(new HashSet<>(List.of(diplomas.get(3))));
         roundV2Repository.save(round10);
+
+        // Seed Instructors V2
+        if (instructorV2Repository.count() == 0) {
+            InstructorV2 inst1 = new InstructorV2();
+            inst1.setName("Eng. Mohamed Saleh");
+            inst1.setPhoneNumber("01127268622");
+            inst1.setSalary(18000.0);
+            inst1.setPaymentMethod("Cash");
+            inst1.setAssignedDiplomas(new HashSet<>(diplomas.subList(0, 1)));
+            instructorV2Repository.save(inst1);
+
+            InstructorV2 inst2 = new InstructorV2();
+            inst2.setName("Ms. Nermin Adel");
+            inst2.setPhoneNumber("01127268622");
+            inst2.setSalary(18000.0);
+            inst2.setPaymentMethod("Cash");
+            inst2.setAssignedDiplomas(new HashSet<>(diplomas.subList(1, 2)));
+            instructorV2Repository.save(inst2);
+
+            InstructorV2 inst3 = new InstructorV2();
+            inst3.setName("Eng. Karim Mostafa");
+            inst3.setPhoneNumber("01127268622");
+            inst3.setSalary(18000.0);
+            inst3.setPaymentMethod("Cash");
+            inst3.setAssignedDiplomas(new HashSet<>(diplomas.subList(2, 3)));
+            instructorV2Repository.save(inst3);
+        }
     }
 }

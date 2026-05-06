@@ -37,6 +37,26 @@ document.addEventListener('DOMContentLoaded', () => {
         loadRoundsList();
     });
 
+    document.getElementById('nav-instructors').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('instructors-list-view');
+        loadInstructors();
+        loadDiplomasForFilters();
+    });
+
+    document.getElementById('btn-add-instructor-nav').onclick = () => {
+        showView('add-instructor-view');
+        initAddInstructorForm();
+        loadDiplomasForInstructorForm();
+    };
+
+    if (document.getElementById('search-instructors')) {
+        document.getElementById('search-instructors').oninput = () => loadInstructors();
+    }
+    if (document.getElementById('filter-instructor-diploma')) {
+        document.getElementById('filter-instructor-diploma').onchange = () => loadInstructors();
+    }
+
     document.getElementById('btn-open-add-round').addEventListener('click', () => {
         showView('add-round-view');
         initAddRoundForm();
@@ -534,6 +554,13 @@ function initAddRoundForm() {
         trigger.classList.toggle('active');
     };
 
+    // Apply button
+    document.getElementById('btn-apply-diplomas').onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove('show');
+        trigger.classList.remove('active');
+    };
+
     // Close dropdown when clicking outside
     document.addEventListener('click', () => {
         dropdown.classList.remove('show');
@@ -588,13 +615,38 @@ async function loadDiplomasForRoundForm() {
 function updateSelectedDiplomasText() {
     const checked = document.querySelectorAll('.diploma-checkbox:checked');
     const textSpan = document.getElementById('selected-diplomas-text');
+    const tagsContainer = document.getElementById('selected-diplomas-tags');
+    
+    tagsContainer.innerHTML = '';
     
     if (checked.length === 0) {
         textSpan.textContent = 'Select diplomas in this round';
-    } else if (checked.length === 1) {
-        textSpan.textContent = checked[0].parentElement.querySelector('span').textContent;
     } else {
-        textSpan.textContent = `${checked.length} diplomas selected`;
+        if (checked.length === 1) {
+            textSpan.textContent = checked[0].parentElement.querySelector('span').textContent;
+        } else {
+            textSpan.textContent = `${checked.length} diplomas selected`;
+        }
+        
+        // Render Tags
+        checked.forEach(cb => {
+            const name = cb.parentElement.querySelector('span').textContent;
+            const tag = document.createElement('div');
+            tag.className = 'diploma-tag';
+            tag.innerHTML = `
+                <span>${name}</span>
+                <i class="fas fa-trash-alt" onclick="removeDiplomaTag(${cb.value})"></i>
+            `;
+            tagsContainer.appendChild(tag);
+        });
+    }
+}
+
+function removeDiplomaTag(id) {
+    const cb = document.getElementById(`dip-${id}`);
+    if (cb) {
+        cb.checked = false;
+        updateSelectedDiplomasText();
     }
 }
 
@@ -661,4 +713,239 @@ function editDiploma(id) {
 
 function deleteDiploma(id) {
     alert('Delete Diploma coming soon for ID: ' + id);
+}
+
+// ===============================
+// Instructors (V2)
+// ===============================
+
+async function loadInstructors(page = 0) {
+    const search = document.getElementById('search-instructors').value;
+    const diplomaId = document.getElementById('filter-instructor-diploma').value;
+    
+    let url = `http://localhost:8080/api/v2/instructors?page=${page}&size=10`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    
+    try {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            renderInstructorsTable(data.content || []);
+            renderPagination('instructors-pagination', data, loadInstructors);
+        }
+    } catch (error) {
+        console.error('Error loading instructors:', error);
+    }
+}
+
+function renderInstructorsTable(instructors) {
+    const tbody = document.getElementById('instructors-tbody');
+    tbody.innerHTML = '';
+    
+    instructors.forEach(inst => {
+        const row = document.createElement('tr');
+        const diplomasList = inst.assignedDiplomas.map(d => d.name).join('<br>');
+        
+        row.innerHTML = `
+            <td>${inst.name}</td>
+            <td>${inst.phoneNumber}</td>
+            <td>${inst.salary}</td>
+            <td>${inst.paymentMethod}</td>
+            <td class="diplomas-column">${diplomasList}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="editInstructor(${inst.id})"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteInstructor(${inst.id})"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function initAddInstructorForm() {
+    const form = document.getElementById('form-add-instructor');
+    form.reset();
+    document.getElementById('inst-selected-diplomas-tags').innerHTML = '';
+    document.getElementById('inst-selected-diplomas-text').textContent = 'Select diplomas';
+    
+    const btnCancel = document.getElementById('btn-cancel-instructor');
+    btnCancel.onclick = () => showView('instructors-list-view');
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const selectedDiplomaIds = Array.from(document.querySelectorAll('.inst-diploma-checkbox:checked'))
+            .map(cb => cb.value);
+
+        if (selectedDiplomaIds.length === 0) {
+            alert('Please select at least one diploma');
+            return;
+        }
+
+        const payload = {
+            name: document.getElementById('input-instructor-name').value,
+            phoneNumber: document.getElementById('input-instructor-phone').value,
+            salary: parseFloat(document.getElementById('input-instructor-salary').value),
+            paymentMethod: document.getElementById('input-instructor-pay-method').value,
+            assignedDiplomaIds: selectedDiplomaIds
+        };
+
+        try {
+            const response = await fetch('http://localhost:8080/api/v2/instructors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert('Instructor added successfully!');
+                showView('instructors-list-view');
+                loadInstructors();
+            } else {
+                const err = await response.json();
+                alert('Error: ' + (err.message || 'Failed to add instructor'));
+            }
+        } catch (error) {
+            console.error('Error adding instructor:', error);
+        }
+    };
+
+    // Custom Multi-select Logic
+    const trigger = document.getElementById('instructor-diploma-trigger');
+    const dropdown = document.getElementById('instructor-diploma-dropdown');
+    
+    trigger.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+        trigger.classList.toggle('active');
+    };
+
+    document.getElementById('btn-apply-inst-diplomas').onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove('show');
+        trigger.classList.remove('active');
+    };
+
+    const searchInput = document.getElementById('inst-search-diplomas-input');
+    searchInput.oninput = () => {
+        const term = searchInput.value.toLowerCase();
+        document.querySelectorAll('#instructor-diploma-options .option-item').forEach(item => {
+            const text = item.querySelector('span').textContent.toLowerCase();
+            item.style.display = text.includes(term) ? 'flex' : 'none';
+        });
+    };
+}
+
+async function loadDiplomasForInstructorForm() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v2/diplomas', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const diplomas = await response.json();
+            const list = document.getElementById('instructor-diploma-options');
+            list.innerHTML = '';
+            
+            diplomas.forEach(d => {
+                const item = document.createElement('div');
+                item.className = 'option-item';
+                item.innerHTML = `
+                    <input type="checkbox" class="inst-diploma-checkbox" value="${d.id}" id="inst-dip-${d.id}">
+                    <span>${d.name}</span>
+                `;
+                
+                item.onclick = (e) => {
+                    const cb = item.querySelector('input');
+                    if (e.target !== cb) cb.checked = !cb.checked;
+                    updateInstSelectedDiplomasText();
+                };
+                
+                list.appendChild(item);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading diplomas for instructor form:', error);
+    }
+}
+
+function updateInstSelectedDiplomasText() {
+    const checked = document.querySelectorAll('.inst-diploma-checkbox:checked');
+    const textSpan = document.getElementById('inst-selected-diplomas-text');
+    const tagsContainer = document.getElementById('inst-selected-diplomas-tags');
+    
+    tagsContainer.innerHTML = '';
+    
+    if (checked.length === 0) {
+        textSpan.textContent = 'Select diplomas';
+    } else {
+        textSpan.textContent = checked.length === 1 ? 
+            checked[0].parentElement.querySelector('span').textContent : 
+            `${checked.length} diplomas selected`;
+        
+        checked.forEach(cb => {
+            const name = cb.parentElement.querySelector('span').textContent;
+            const tag = document.createElement('div');
+            tag.className = 'diploma-tag';
+            tag.innerHTML = `
+                <span>${name}</span>
+                <i class="fas fa-trash-alt" onclick="removeInstructorDiplomaTag(${cb.value})"></i>
+            `;
+            tagsContainer.appendChild(tag);
+        });
+    }
+}
+
+function removeInstructorDiplomaTag(id) {
+    const cb = document.getElementById(`inst-dip-${id}`);
+    if (cb) {
+        cb.checked = false;
+        updateInstSelectedDiplomasText();
+    }
+}
+
+async function loadDiplomasForFilters() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v2/diplomas', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const diplomas = await response.json();
+            const filter = document.getElementById('filter-instructor-diploma');
+            filter.innerHTML = '<option value="">Diploma</option>';
+            diplomas.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = d.name;
+                filter.appendChild(opt);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading filters:', error);
+    }
+}
+
+async function deleteInstructor(id) {
+    if (confirm('Are you sure you want to delete this instructor?')) {
+        try {
+            const response = await fetch(`http://localhost:8080/api/v2/instructors/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (response.ok) {
+                loadInstructors();
+            }
+        } catch (error) {
+            console.error('Error deleting instructor:', error);
+        }
+    }
+}
+
+function editInstructor(id) {
+    alert('Edit Instructor Coming Soon!');
 }
