@@ -1,6 +1,7 @@
 package org.example.academicmanagementsystem.model;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -8,6 +9,10 @@ import java.util.List;
 
 @Entity
 @Table(name = "rounds")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 public class Round extends BaseEntity {
 
     @Column(nullable = false)
@@ -34,7 +39,6 @@ public class Round extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RoundStatus status = RoundStatus.ACTIVE;
-
 
     // Relations
     @OneToMany(mappedBy = "round")

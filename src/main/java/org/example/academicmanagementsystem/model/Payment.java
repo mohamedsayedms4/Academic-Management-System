@@ -1,13 +1,18 @@
 package org.example.academicmanagementsystem.model;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payments")
-public class Payment extends BaseEntity{
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class Payment extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
@@ -33,9 +38,13 @@ public class Payment extends BaseEntity{
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column
+    private Integer installmentNumber; // Tracks which installment: 1, 2, 3, etc.
+
     @ManyToOne
     @JoinColumn(name = "processed_by")
     private User processedBy;
 
+    private LocalDateTime processedAt;
 
 }

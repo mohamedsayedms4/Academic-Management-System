@@ -30,6 +30,7 @@ public class LeadServiceImpl implements LeadService {
     private final LeadRepository leadRepository;
     private final LeadMapper leadMapper;
     private final UserRepository userRepository;
+    private final org.example.academicmanagementsystem.repository.DiplomaRepository diplomaRepository;
 
     @Override
     public Optional<LeadResponse> findById(Long id) {
@@ -75,6 +76,12 @@ public class LeadServiceImpl implements LeadService {
             }
         }
 
+        // Set Diploma if ID provided
+        if (leadRequest.getDiplomaId() != null) {
+            lead.setDiploma(diplomaRepository.findById(leadRequest.getDiplomaId())
+                    .orElseThrow(() -> new RuntimeException("Diploma not found with id: " + leadRequest.getDiplomaId())));
+        }
+
         // Set default status if not provided
         if (lead.getStatus() == null) {
             lead.setStatus(LeadStatus.OPEN);
@@ -95,10 +102,16 @@ public class LeadServiceImpl implements LeadService {
 
         // Convert DTO to entity
         Lead lead = new Lead();
+        lead.setFullName(leadCreateRequest.getFullName());
         lead.setPhoneNumber(leadCreateRequest.getPhoneNumber());
-        lead.setDiplomaName(leadCreateRequest.getDiplomaName());
+        lead.setSource(leadCreateRequest.getSource());
         lead.setModeratorNotes(leadCreateRequest.getModeratorNotes());
         lead.setClosureReason(leadCreateRequest.getClosureReason());
+
+        if (leadCreateRequest.getDiplomaId() != null) {
+            lead.setDiploma(diplomaRepository.findById(leadCreateRequest.getDiplomaId())
+                    .orElseThrow(() -> new RuntimeException("Diploma not found with id: " + leadCreateRequest.getDiplomaId())));
+        }
 
         // Get current authenticated user from SecurityContext
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -159,11 +172,17 @@ public class LeadServiceImpl implements LeadService {
         return leadRepository.findById(leadToUpdate.getId())
                 .map(existingLead -> {
                     // Update fields
+                    if (leadToUpdate.getFullName() != null) {
+                        existingLead.setFullName(leadToUpdate.getFullName());
+                    }
                     if (leadToUpdate.getPhoneNumber() != null) {
                         existingLead.setPhoneNumber(leadToUpdate.getPhoneNumber());
                     }
-                    if (leadToUpdate.getDiplomaName() != null) {
-                        existingLead.setDiplomaName(leadToUpdate.getDiplomaName());
+                    if (leadToUpdate.getSource() != null) {
+                        existingLead.setSource(leadToUpdate.getSource());
+                    }
+                    if (leadToUpdate.getDiploma() != null) {
+                        existingLead.setDiploma(leadToUpdate.getDiploma());
                     }
                     if (leadToUpdate.getModeratorNotes() != null) {
                         existingLead.setModeratorNotes(leadToUpdate.getModeratorNotes());

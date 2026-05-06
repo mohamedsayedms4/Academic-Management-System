@@ -41,6 +41,7 @@ public interface LeadMapper {
     // Convert LeadRequest to Lead entity
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "teleSales", ignore = true) // Will be set manually using teleSalesId
+    @Mapping(target = "diploma", ignore = true) // Will be set manually using diplomaId
     @Mapping(target = "followUps", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)

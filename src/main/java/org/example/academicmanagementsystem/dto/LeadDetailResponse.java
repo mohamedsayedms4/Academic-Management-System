@@ -15,8 +15,10 @@ import java.util.List;
 @Builder
 public class LeadDetailResponse {
     private Long id;
+    private String fullName;
     private String phoneNumber;
-    private String diplomaName;
+    private String source;
+    private DiplomaResponse diploma;
     private String moderatorNotes;
     private LeadStatus status;
     private String closureReason;

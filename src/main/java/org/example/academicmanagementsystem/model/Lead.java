@@ -17,10 +17,16 @@ import java.util.List;
 public class Lead extends BaseEntity{
 
     @Column(nullable = false)
-    private String phoneNumber;
+    private String fullName;
 
     @Column(nullable = false)
-    private String diplomaName;
+    private String phoneNumber;
+
+    private String source;
+
+    @ManyToOne
+    @JoinColumn(name = "diploma_id")
+    private Diploma diploma;
 
     @Column(columnDefinition = "TEXT")
     private String moderatorNotes;

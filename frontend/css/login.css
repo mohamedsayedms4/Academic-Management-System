@@ -1,0 +1,209 @@
+:root {
+    --primary-yellow: #FFCC33;
+    --primary-yellow-hover: #EBB822;
+    --text-dark: #333333;
+    --text-muted: #666666;
+    --bg-cream: #FCF8F1;
+    --bg-decor: #FEF7E6;
+    --white: #FFFFFF;
+    --border-color: #E0E0E0;
+    --error-red: #D32F2F;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #FFFFFF; /* Pure white background */
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Half Yellow Circle extending exactly to 50% of page height */
+.background-decor {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200vw;
+    height: 100vh; /* Since center is at 0, bottom will be at 50vh */
+    background-color: #FFF9E1;
+    border-radius: 50%;
+    z-index: -1;
+}
+
+.login-wrapper {
+    width: 100%;
+    max-width: 460px;
+    padding: 20px;
+    z-index: 1;
+}
+
+.logo-container {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.main-logo {
+    max-width: 280px;
+    height: auto;
+}
+
+.login-card {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 50px 40px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0,0,0,0.02);
+}
+
+.login-card h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-dark);
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--text-dark);
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-yellow);
+}
+
+.password-input-wrapper {
+    position: relative;
+}
+
+.eye-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.options {
+    margin-bottom: 30px;
+}
+
+/* Custom Checkbox */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding-left: 28px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+    user-select: none;
+}
+
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    height: 18px;
+    width: 18px;
+    background-color: var(--white);
+    border: 2px solid var(--border-color);
+    border-radius: 3px;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+    border-color: var(--primary-yellow);
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background-color: var(--primary-yellow);
+    border-color: var(--primary-yellow);
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.checkbox-container .checkmark:after {
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.btn-login {
+    width: 100%;
+    background-color: var(--primary-yellow);
+    color: var(--text-dark);
+    border: none;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-login:hover {
+    background-color: var(--primary-yellow-hover);
+}
+
+.error-message {
+    color: var(--error-red);
+    font-size: 13px;
+    margin-top: 15px;
+    text-align: center;
+    min-height: 20px;
+}

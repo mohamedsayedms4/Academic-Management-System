@@ -24,6 +24,9 @@ public class Student extends BaseEntity {
     @Column(unique = true, nullable = false)
     private String phone;
 
+    @Column(nullable = true , unique = true)
+    private String email;
+
     @ManyToOne
     @JoinColumn(name = "round_id", nullable = false)
     private Round round;

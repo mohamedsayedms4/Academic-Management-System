@@ -11,8 +11,10 @@ import org.example.academicmanagementsystem.model.LeadStatus;
 @AllArgsConstructor
 @Builder
 public class LeadRequest {
+    private String fullName;
     private String phoneNumber;
-    private String diplomaName;
+    private String source;
+    private Long diplomaId;
     private String moderatorNotes;
     private LeadStatus status;
     private String closureReason;
