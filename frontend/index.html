@@ -687,6 +687,114 @@
                     </div>
                 </form>
             </div>
+
+            <!-- 11. Invoices List View -->
+            <div class="page-content" id="invoices-list-view" style="display: none;">
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Invoices</h1>
+                        <p>View and manage all invoices and their details.</p>
+                    </div>
+                </div>
+                <div class="content-controls">
+                    <div class="filters">
+                        <div class="control-item search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-invoices" placeholder="Search...">
+                        </div>
+                    </div>
+                    <button class="btn-save" id="btn-add-invoice-nav" style="background-color: #ebb700;">
+                        <i class="fas fa-plus"></i> Add New Invoice
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Amount</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoices-tbody">
+                            <!-- Data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="invoices-pagination"></div>
+            </div>
+
+            <!-- 12. Add New Invoice View -->
+            <div class="page-content" id="add-invoice-view" style="display: none;">
+                <div class="breadcrumb">
+                    <span>Invoices</span> <i class="fas fa-chevron-right"></i> <span class="active">Add New invoice</span>
+                </div>
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Add New Invoice</h1>
+                    </div>
+                </div>
+                <form id="form-add-invoice" class="modern-form">
+                    <!-- Section 1: Invoice Details -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">1</span>
+                            <h3>Invoice Details</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Invoice Date*</label>
+                                <div class="input-with-icon">
+                                    <input type="date" id="input-invoice-date" required>
+                                    <i class="far fa-calendar-alt"></i>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Amount*</label>
+                                <input type="number" id="input-invoice-amount" placeholder="Enter Invoice amount" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Customer info -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">2</span>
+                            <h3>Customer info</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Name*</label>
+                                <input type="text" id="input-invoice-name" placeholder="Enter customer name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone*</label>
+                                <input type="text" id="input-invoice-phone" placeholder="Enter phone number" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Additional info -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">3</span>
+                            <h3>Additional info</h3>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes (Optional)</label>
+                            <textarea id="input-invoice-notes" placeholder="Enter your notes....." style="width: 100%; min-height: 120px; padding: 12px; border: 1px solid #eee; border-radius: 8px; font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-save" style="background-color: #ebb700;">Save</button>
+                        <button type="button" class="btn-cancel" id="btn-cancel-invoice" style="background-color: #fff; color: #333; border: 1px solid #ddd;">Cancel</button>
+                    </div>
+                </form>
+            </div>
         </main>
     </div>
 

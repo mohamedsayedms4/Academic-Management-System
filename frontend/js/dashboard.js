@@ -111,6 +111,22 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'login.html';
     });
 
+    // Invoices Navigation
+    document.getElementById('nav-invoices').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('invoices-list-view');
+        loadInvoices();
+    });
+
+    document.getElementById('btn-add-invoice-nav').addEventListener('click', () => {
+        showView('add-invoice-view');
+        initAddInvoiceForm();
+    });
+
+    if (document.getElementById('search-invoices')) {
+        document.getElementById('search-invoices').oninput = () => loadInvoices();
+    }
+
     // Load Initial Data
     loadRounds();
     loadDiplomas();
@@ -130,6 +146,8 @@ function showView(viewId) {
         document.getElementById('nav-diplomas').parentElement.classList.add('active');
     } else if (viewId === 'rounds-list-view' || viewId === 'add-round-view') {
         document.getElementById('nav-rounds').parentElement.classList.add('active');
+    } else if (viewId === 'invoices-list-view' || viewId === 'add-invoice-view') {
+        document.getElementById('nav-invoices').parentElement.classList.add('active');
     }
 }
 
@@ -1212,4 +1230,147 @@ async function cancelStudentPrompt(id) {
     } catch (error) {
         console.error('Error cancelling student:', error);
     }
+}
+
+// ===============================
+// Invoices (V2)
+// ===============================
+
+async function loadInvoices(page = 0) {
+    const search = document.getElementById('search-invoices').value;
+    let url = `http://localhost:8080/api/v2/invoices?page=${page}&size=10`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    
+    try {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            renderInvoicesTable(data.content || []);
+            renderPagination('invoices-pagination', data, loadInvoices);
+        }
+    } catch (error) {
+        console.error('Error loading invoices:', error);
+    }
+}
+
+function renderInvoicesTable(invoices) {
+    const tbody = document.getElementById('invoices-tbody');
+    tbody.innerHTML = '';
+    
+    if (invoices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No invoices found.</td></tr>';
+        return;
+    }
+
+    invoices.forEach(inv => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${formatDate(inv.invoiceDate)}</td>
+            <td>${inv.customerName}</td>
+            <td>${inv.customerPhone}</td>
+            <td>${inv.amount}</td>
+            <td>${inv.notes || '-'}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="editInvoice(${inv.id})"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function initAddInvoiceForm() {
+    const form = document.getElementById('form-add-invoice');
+    form.reset();
+    
+    document.getElementById('btn-cancel-invoice').onclick = () => showView('invoices-list-view');
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const payload = {
+            invoiceDate: document.getElementById('input-invoice-date').value,
+            amount: parseFloat(document.getElementById('input-invoice-amount').value),
+            customerName: document.getElementById('input-invoice-name').value,
+            customerPhone: document.getElementById('input-invoice-phone').value,
+            notes: document.getElementById('input-invoice-notes').value
+        };
+
+        try {
+            const response = await fetch('http://localhost:8080/api/v2/invoices', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert('Invoice saved successfully!');
+                showView('invoices-list-view');
+                loadInvoices();
+            } else {
+                const err = await response.json();
+                alert('Error: ' + (err.message || 'Failed to save invoice'));
+            }
+        } catch (error) {
+            console.error('Error saving invoice:', error);
+        }
+    };
+}
+
+async function deleteInvoice(id) {
+    if (confirm('Are you sure you want to delete this invoice?')) {
+        try {
+            const response = await fetch(`http://localhost:8080/api/v2/invoices/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (response.ok) {
+                loadInvoices();
+            }
+        } catch (error) {
+            console.error('Error deleting invoice:', error);
+        }
+    }
+}
+
+function editInvoice(id) {
+    alert('Edit Invoice Coming Soon!');
+}
+
+function renderPagination(containerId, data, loadFn) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (data.totalPages <= 1) return;
+    
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    prevBtn.disabled = data.first;
+    prevBtn.onclick = () => loadFn(data.number - 1);
+    container.appendChild(prevBtn);
+    
+    for (let i = 0; i < data.totalPages; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `page-btn ${i === data.number ? 'active' : ''}`;
+        pageBtn.textContent = i + 1;
+        pageBtn.onclick = () => loadFn(i);
+        container.appendChild(pageBtn);
+    }
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    nextBtn.disabled = data.last;
+    nextBtn.onclick = () => loadFn(data.number + 1);
+    container.appendChild(nextBtn);
 }
