@@ -23,13 +23,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('nav-diplomas').addEventListener('click', (e) => {
         e.preventDefault();
         showView('diplomas-list-view');
-        loadDiplomasList();
+        loadDiplomasV2();
     });
 
     document.getElementById('btn-open-add-diploma').addEventListener('click', () => {
         showView('add-diploma-view');
-        initAddDiplomaForm();
+        initAddDiplomaV2Form();
     });
+
+    if (document.getElementById('search-diplomas-v2')) {
+        document.getElementById('search-diplomas-v2').oninput = () => loadDiplomasV2();
+    }
+    if (document.getElementById('filter-diploma-instructor')) {
+        document.getElementById('filter-diploma-instructor').onchange = () => loadDiplomasV2();
+    }
 
     document.getElementById('nav-rounds').addEventListener('click', (e) => {
         e.preventDefault();
@@ -1373,4 +1380,267 @@ function renderPagination(containerId, data, loadFn) {
     nextBtn.disabled = data.last;
     nextBtn.onclick = () => loadFn(data.number + 1);
     container.appendChild(nextBtn);
+}
+// ===============================
+// Diplomas (V2)
+// ===============================
+
+async function loadDiplomasV2(page = 0) {
+    const search = document.getElementById('search-diplomas-v2').value;
+    const instructorId = document.getElementById('filter-diploma-instructor').value;
+    
+    let url = `http://localhost:8080/api/v2/round-diplomas?page=${page}&size=10`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    
+    try {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            renderDiplomasV2Table(data.content || []);
+            renderPagination('diplomas-pagination', data, loadDiplomasV2);
+        }
+    } catch (error) {
+        console.error('Error loading diplomas V2:', error);
+    }
+}
+
+function renderDiplomasV2Table(diplomas) {
+    const tbody = document.getElementById('diplomas-list-tbody');
+    tbody.innerHTML = '';
+    
+    if (diplomas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">No diplomas found.</td></tr>';
+        return;
+    }
+
+    diplomas.forEach(d => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${d.diplomaName}</td>
+            <td>${d.roundName}</td>
+            <td>${d.totalStudents}</td>
+            <td>${d.instructorName}</td>
+            <td>${d.totalPrice}</td>
+            <td>${formatDate(d.startDate)}</td>
+            <td>${formatDate(d.endDate)}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="editDiplomaV2(${d.id})"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteDiplomaV2(${d.id})"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function initAddDiplomaV2Form() {
+    // Load lookup data
+    await loadV2LookupData();
+    
+    const form = document.getElementById('form-add-diploma-v2');
+    form.reset();
+    document.getElementById('v2-installments-tbody').innerHTML = '';
+    updateV2PaymentSummary();
+
+    const totalPriceInput = document.getElementById('v2-input-total-price');
+    totalPriceInput.oninput = () => updateV2InstallmentAmounts();
+
+    document.getElementById('v2-btn-cancel-add').onclick = () => showView('diplomas-list-view');
+
+    document.getElementById('v2-btn-add-inst').onclick = () => {
+        const tbody = document.getElementById('v2-installments-tbody');
+        const count = tbody.children.length;
+        if (count >= 4) return;
+
+        const row = document.createElement('tr');
+        const label = count === 0 ? '1st' : count === 1 ? '2nd' : count === 2 ? '3rd' : '4th';
+        row.innerHTML = `
+            <td style="padding: 12px;">${label} Installment</td>
+            <td style="padding: 12px;"><input type="number" class="v2-inst-percent" style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="0"></td>
+            <td style="padding: 12px;"><input type="number" class="v2-inst-amount" style="width: 120px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9;" readonly value="0"></td>
+            <td style="padding: 12px;"><input type="date" class="v2-inst-date" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></td>
+            <td style="padding: 12px;"><button type="button" class="v2-btn-del-inst" style="background: none; border: none; color: #dc3545; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+        `;
+
+        row.querySelector('.v2-inst-percent').oninput = () => {
+            updateV2InstallmentAmounts();
+            updateV2PaymentSummary();
+        };
+        row.querySelector('.v2-btn-del-inst').onclick = () => {
+            row.remove();
+            updateV2InstallmentAmounts();
+            updateV2PaymentSummary();
+        };
+
+        tbody.appendChild(row);
+        updateV2PaymentSummary();
+    };
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const totalPercent = calculateTotalV2Percent();
+        if (totalPercent !== 100) {
+            alert('Total percentage must be exactly 100%');
+            return;
+        }
+
+        const payload = {
+            roundId: document.getElementById('v2-input-round-id').value,
+            diplomaId: document.getElementById('v2-input-diploma-id').value,
+            instructorId: document.getElementById('v2-input-instructor-id').value,
+            totalPrice: parseFloat(document.getElementById('v2-input-total-price').value),
+            startDate: document.getElementById('v2-input-start-date').value,
+            endDate: document.getElementById('v2-input-end-date').value,
+            totalStudents: parseInt(document.getElementById('v2-input-total-students').value),
+            installment1Percent: getV2InstPercent(0),
+            installment2Percent: getV2InstPercent(1),
+            installment3Percent: getV2InstPercent(2),
+            installment4Percent: getV2InstPercent(3),
+            installment1Amount: getV2InstAmount(0),
+            installment2Amount: getV2InstAmount(1),
+            installment3Amount: getV2InstAmount(2),
+            installment4Amount: getV2InstAmount(3),
+            installment1Date: getV2InstDate(0),
+            installment2Date: getV2InstDate(1),
+            installment3Date: getV2InstDate(2),
+            installment4Date: getV2InstDate(3)
+        };
+
+        try {
+            const response = await fetch('http://localhost:8080/api/v2/round-diplomas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert('Diploma added successfully!');
+                showView('diplomas-list-view');
+                loadDiplomasV2();
+            } else {
+                const err = await response.json();
+                alert('Error: ' + (err.message || 'Failed to add diploma'));
+            }
+        } catch (error) {
+            console.error('Error adding diploma:', error);
+        }
+    };
+}
+
+async function loadV2LookupData() {
+    try {
+        const [roundsRes, diplomasRes, instructorsRes] = await Promise.all([
+            fetch('http://localhost:8080/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch('http://localhost:8080/api/v2/diplomas/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch('http://localhost:8080/api/v2/instructors/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+        ]);
+
+        const rounds = await roundsRes.json();
+        const diplomas = await diplomasRes.json();
+        const instructors = await instructorsRes.json();
+
+        populateSelect('v2-input-round-id', rounds, 'name', 'id');
+        populateSelect('v2-input-diploma-id', diplomas, 'name', 'id');
+        populateSelect('v2-input-instructor-id', instructors, 'name', 'id');
+        populateSelect('filter-diploma-instructor', instructors, 'name', 'id', 'Instructor');
+
+    } catch (error) {
+        console.error('Error loading lookup data:', error);
+    }
+}
+
+function populateSelect(id, items, labelKey, valueKey, defaultLabel = 'Select') {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.innerHTML = `<option value="">${defaultLabel}</option>`;
+    items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item[valueKey];
+        opt.textContent = item[labelKey];
+        select.appendChild(opt);
+    });
+}
+
+function updateV2InstallmentAmounts() {
+    const total = parseFloat(document.getElementById('v2-input-total-price').value) || 0;
+    const rows = document.querySelectorAll('#v2-installments-tbody tr');
+    rows.forEach(row => {
+        const percent = parseFloat(row.querySelector('.v2-inst-percent').value) || 0;
+        const amountInput = row.querySelector('.v2-inst-amount');
+        amountInput.value = ((percent / 100) * total).toFixed(2);
+    });
+}
+
+function calculateTotalV2Percent() {
+    let total = 0;
+    document.querySelectorAll('.v2-inst-percent').forEach(input => {
+        total += parseFloat(input.value) || 0;
+    });
+    return total;
+}
+
+function updateV2PaymentSummary() {
+    const totalPercent = calculateTotalV2Percent();
+    const totalPrice = parseFloat(document.getElementById('v2-input-total-price').value) || 0;
+    const totalAmount = (totalPercent / 100) * totalPrice;
+
+    const percentSpan = document.getElementById('v2-total-percent');
+    const amountSpan = document.getElementById('v2-total-amount-summary');
+
+    percentSpan.textContent = `${totalPercent}%`;
+    amountSpan.textContent = `${totalAmount.toFixed(2)} EGP`;
+
+    if (totalPercent === 100) {
+        percentSpan.style.color = '#28a745';
+        amountSpan.style.color = '#28a745';
+        document.getElementById('v2-payment-summary').style.borderColor = '#28a745';
+        document.getElementById('v2-payment-summary').style.backgroundColor = '#f4fff4';
+    } else {
+        percentSpan.style.color = '#dc3545';
+        amountSpan.style.color = '#dc3545';
+        document.getElementById('v2-payment-summary').style.borderColor = '#ddd';
+        document.getElementById('v2-payment-summary').style.backgroundColor = '#fff';
+    }
+}
+
+function getV2InstPercent(index) {
+    const inputs = document.querySelectorAll('.v2-inst-percent');
+    return index < inputs.length ? parseInt(inputs[index].value) : null;
+}
+
+function getV2InstAmount(index) {
+    const inputs = document.querySelectorAll('.v2-inst-amount');
+    return index < inputs.length ? parseFloat(inputs[index].value) : null;
+}
+
+function getV2InstDate(index) {
+    const inputs = document.querySelectorAll('.v2-inst-date');
+    return index < inputs.length ? inputs[index].value || null : null;
+}
+
+async function deleteDiplomaV2(id) {
+    if (confirm('Are you sure you want to delete this diploma?')) {
+        try {
+            const response = await fetch(`http://localhost:8080/api/v2/round-diplomas/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (response.ok) {
+                loadDiplomasV2();
+            }
+        } catch (error) {
+            console.error('Error deleting diploma:', error);
+        }
+    }
+}
+
+function editDiplomaV2(id) {
+    alert('Edit coming soon for ID: ' + id);
 }
