@@ -18,6 +18,17 @@ public class DiplomaV2Controller {
 
     private final DiplomaV2Repository diplomaRepository;
 
+    @GetMapping("/all")
+    public ResponseEntity<List<DiplomaResponseV2>> getAllDiplomasList() {
+        List<DiplomaResponseV2> diplomas = diplomaRepository.findAll().stream()
+                .map(d -> DiplomaResponseV2.builder()
+                        .id(d.getId())
+                        .name(d.getName())
+                        .build())
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(diplomas);
+    }
+
     @GetMapping
     public ResponseEntity<List<DiplomaResponseV2>> getAllDiplomas() {
         List<DiplomaResponseV2> diplomas = diplomaRepository.findAll().stream()

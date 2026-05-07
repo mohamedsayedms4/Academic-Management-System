@@ -11,4 +11,5 @@ public interface InstructorV2Service {
     void deleteInstructor(Long id);
     InstructorResponseV2 getInstructor(Long id);
     Page<InstructorResponseV2> getAllInstructors(Pageable pageable, String search);
+    java.util.List<InstructorResponseV2> getAllInstructorsList();
 }

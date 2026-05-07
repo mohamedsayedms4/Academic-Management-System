@@ -68,6 +68,14 @@ public class InstructorV2ServiceImpl implements InstructorV2Service {
         return instructors.map(this::mapToResponse);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<InstructorResponseV2> getAllInstructorsList() {
+        return instructorRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private void updateInstructorFields(InstructorV2 instructor, InstructorRequestV2 request) {
         instructor.setName(request.getName());
         instructor.setPhoneNumber(request.getPhoneNumber());

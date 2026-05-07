@@ -31,8 +31,15 @@ public class RoundDiplomaV2ServiceImpl implements RoundDiplomaV2Service {
     public RoundDiplomaV2Response createDiploma(RoundDiplomaV2Request request) {
         RoundV2 round = roundRepository.findById(request.getRoundId())
                 .orElseThrow(() -> new RuntimeException("Round not found"));
-        DiplomaV2 diploma = diplomaRepository.findById(request.getDiplomaId())
-                .orElseThrow(() -> new RuntimeException("Diploma not found"));
+        
+        // Find or Create DiplomaV2 by name
+        DiplomaV2 diploma = diplomaRepository.findByName(request.getDiplomaName())
+                .orElseGet(() -> {
+                    DiplomaV2 newDiploma = new DiplomaV2();
+                    newDiploma.setName(request.getDiplomaName());
+                    return diplomaRepository.save(newDiploma);
+                });
+
         InstructorV2 instructor = request.getInstructorId() != null ? 
                 instructorRepository.findById(request.getInstructorId()).orElse(null) : null;
 

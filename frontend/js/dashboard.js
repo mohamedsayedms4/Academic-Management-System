@@ -1490,7 +1490,7 @@ async function initAddDiplomaV2Form() {
 
         const payload = {
             roundId: document.getElementById('v2-input-round-id').value,
-            diplomaId: document.getElementById('v2-input-diploma-id').value,
+            diplomaName: document.getElementById('v2-input-diploma-name').value,
             instructorId: document.getElementById('v2-input-instructor-id').value,
             totalPrice: parseFloat(document.getElementById('v2-input-total-price').value),
             startDate: document.getElementById('v2-input-start-date').value,
@@ -1547,7 +1547,6 @@ async function loadV2LookupData() {
         const instructors = await instructorsRes.json();
 
         populateSelect('v2-input-round-id', rounds, 'name', 'id');
-        populateSelect('v2-input-diploma-id', diplomas, 'name', 'id');
         populateSelect('v2-input-instructor-id', instructors, 'name', 'id');
         populateSelect('filter-diploma-instructor', instructors, 'name', 'id', 'Instructor');
 

@@ -44,4 +44,9 @@ public class InstructorV2Controller {
             @RequestParam(required = false) String search) {
         return ResponseEntity.ok(instructorService.getAllInstructors(pageable, search));
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<java.util.List<InstructorResponseV2>> getAllInstructorsList() {
+        return ResponseEntity.ok(instructorService.getAllInstructorsList());
+    }
 }

@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DiplomaV2Repository extends JpaRepository<DiplomaV2, Long> {
+    java.util.Optional<DiplomaV2> findByName(String name);
 }
