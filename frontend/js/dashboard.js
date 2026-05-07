@@ -1428,7 +1428,7 @@ function renderDiplomasV2Table(diplomas) {
             <td>
                 <div class="actions-cell">
                     <button class="btn-action edit" onclick="editDiplomaV2(${d.id})"><i class="fas fa-pen"></i></button>
-                    <button class="btn-action delete" onclick="deleteDiplomaV2(${d.id})"><i class="fas fa-trash"></i></button>
+                    <button class="btn-action delete" onclick="deleteDiplomaV2(${d.id}, '${d.diplomaName}')"><i class="fas fa-trash"></i></button>
                 </div>
             </td>
         `;
@@ -1521,12 +1521,11 @@ async function initAddDiplomaV2Form() {
             });
 
             if (response.ok) {
-                alert('Diploma added successfully!');
+                showToast('Diploma added successfully', 'success');
                 showView('diplomas-list-view');
                 loadDiplomasV2();
             } else {
-                const err = await response.json();
-                alert('Error: ' + (err.message || 'Failed to add diploma'));
+                showToast('Failed to add diploma', 'error');
             }
         } catch (error) {
             console.error('Error adding diploma:', error);
@@ -1624,22 +1623,276 @@ function getV2InstDate(index) {
     return index < inputs.length ? inputs[index].value || null : null;
 }
 
-async function deleteDiplomaV2(id) {
-    if (confirm('Are you sure you want to delete this diploma?')) {
+async function deleteDiplomaV2(id, name = "this diploma") {
+    showDeleteModal(`Delete "${name}"?`, async () => {
         try {
             const response = await fetch(`http://localhost:8080/api/v2/round-diplomas/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (response.ok) {
+                showToast('Diploma Deleted successfully', 'success');
                 loadDiplomasV2();
+            } else {
+                showToast('Failed to delete diploma', 'error');
             }
         } catch (error) {
             console.error('Error deleting diploma:', error);
+            showToast('Error connecting to server', 'error');
         }
+    });
+}
+
+async function editDiplomaV2(id) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v2/round-diplomas/${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const d = await response.json();
+            
+            showView('edit-diploma-view');
+            
+            // Populate Breadcrumb and Title
+            document.getElementById('edit-diploma-breadcrumb').textContent = `Edit ${d.diplomaName}`;
+            document.getElementById('edit-diploma-title').textContent = `Edit ${d.diplomaName}`;
+            
+            // Load lookups then populate
+            await loadV2LookupDataForEdit();
+            
+            document.getElementById('edit-v2-id').value = d.id;
+            document.getElementById('edit-v2-input-diploma-name').value = d.diplomaName;
+            document.getElementById('edit-v2-input-round-id').value = d.roundId;
+            document.getElementById('edit-v2-input-instructor-id').value = d.instructorId || "";
+            document.getElementById('edit-v2-input-total-price').value = d.totalPrice;
+            document.getElementById('edit-v2-input-start-date').value = d.startDate;
+            document.getElementById('edit-v2-input-end-date').value = d.endDate;
+            document.getElementById('edit-v2-input-total-students').value = d.totalStudents;
+            
+            // Clear and add installments
+            const tbody = document.getElementById('edit-v2-installments-tbody');
+            tbody.innerHTML = '';
+            
+            if (d.installment1Percent) addV2InstallmentRowEdit(1, d.installment1Percent, d.installment1Amount, d.installment1Date);
+            if (d.installment2Percent) addV2InstallmentRowEdit(2, d.installment2Percent, d.installment2Amount, d.installment2Date);
+            if (d.installment3Percent) addV2InstallmentRowEdit(3, d.installment3Percent, d.installment3Amount, d.installment3Date);
+            if (d.installment4Percent) addV2InstallmentRowEdit(4, d.installment4Percent, d.installment4Amount, d.installment4Date);
+            
+            updateV2PaymentSummaryEdit();
+            initEditDiplomaFormLogic();
+        }
+    } catch (error) {
+        console.error('Error loading diploma for edit:', error);
     }
 }
 
-function editDiplomaV2(id) {
-    alert('Edit coming soon for ID: ' + id);
+async function loadV2LookupDataForEdit() {
+    try {
+        const [roundsRes, instructorsRes] = await Promise.all([
+            fetch('http://localhost:8080/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch('http://localhost:8080/api/v2/instructors/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+        ]);
+
+        const rounds = await roundsRes.json();
+        const instructors = await instructorsRes.json();
+
+        populateSelect('edit-v2-input-round-id', rounds, 'name', 'id');
+        populateSelect('edit-v2-input-instructor-id', instructors, 'name', 'id');
+    } catch (error) {
+        console.error('Error loading lookup data for edit:', error);
+    }
+}
+
+function addV2InstallmentRowEdit(num, percent = 0, amount = 0, date = "") {
+    const tbody = document.getElementById('edit-v2-installments-tbody');
+    const label = num === 1 ? '1st' : num === 2 ? '2nd' : num === 3 ? '3rd' : '4th';
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td style="padding: 12px;">${label} Installment</td>
+        <td style="padding: 12px;"><input type="number" class="edit-v2-inst-percent" style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="${percent}"></td>
+        <td style="padding: 12px;"><input type="number" class="edit-v2-inst-amount" style="width: 120px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9;" readonly value="${amount}"></td>
+        <td style="padding: 12px;"><input type="date" class="edit-v2-inst-date" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="${date}"></td>
+        <td style="padding: 12px;"><button type="button" class="edit-v2-btn-del-inst" style="background: none; border: none; color: #dc3545; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+    `;
+    
+    row.querySelector('.edit-v2-inst-percent').oninput = () => {
+        updateV2InstallmentAmountsEdit();
+        updateV2PaymentSummaryEdit();
+    };
+    row.querySelector('.edit-v2-btn-del-inst').onclick = () => {
+        row.remove();
+        updateV2PaymentSummaryEdit();
+    };
+    
+    tbody.appendChild(row);
+}
+
+function initEditDiplomaFormLogic() {
+    const form = document.getElementById('form-edit-diploma-v2');
+    
+    document.getElementById('edit-v2-btn-cancel').onclick = () => showView('diplomas-list-view');
+    document.getElementById('edit-v2-input-total-price').oninput = () => updateV2InstallmentAmountsEdit();
+    
+    document.getElementById('edit-v2-btn-add-inst').onclick = () => {
+        const count = document.getElementById('edit-v2-installments-tbody').children.length;
+        if (count < 4) addV2InstallmentRowEdit(count + 1);
+    };
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('edit-v2-id').value;
+        const totalPercent = calculateTotalV2PercentEdit();
+        
+        if (totalPercent !== 100) {
+            alert('Total percentage must equal 100%');
+            return;
+        }
+
+        const payload = {
+            roundId: document.getElementById('edit-v2-input-round-id').value,
+            diplomaName: document.getElementById('edit-v2-input-diploma-name').value,
+            instructorId: document.getElementById('edit-v2-input-instructor-id').value,
+            totalPrice: parseFloat(document.getElementById('edit-v2-input-total-price').value),
+            startDate: document.getElementById('edit-v2-input-start-date').value,
+            endDate: document.getElementById('edit-v2-input-end-date').value,
+            totalStudents: parseInt(document.getElementById('edit-v2-input-total-students').value),
+            installment1Percent: getV2InstPercentEdit(0),
+            installment2Percent: getV2InstPercentEdit(1),
+            installment3Percent: getV2InstPercentEdit(2),
+            installment4Percent: getV2InstPercentEdit(3),
+            installment1Amount: getV2InstAmountEdit(0),
+            installment2Amount: getV2InstAmountEdit(1),
+            installment3Amount: getV2InstAmountEdit(2),
+            installment4Amount: getV2InstAmountEdit(3),
+            installment1Date: getV2InstDateEdit(0),
+            installment2Date: getV2InstDateEdit(1),
+            installment3Date: getV2InstDateEdit(2),
+            installment4Date: getV2InstDateEdit(3)
+        };
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/v2/round-diplomas/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                showToast('Changes saved successfully', 'success');
+                showView('diplomas-list-view');
+                loadDiplomasV2();
+            } else {
+                showToast('Failed to save changes', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating diploma:', error);
+            showToast('Error connecting to server', 'error');
+        }
+    };
+}
+
+function updateV2InstallmentAmountsEdit() {
+    const total = parseFloat(document.getElementById('edit-v2-input-total-price').value) || 0;
+    const rows = document.querySelectorAll('#edit-v2-installments-tbody tr');
+    rows.forEach(row => {
+        const percent = parseFloat(row.querySelector('.edit-v2-inst-percent').value) || 0;
+        const amountInput = row.querySelector('.edit-v2-inst-amount');
+        amountInput.value = ((percent / 100) * total).toFixed(2);
+    });
+}
+
+function calculateTotalV2PercentEdit() {
+    let total = 0;
+    document.querySelectorAll('.edit-v2-inst-percent').forEach(input => {
+        total += parseFloat(input.value) || 0;
+    });
+    return total;
+}
+
+function updateV2PaymentSummaryEdit() {
+    const totalPercent = calculateTotalV2PercentEdit();
+    const totalPrice = parseFloat(document.getElementById('edit-v2-input-total-price').value) || 0;
+    const totalAmount = (totalPercent / 100) * totalPrice;
+
+    const percentSpan = document.getElementById('edit-v2-total-percent');
+    const amountSpan = document.getElementById('edit-v2-total-amount-summary');
+
+    percentSpan.textContent = `${totalPercent}%`;
+    amountSpan.textContent = `${totalAmount.toFixed(2)} EGP`;
+
+    if (totalPercent === 100) {
+        percentSpan.style.color = '#28a745';
+        amountSpan.style.color = '#28a745';
+        document.getElementById('edit-v2-payment-summary').style.borderColor = '#28a745';
+        document.getElementById('edit-v2-payment-summary').style.backgroundColor = '#f4fff4';
+    } else {
+        percentSpan.style.color = '#dc3545';
+        amountSpan.style.color = '#dc3545';
+        document.getElementById('edit-v2-payment-summary').style.borderColor = '#ddd';
+        document.getElementById('edit-v2-payment-summary').style.backgroundColor = '#fff';
+    }
+}
+
+function getV2InstPercentEdit(index) {
+    const inputs = document.querySelectorAll('.edit-v2-inst-percent');
+    return index < inputs.length ? parseInt(inputs[index].value) : null;
+}
+
+function getV2InstAmountEdit(index) {
+    const inputs = document.querySelectorAll('.edit-v2-inst-amount');
+    return index < inputs.length ? parseFloat(inputs[index].value) : null;
+}
+
+function getV2InstDateEdit(index) {
+    const inputs = document.querySelectorAll('.edit-v2-inst-date');
+    return index < inputs.length ? inputs[index].value || null : null;
+}
+
+// ===============================
+// Notifications & Modals
+// ===============================
+
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="fas ${type === 'success' ? 'fa-check' : 'fa-times'}"></i>
+        </div>
+        <div class="toast-message">${message}</div>
+        <div class="toast-close"><i class="fas fa-times"></i></div>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove
+    const timer = setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+    
+    toast.querySelector('.toast-close').onclick = () => {
+        clearTimeout(timer);
+        toast.remove();
+    };
+}
+
+function showDeleteModal(title, onConfirm) {
+    const modal = document.getElementById('delete-modal');
+    document.getElementById('delete-modal-title').textContent = title;
+    modal.style.display = 'flex';
+    
+    document.getElementById('btn-confirm-delete').onclick = () => {
+        onConfirm();
+        modal.style.display = 'none';
+    };
+    
+    document.getElementById('btn-cancel-delete').onclick = () => {
+        modal.style.display = 'none';
+    };
 }
