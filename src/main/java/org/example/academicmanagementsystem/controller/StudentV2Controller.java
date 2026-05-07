@@ -53,4 +53,17 @@ public class StudentV2Controller {
     public ResponseEntity<StudentResponseV2> getStudent(@PathVariable Long id) {
         return ResponseEntity.ok(studentService.getStudent(id));
     }
+
+    @GetMapping("/round-diploma/{id}")
+    public ResponseEntity<Page<StudentResponseV2>> getStudentsByRoundDiploma(
+            @PathVariable Long id,
+            @RequestParam(required = false) String search,
+            Pageable pageable) {
+        return ResponseEntity.ok(studentService.getStudentsByRoundDiploma(id, search, pageable));
+    }
+
+    @PutMapping("/{id}/postpone")
+    public ResponseEntity<StudentResponseV2> postponeEnrollment(@PathVariable Long id, @RequestBody Map<String, Long> body) {
+        return ResponseEntity.ok(studentService.postponeEnrollment(id, body.get("targetRoundId")));
+    }
 }

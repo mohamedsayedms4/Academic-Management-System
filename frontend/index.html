@@ -405,6 +405,123 @@
                 </form>
             </div>
 
+            <!-- 5. Diploma Details View (V2) -->
+            <div class="page-content" id="diploma-details-view" style="display: none;">
+                <div class="breadcrumb">
+                    <span>Diplomas</span> <i class="fas fa-chevron-right"></i> <span id="details-diploma-name-breadcrumb">Interior Design</span> <i class="fas fa-chevron-right"></i> <span class="active">Students</span>
+                </div>
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1 id="details-diploma-title">Interior Design & Decoration – Online</h1>
+                    </div>
+                </div>
+
+                <div class="details-tabs">
+                    <button class="tab-btn active" data-tab="students-tab">Students</button>
+                    <button class="tab-btn" data-tab="attendance-tab">Attendance & Tasks</button>
+                </div>
+
+                <div id="students-tab" class="tab-content active">
+                    <div class="content-controls">
+                        <div class="filters">
+                            <div class="control-item search">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="search-details-students" placeholder="Search students...">
+                            </div>
+                            <div class="control-item select">
+                                <i class="fas fa-sync"></i>
+                                <select id="filter-details-it-status">
+                                    <option value="">IT Status</option>
+                                </select>
+                                <i class="fas fa-chevron-down chevron"></i>
+                            </div>
+                            <div class="control-item select">
+                                <i class="fas fa-sync"></i>
+                                <select id="filter-details-student-status">
+                                    <option value="">Student Status</option>
+                                </select>
+                                <i class="fas fa-chevron-down chevron"></i>
+                            </div>
+                        </div>
+                        <button class="btn-save" id="btn-add-student-to-diploma" style="background-color: #ebb700;"><i class="fas fa-plus"></i> Add New Student</button>
+                    </div>
+
+                    <div class="table-container details-table-container">
+                        <table class="modern-table details-table">
+                            <thead>
+                                <tr class="header-groups">
+                                    <th colspan="2" class="group-bg-yellow">Student info</th>
+                                    <th colspan="5" class="group-bg-blue">Account info</th>
+                                    <th colspan="2" class="group-bg-light">Diploma info</th>
+                                    <th>Actions</th>
+                                </tr>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                    <th>IT</th>
+                                    <th>Email</th>
+                                    <th>Password</th>
+                                    <th>Notes</th>
+                                    <th>Start Date</th>
+                                    <th>Amount</th>
+                                    <th>Paid</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="details-students-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="attendance-tab" class="tab-content" style="display: none;">
+                    <div class="attendance-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 12px;">
+                        <div class="date-selector" style="display: flex; align-items: center; gap: 15px;">
+                            <label style="font-weight: 600;">Attendance Date:</label>
+                            <input type="date" id="attendance-date-picker" style="padding: 8px 15px; border: 1px solid #ddd; border-radius: 8px;">
+                            <button class="btn-save" id="btn-load-attendance" style="padding: 8px 20px; font-size: 14px;">Load Date</button>
+                        </div>
+                        <button class="btn-save" id="btn-save-attendance" style="background-color: #28a745;"><i class="fas fa-check-circle"></i> Save Attendance</button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="modern-table attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="tasks-section" style="margin-top: 40px;">
+                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3>Course Tasks</h3>
+                            <button class="btn-save" id="btn-open-add-task" style="background-color: #ebb700;"><i class="fas fa-plus"></i> New Task</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Task Title</th>
+                                        <th>Deadline</th>
+                                        <th>Total Submissions</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tasks-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 4. Rounds List View -->
             <div class="page-content" id="rounds-list-view" style="display: none;">
                 <div class="content-header">
@@ -953,9 +1070,76 @@
         </div>
     </div>
 
+    <!-- Cancel Student Modal -->
+    <div id="cancel-student-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content delete-modal">
+            <div class="modal-icon" style="color: #dc3545; background-color: #ffebee;">
+                <i class="fas fa-ban"></i>
+            </div>
+            <h2>Cancel this student's enrollment?</h2>
+            <p>This will mark the student as cancelled without deleting their data.</p>
+            <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                <label>Cancellation reason</label>
+                <input type="text" id="cancel-reason-input" placeholder="Enter reason..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+            <div class="modal-actions">
+                <button id="btn-confirm-cancel-student" class="btn-delete-confirm">Cancel Enrollment</button>
+                <button id="btn-abort-cancel-student" class="btn-delete-cancel">Keep Student</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Postpone Student Modal -->
+    <div id="postpone-student-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content delete-modal">
+            <div class="modal-icon" style="color: #ebb700; background-color: #fff8e1;">
+                <i class="fas fa-pause"></i>
+            </div>
+            <h2>Postpone this student's enrollment?</h2>
+            <p>The student will be moved to a future round and paused in the current one.</p>
+            <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                <label>Target round *</label>
+                <select id="postpone-target-round-select" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                    <option value="">Select round...</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button id="btn-confirm-postpone-student" class="btn-delete-confirm" style="background-color: #ebb700;">Postpone Enrollment</button>
+                <button id="btn-abort-postpone-student" class="btn-delete-cancel">Keep Student</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notifications -->
     <div id="toast-container" class="toast-container"></div>
 
     <script src="js/dashboard.js"></script>
+    <!-- Add Student Task Modal -->
+    <div id="add-task-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Task</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="form-add-student-task" class="modern-form">
+                <div class="form-group">
+                    <label>Task Title*</label>
+                    <input type="text" id="task-title-input" placeholder="e.g. Project Phase 1" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="task-desc-input" rows="3" placeholder="Enter task details..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Deadline*</label>
+                    <input type="date" id="task-deadline-input" required>
+                </div>
+                <div class="modal-actions" style="margin-top: 20px;">
+                    <button type="submit" class="btn-save">Create Task</button>
+                    <button type="button" class="btn-cancel" onclick="document.getElementById('add-task-modal').style.display='none'">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

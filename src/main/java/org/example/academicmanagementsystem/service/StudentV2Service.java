@@ -12,4 +12,6 @@ public interface StudentV2Service {
     StudentResponseV2 restoreEnrollment(Long id);
     Page<StudentResponseV2> getStudentsByStatus(StudentStatus status, Pageable pageable, String search);
     StudentResponseV2 getStudent(Long id);
+    Page<StudentResponseV2> getStudentsByRoundDiploma(Long roundDiplomaId, String search, Pageable pageable);
+    StudentResponseV2 postponeEnrollment(Long id, Long targetRoundId);
 }

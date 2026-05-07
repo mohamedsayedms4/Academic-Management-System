@@ -21,6 +21,7 @@ public class StudentV2ServiceImpl implements StudentV2Service {
     private final RoundV2Repository roundRepository;
     private final DiplomaV2Repository diplomaRepository;
     private final UserRepository userRepository;
+    private final RoundDiplomaV2Repository roundDiplomaRepository;
 
     @Override
     @Transactional
@@ -87,6 +88,34 @@ public class StudentV2ServiceImpl implements StudentV2Service {
         return studentRepository.findById(id)
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<StudentResponseV2> getStudentsByRoundDiploma(Long roundDiplomaId, String search, Pageable pageable) {
+        RoundDiplomaV2 rd = roundDiplomaRepository.findById(roundDiplomaId)
+                .orElseThrow(() -> new RuntimeException("RoundDiploma not found"));
+        
+        Page<StudentV2> students;
+        if (search != null && !search.isEmpty()) {
+            students = studentRepository.searchInRoundDiploma(rd.getRound(), rd.getDiploma(), search, pageable);
+        } else {
+            students = studentRepository.findByRoundAndDiploma(rd.getRound(), rd.getDiploma(), pageable);
+        }
+        return students.map(this::mapToResponse);
+    }
+
+    @Override
+    @Transactional
+    public StudentResponseV2 postponeEnrollment(Long id, Long targetRoundId) {
+        StudentV2 student = studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+        RoundV2 targetRound = roundRepository.findById(targetRoundId)
+                .orElseThrow(() -> new RuntimeException("Target round not found"));
+        
+        student.setRound(targetRound);
+        student.setStatus(StudentStatus.POSTPONED);
+        return mapToResponse(studentRepository.save(student));
     }
 
     private StudentResponseV2 mapToResponse(StudentV2 student) {

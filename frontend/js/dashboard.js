@@ -1418,7 +1418,7 @@ function renderDiplomasV2Table(diplomas) {
     diplomas.forEach(d => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${d.diplomaName}</td>
+            <td><span class="clickable-name" onclick="viewDiplomaDetailsV2(${d.id})">${d.diplomaName}</span></td>
             <td>${d.roundName}</td>
             <td>${d.totalStudents}</td>
             <td>${d.instructorName}</td>
@@ -1895,4 +1895,368 @@ function showDeleteModal(title, onConfirm) {
     document.getElementById('btn-cancel-delete').onclick = () => {
         modal.style.display = 'none';
     };
+}
+
+let currentDetailsRoundDiplomaId = null;
+
+async function viewDiplomaDetailsV2(id) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v2/round-diplomas/${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const d = await response.json();
+            currentDetailsRoundDiplomaId = id;
+            
+            showView('diploma-details-view');
+            
+            // Update UI
+            document.getElementById('details-diploma-name-breadcrumb').textContent = d.diplomaName;
+            document.getElementById('details-diploma-title').textContent = `${d.diplomaName} – ${d.roundName}`;
+            
+            // Initialize Tabs
+            initDetailsTabs(id);
+            
+            // Load students
+            loadDiplomaStudentsV2(id);
+            
+            // Search logic
+            document.getElementById('search-details-students').oninput = (e) => {
+                loadDiplomaStudentsV2(id, e.target.value);
+            };
+
+            // Postpone Target Round Lookup
+            loadPostponeRounds();
+        }
+    } catch (error) {
+        console.error('Error loading diploma details:', error);
+    }
+}
+
+function initDetailsTabs(roundDiplomaId) {
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(tab => {
+        tab.onclick = () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            const target = tab.getAttribute('data-tab');
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            document.getElementById(target).style.display = 'block';
+
+            if (target === 'attendance-tab') {
+                initAttendanceTab(roundDiplomaId);
+            }
+        };
+    });
+}
+
+async function loadDiplomaStudentsV2(id, search = '') {
+    try {
+        const url = new URL(`http://localhost:8080/api/v2/students/round-diploma/${id}`);
+        if (search) url.searchParams.append('search', search);
+        
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            renderDiplomaStudentsV2(data.content);
+        }
+    } catch (error) {
+        console.error('Error loading diploma students:', error);
+    }
+}
+
+function renderDiplomaStudentsV2(students) {
+    const tbody = document.getElementById('details-students-tbody');
+    tbody.innerHTML = '';
+    
+    students.forEach(s => {
+        const statusClass = s.status === 'ACTIVE' ? 'status-active' : s.status === 'CANCELLED' ? 'status-cancelled' : 'status-postponed';
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${s.name}</td>
+            <td>${s.phone}</td>
+            <td><span class="status-badge ${statusClass}">${s.status}</span></td>
+            <td><input type="checkbox" ${s.itStatus ? 'checked' : ''} disabled></td>
+            <td>${s.email || '-'}</td>
+            <td>••••••••</td>
+            <td>${s.notes || '-'}</td>
+            <td>${formatDate(s.enrollmentDate)}</td>
+            <td>${s.totalAmount || '0'}</td>
+            <td>${s.paidAmount || '0'}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="postponeStudent(${s.id}, '${s.name}')" title="Postpone"><i class="fas fa-pause"></i></button>
+                    <button class="btn-action delete" onclick="cancelStudent(${s.id}, '${s.name}')" title="Cancel"><i class="fas fa-ban"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function cancelStudent(id, name) {
+    const modal = document.getElementById('cancel-student-modal');
+    modal.style.display = 'flex';
+    document.getElementById('cancel-reason-input').value = '';
+    
+    document.getElementById('btn-confirm-cancel-student').onclick = async () => {
+        const reason = document.getElementById('cancel-reason-input').value;
+        try {
+            const response = await fetch(`http://localhost:8080/api/v2/students/${id}/cancel`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ reason })
+            });
+            if (response.ok) {
+                showToast('Student enrollment cancelled', 'success');
+                modal.style.display = 'none';
+                loadDiplomaStudentsV2(currentDetailsRoundDiplomaId);
+            }
+        } catch (error) {
+            console.error('Error cancelling student:', error);
+        }
+    };
+    
+    document.getElementById('btn-abort-cancel-student').onclick = () => {
+        modal.style.display = 'none';
+    };
+}
+
+async function postponeStudent(id, name) {
+    const modal = document.getElementById('postpone-student-modal');
+    modal.style.display = 'flex';
+    
+    document.getElementById('btn-confirm-postpone-student').onclick = async () => {
+        const targetRoundId = document.getElementById('postpone-target-round-select').value;
+        if (!targetRoundId) {
+            alert('Please select a target round');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`http://localhost:8080/api/v2/students/${id}/postpone`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ targetRoundId })
+            });
+            if (response.ok) {
+                showToast('Student postponed to future round', 'success');
+                modal.style.display = 'none';
+                loadDiplomaStudentsV2(currentDetailsRoundDiplomaId);
+            }
+        } catch (error) {
+            console.error('Error postponing student:', error);
+        }
+    };
+    
+    document.getElementById('btn-abort-postpone-student').onclick = () => {
+        modal.style.display = 'none';
+    };
+}
+
+async function loadPostponeRounds() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v2/rounds/all', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const rounds = await response.json();
+            populateSelect('postpone-target-round-select', rounds, 'name', 'id', 'Select round...');
+        }
+    } catch (error) {
+        console.error('Error loading rounds for postpone:', error);
+    }
+}
+
+// ===============================
+// Attendance & Tasks V2
+// ===============================
+
+function initAttendanceTab(roundDiplomaId) {
+    const datePicker = document.getElementById('attendance-date-picker');
+    if (!datePicker.value) {
+        datePicker.value = new Date().toISOString().split('T')[0];
+    }
+    
+    document.getElementById('btn-load-attendance').onclick = () => loadAttendanceData(roundDiplomaId, datePicker.value);
+    document.getElementById('btn-save-attendance').onclick = () => saveAttendanceData(roundDiplomaId);
+    
+    document.getElementById('btn-open-add-task').onclick = () => {
+        document.getElementById('add-task-modal').style.display = 'flex';
+    };
+
+    document.getElementById('form-add-student-task').onsubmit = (e) => {
+        e.preventDefault();
+        createTaskData(roundDiplomaId);
+    };
+
+    loadAttendanceData(roundDiplomaId, datePicker.value);
+    loadTasksData(roundDiplomaId);
+}
+
+async function loadAttendanceData(roundDiplomaId, date) {
+    try {
+        // First get students in this diploma
+        const stdResponse = await fetch(`http://localhost:8080/api/v2/students/round-diploma/${roundDiplomaId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const stdData = await stdResponse.json();
+        const students = stdData.content;
+
+        // Then get attendance records for this date
+        const attResponse = await fetch(`http://localhost:8080/api/v2/attendance/diploma/${roundDiplomaId}?date=${date}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const attendanceRecords = await attResponse.json();
+
+        renderAttendanceTable(students, attendanceRecords);
+    } catch (error) {
+        console.error('Error loading attendance data:', error);
+    }
+}
+
+function renderAttendanceTable(students, records) {
+    const tbody = document.getElementById('attendance-tbody');
+    tbody.innerHTML = '';
+
+    const recordMap = new Map(records.map(r => [r.studentId, r]));
+
+    students.forEach(s => {
+        const record = recordMap.get(s.id);
+        const currentStatus = record ? record.status : 'PRESENT';
+        const currentNotes = record ? record.notes : '';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${s.name}</td>
+            <td>
+                <div class="attendance-status-group" data-student-id="${s.id}">
+                    <label class="attendance-radio present ${currentStatus === 'PRESENT' ? 'active' : ''}">
+                        <input type="radio" name="att-${s.id}" value="PRESENT" ${currentStatus === 'PRESENT' ? 'checked' : ''}> P
+                    </label>
+                    <label class="attendance-radio absent ${currentStatus === 'ABSENT' ? 'active' : ''}">
+                        <input type="radio" name="att-${s.id}" value="ABSENT" ${currentStatus === 'ABSENT' ? 'checked' : ''}> A
+                    </label>
+                    <label class="attendance-radio excused ${currentStatus === 'EXCUSED' ? 'active' : ''}">
+                        <input type="radio" name="att-${s.id}" value="EXCUSED" ${currentStatus === 'EXCUSED' ? 'checked' : ''}> E
+                    </label>
+                </div>
+            </td>
+            <td><input type="text" class="att-notes" value="${currentNotes}" style="width: 100%; border: none; background: transparent;" placeholder="..."></td>
+        `;
+
+        // UI helper for radio appearance
+        row.querySelectorAll('.attendance-radio').forEach(label => {
+            label.onclick = () => {
+                row.querySelectorAll('.attendance-radio').forEach(l => l.classList.remove('active'));
+                label.classList.add('active');
+            };
+        });
+
+        tbody.appendChild(row);
+    });
+}
+
+async function saveAttendanceData(roundDiplomaId) {
+    const date = document.getElementById('attendance-date-picker').value;
+    const records = [];
+
+    document.querySelectorAll('.attendance-status-group').forEach(group => {
+        const studentId = group.getAttribute('data-student-id');
+        const status = group.querySelector('input:checked').value;
+        const notes = group.closest('tr').querySelector('.att-notes').value;
+        records.push({ studentId: parseInt(studentId), status, notes });
+    });
+
+    const payload = { roundDiplomaId, date, records };
+
+    try {
+        const response = await fetch('http://localhost:8080/api/v2/attendance/bulk', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            showToast('Attendance saved successfully', 'success');
+        }
+    } catch (error) {
+        console.error('Error saving attendance:', error);
+    }
+}
+
+async function loadTasksData(roundDiplomaId) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v2/tasks/diploma/${roundDiplomaId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const tasks = await response.json();
+            renderTasksTable(tasks);
+        }
+    } catch (error) {
+        console.error('Error loading tasks:', error);
+    }
+}
+
+function renderTasksTable(tasks) {
+    const tbody = document.getElementById('tasks-tbody');
+    tbody.innerHTML = '';
+    
+    tasks.forEach(t => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${t.title}</td>
+            <td>${formatDate(t.deadline)}</td>
+            <td>0/0</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="viewSubmissions(${t.id})" title="View Submissions"><i class="fas fa-eye"></i></button>
+                    <button class="btn-action delete" title="Delete Task"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function createTaskData(roundDiplomaId) {
+    const payload = {
+        title: document.getElementById('task-title-input').value,
+        description: document.getElementById('task-desc-input').value,
+        deadline: document.getElementById('task-deadline-input').value,
+        roundDiploma: { id: roundDiplomaId }
+    };
+
+    try {
+        const response = await fetch('http://localhost:8080/api/v2/tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            showToast('Task created successfully', 'success');
+            document.getElementById('add-task-modal').style.display = 'none';
+            document.getElementById('form-add-student-task').reset();
+            loadTasksData(roundDiplomaId);
+        }
+    } catch (error) {
+        console.error('Error creating task:', error);
+    }
 }

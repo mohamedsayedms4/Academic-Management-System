@@ -817,6 +817,102 @@ body {
    Existing Styles
    =============================== */
 /* Modern Table Styles (for lists) */
+/* ===============================
+   Diploma Details View
+   =============================== */
+
+.details-tabs {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #eee;
+}
+
+.tab-btn {
+    padding: 12px 5px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #666;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    color: #ebb700;
+    border-bottom-color: #ebb700;
+}
+
+.group-bg-yellow { background-color: #fff9e6 !important; color: #856404 !important; }
+.group-bg-blue { background-color: #e7f3ff !important; color: #004085 !important; }
+.group-bg-light { background-color: #f8f9fa !important; color: #383d41 !important; }
+
+.details-table thead tr.header-groups th {
+    padding: 8px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+}
+
+.details-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.details-table th, .details-table td {
+    white-space: nowrap;
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-active { background: #e8f5e9; color: #2e7d32; }
+.status-cancelled { background: #ffebee; color: #c62828; }
+.status-postponed { background: #fff3e0; color: #ef6c00; }
+
+.clickable-name {
+    color: #007bff;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.clickable-name:hover {
+    text-decoration: underline;
+}
+
+/* Attendance Radio Styles */
+.attendance-status-group {
+    display: flex;
+    gap: 15px;
+}
+
+.attendance-radio {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    transition: all 0.2s ease;
+}
+
+.attendance-radio input { display: none; }
+
+.attendance-radio.present:hover, .attendance-radio.present.active { background: #e8f5e9; border-color: #2e7d32; color: #2e7d32; }
+.attendance-radio.absent:hover, .attendance-radio.absent.active { background: #ffebee; border-color: #c62828; color: #c62828; }
+.attendance-radio.excused:hover, .attendance-radio.excused.active { background: #fff3e0; border-color: #ef6c00; color: #ef6c00; }
+
+/* ===============================
+   Existing Styles
+   =============================== */
 .modern-table {
     width: 100%;
     border-collapse: collapse;
