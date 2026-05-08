@@ -1247,3 +1247,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .response-cell { display: flex; flex-direction: column; gap: 4px; } .response-text { font-size: 0.9rem; color: #333; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .response-author { font-size: 0.75rem; color: #ebb700; font-weight: 600; }
+
+/* Finance Module */
+.finance-charts-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; margin-top: 24px; }
+.chart-container-card { background: #fff; padding: 24px; border-radius: 16px; border: 1px solid #eee; }
+.chart-container-card h3 { font-size: 1.1rem; margin-bottom: 20px; color: #333; }
+.chart-wrapper { position: relative; height: 300px; width: 100%; }
+.chart-legend { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #666; }
+.legend-item .dot { width: 10px; height: 10px; border-radius: 50%; }
+.month-selector { padding: 8px 16px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-family: inherit; font-weight: 500; cursor: pointer; }
+.info-note { background: #fdf8e4; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #ebb700; display: flex; align-items: center; gap: 10px; }
+.badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; background: #f0f0f0; color: #666; }

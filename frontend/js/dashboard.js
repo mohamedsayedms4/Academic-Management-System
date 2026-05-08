@@ -148,6 +148,50 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('filter-leads-status').onchange = () => loadLeads();
     }
 
+    // Finance Navigation
+    document.getElementById('nav-finance-overview').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('finance-overview-view');
+        loadFinanceOverview();
+    });
+
+    document.getElementById('nav-finance-salaries').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('finance-salaries-view');
+        loadSalaries();
+    });
+
+    document.getElementById('nav-finance-expenses').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('finance-expenses-view');
+        loadExpenses();
+    });
+
+    // Finance Controls
+    if (document.getElementById('finance-overview-month')) {
+        document.getElementById('finance-overview-month').onchange = () => loadFinanceOverview();
+    }
+    if (document.getElementById('finance-salaries-month')) {
+        document.getElementById('finance-salaries-month').onchange = () => loadSalaries();
+    }
+    if (document.getElementById('finance-expenses-month')) {
+        document.getElementById('finance-expenses-month').onchange = () => loadExpenses();
+    }
+
+    document.getElementById('btn-run-payroll').addEventListener('click', () => runPayroll());
+    document.getElementById('btn-add-expense').addEventListener('click', () => {
+        document.getElementById('add-expense-modal').style.display = 'flex';
+        document.getElementById('expense-date').valueAsDate = new Date();
+    });
+    document.getElementById('btn-add-freelancer').addEventListener('click', () => {
+        document.getElementById('add-freelancer-modal').style.display = 'flex';
+    });
+
+    document.getElementById('form-add-expense').onsubmit = (e) => {
+        e.preventDefault();
+        addExpense();
+    };
+
     // Load Initial Data
     loadRounds();
     loadDiplomas();
@@ -173,6 +217,8 @@ function showView(viewId) {
         document.getElementById('nav-employees').parentElement.classList.add('active');
     } else if (viewId === 'leads-list-view') {
         document.getElementById('nav-leads').parentElement.classList.add('active');
+    } else if (viewId.startsWith('finance-')) {
+        document.getElementById('nav-finance-parent').classList.add('active');
     }
 }
 
@@ -2579,4 +2625,217 @@ function showToast(message, type = 'info') {
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 500);
     }, 3000);
+}
+
+// ===============================
+// Finance (Integrated)
+// ===============================
+
+let breakdownChart = null;
+let revenueChart = null;
+
+async function loadFinanceOverview() {
+    const month = document.getElementById('finance-overview-month').value;
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/finance/overview?month=${month}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('finance-total-revenue').textContent = data.totalRevenue.toLocaleString();
+            document.getElementById('finance-collected-revenue').textContent = data.collectedRevenue.toLocaleString();
+            document.getElementById('finance-pending-revenue').textContent = data.pendingRevenue.toLocaleString();
+            document.getElementById('finance-net-profit').textContent = data.netProfit.toLocaleString();
+            
+            renderFinanceCharts(data);
+        }
+    } catch (error) {
+        console.error('Error loading finance overview:', error);
+    }
+}
+
+function renderFinanceCharts(data) {
+    const breakdownCtx = document.getElementById('financial-breakdown-chart').getContext('2d');
+    if (breakdownChart) breakdownChart.destroy();
+    
+    const breakdownData = data.financialBreakdown || {};
+    const labels = Object.keys(breakdownData);
+    const values = Object.values(breakdownData);
+    
+    breakdownChart = new Chart(breakdownCtx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: ['#ebb700', '#333', '#666', '#999', '#4caf50'],
+                borderWidth: 0
+            }]
+        },
+        options: { cutout: '70%', plugins: { legend: { display: false } } }
+    });
+
+    // Update legend
+    const legend = document.getElementById('breakdown-legend');
+    legend.innerHTML = '';
+    labels.forEach((l, i) => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `<span class='dot' style='background:${breakdownChart.data.datasets[0].backgroundColor[i]}'></span> ${l}: ${values[i].toLocaleString()}`;
+        legend.appendChild(item);
+    });
+
+    const revenueCtx = document.getElementById('revenue-expenses-chart').getContext('2d');
+    if (revenueChart) revenueChart.destroy();
+    
+    const chartPoints = data.revenueVsExpenses || [];
+    revenueChart = new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: chartPoints.map(p => p.label),
+            datasets: [
+                { label: 'Revenue', data: chartPoints.map(p => p.revenue), borderColor: '#ebb700', tension: 0.4 },
+                { label: 'Expenses', data: chartPoints.map(p => p.expenses), borderColor: '#666', tension: 0.4, borderDash: [5, 5] }
+            ]
+        },
+        options: { plugins: { legend: { position: 'top' } } }
+    });
+}
+
+async function loadSalaries() {
+    const month = document.getElementById('finance-salaries-month').value;
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/finance/salaries?month=${month}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const salaries = await response.json();
+            renderSalariesTable(salaries);
+            
+            const total = salaries.reduce((acc, s) => acc + s.total, 0);
+            const paid = salaries.reduce((acc, s) => acc + s.payed, 0);
+            document.getElementById('salaries-total-payroll').textContent = total.toLocaleString();
+            document.getElementById('salaries-paid-amount').textContent = paid.toLocaleString();
+            document.getElementById('salaries-remaining-amount').textContent = (total - paid).toLocaleString();
+        }
+    } catch (error) {
+        console.error('Error loading salaries:', error);
+    }
+}
+
+function renderSalariesTable(salaries) {
+    const tbody = document.getElementById('salaries-tbody');
+    tbody.innerHTML = '';
+    salaries.forEach(s => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${s.employeeName}</td>
+            <td>${s.role}</td>
+            <td><span class='badge'>${s.employmentType || 'Full time'}</span></td>
+            <td>${s.salary.toLocaleString()}</td>
+            <td>${s.bonus.toLocaleString()}</td>
+            <td>${s.overtime.toLocaleString()}</td>
+            <td>${s.total.toLocaleString()}</td>
+            <td>${s.phone || '-'}</td>
+            <td>${s.payMethod || '-'}</td>
+            <td style='color: #4caf50; font-weight: 600;'>${s.payed.toLocaleString()}</td>
+            <td style='color: #f44336; font-weight: 600;'>${s.remaining.toLocaleString()}</td>
+            <td>
+                <button class='btn-save' style='padding: 5px 10px; background: #e3f2fd; color: #2196f3;'><i class='fas fa-link'></i></button>
+            </td>` ;
+        tbody.appendChild(row);
+    });
+}
+
+async function runPayroll() {
+    const month = document.getElementById('finance-salaries-month').value;
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/finance/salaries/run-payroll?month=${month}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            showToast('Payroll generated successfully', 'success');
+            loadSalaries();
+        } else {
+            const err = await response.json();
+            if (err.error === 'ALREADY_EXISTS') {
+                document.getElementById('payroll-exists-modal').style.display = 'flex';
+            } else {
+                showToast('Failed to run payroll', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error running payroll:', error);
+    }
+}
+
+async function loadExpenses() {
+    const month = document.getElementById('finance-expenses-month').value;
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/finance/expenses?month=${month}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const expenses = await response.json();
+            renderExpensesTable(expenses);
+            
+            const total = expenses.reduce((acc, e) => acc + e.amount, 0);
+            const paid = expenses.reduce((acc, e) => acc + e.payed, 0);
+            document.getElementById('expenses-total-amount').textContent = total.toLocaleString();
+            document.getElementById('expenses-paid-amount').textContent = paid.toLocaleString();
+            document.getElementById('expenses-remaining-amount').textContent = (total - paid).toLocaleString();
+        }
+    } catch (error) {
+        console.error('Error loading expenses:', error);
+    }
+}
+
+function renderExpensesTable(expenses) {
+    const tbody = document.getElementById('expenses-tbody');
+    tbody.innerHTML = '';
+    expenses.forEach(e => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${e.title}</td>
+            <td>${e.amount.toLocaleString()}</td>
+            <td style='color: #4caf50;'>${e.payed.toLocaleString()}</td>
+            <td style='color: #f44336;'>${e.remaining.toLocaleString()}</td>
+            <td>${e.payMethod}</td>
+            <td>${formatDate(e.date)}</td>
+            <td>${e.note || '-'}</td>
+            <td>
+                <button class='btn-save' style='padding: 5px 10px; background: #e3f2fd; color: #2196f3;'><i class='fas fa-edit'></i></button>
+            </td>`;
+        tbody.appendChild(row);
+    });
+}
+
+async function addExpense() {
+    const expense = {
+        title: document.getElementById('expense-title').value,
+        amount: parseFloat(document.getElementById('expense-amount').value),
+        paidAmount: parseFloat(document.getElementById('expense-paid').value),
+        paymentMethod: document.getElementById('expense-pay-method').value,
+        expenseDate: document.getElementById('expense-date').value,
+        note: document.getElementById('expense-note').value
+    };
+
+    try {
+        const response = await fetch('http://localhost:8080/api/v1/finance/expenses', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(expense)
+        });
+        if (response.ok) {
+            showToast('Expense added successfully', 'success');
+            document.getElementById('add-expense-modal').style.display = 'none';
+            loadExpenses();
+        }
+    } catch (error) {
+        console.error('Error adding expense:', error);
+    }
 }

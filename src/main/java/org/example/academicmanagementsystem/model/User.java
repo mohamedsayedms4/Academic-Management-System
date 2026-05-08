@@ -43,6 +43,8 @@ public class User extends BaseEntity {
 
     private Double commission; // Specific to sales-related roles
 
+    private String employmentType; // Full time, Freelance
+
     // Relations
     @OneToMany(mappedBy = "teleSales")
     private List<Lead> managedLeads;

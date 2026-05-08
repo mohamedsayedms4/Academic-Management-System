@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SalaryRepository extends JpaRepository<Salary, Long> {
+    java.util.List<Salary> findByMonth(String month);
+    void deleteByMonth(String month);
 }

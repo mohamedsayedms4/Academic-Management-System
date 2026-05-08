@@ -33,8 +33,14 @@ public class Salary extends BaseEntity {
     @Column(precision = 10, scale = 2)
     private BigDecimal deductions = BigDecimal.ZERO;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal overtime = BigDecimal.ZERO;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal netSalary;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal paidAmount = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
