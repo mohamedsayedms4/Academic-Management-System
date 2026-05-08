@@ -1102,6 +1102,102 @@
                 </form>
             </div>
 
+            <!-- 15. Leads List View -->
+            <div class="page-content" id="leads-list-view" style="display: none;">
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>All leads</h1>
+                        <p>Track all leads in one place.</p>
+                    </div>
+                </div>
+                
+                <!-- Leads Stats -->
+                <div class="stats-grid" style="grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #fff8e1; color: #ebb700;"><i class="fas fa-users"></i></div>
+                        <div class="stat-info">
+                            <h3>Total Leads</h3>
+                            <p id="stat-total-leads">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #e8f5e9; color: #4caf50;"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <h3>Opened</h3>
+                            <p id="stat-opened-leads">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #ffebee; color: #f44336;"><i class="fas fa-times-circle"></i></div>
+                        <div class="stat-info">
+                            <h3>Closed</h3>
+                            <p id="stat-closed-leads">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #e3f2fd; color: #2196f3;"><i class="fas fa-user-graduate"></i></div>
+                        <div class="stat-info">
+                            <h3>Enrolled</h3>
+                            <p id="stat-enrolled-leads">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #f3e5f5; color: #9c27b0;"><i class="fas fa-globe"></i></div>
+                        <div class="stat-info">
+                            <h3>Countries</h3>
+                            <p id="stat-countries-leads">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #eceff1; color: #607d8b;"><i class="fas fa-phone-slash"></i></div>
+                        <div class="stat-info">
+                            <h3>No Responses</h3>
+                            <p id="stat-no-responses-leads">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-controls">
+                    <div class="filters">
+                        <div class="control-item search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-leads" placeholder="Search...">
+                        </div>
+                        <div class="control-item select">
+                            <i class="fas fa-filter"></i>
+                            <select id="filter-leads-status">
+                                <option value="">Final status</option>
+                                <option value="OPEN">Open</option>
+                                <option value="INTERESTED">Interested</option>
+                                <option value="FOLLOW_UP">Follow Up</option>
+                                <option value="ENROLLED">Enrolled</option>
+                                <option value="REJECTED">Rejected</option>
+                                <option value="CLOSED">Closed</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Phone</th>
+                                <th>Diploma</th>
+                                <th>Date</th>
+                                <th>Source</th>
+                                <th>Assigned to</th>
+                                <th>Response 1</th>
+                                <th>Response 2</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leads-list-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- 12. Add New Invoice View -->
             <div class="page-content" id="add-invoice-view" style="display: none;">
                 <div class="breadcrumb">

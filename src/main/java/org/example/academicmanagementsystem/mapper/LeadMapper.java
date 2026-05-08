@@ -47,13 +47,19 @@ public interface LeadMapper {
     @Mapping(target = "updatedAt", ignore = true)
     Lead toLeadEntity(LeadRequest leadRequest);
 
-    // Map FollowUp to FollowUpInfo
+    // Map FollowUp to LeadResponse.FollowUpInfo
+    @Mapping(target = "sequence", source = "sequence")
+    @Mapping(target = "message", source = "message")
+    @Mapping(target = "employeeName", source = "employee.fullName")
+    LeadResponse.FollowUpInfo toLeadResponseFollowUpInfo(FollowUp followUp);
+
+    // Map list of FollowUp to list of LeadResponse.FollowUpInfo
+    List<LeadResponse.FollowUpInfo> toLeadResponseFollowUpInfoList(List<FollowUp> followUps);
+
+    // Map FollowUp to LeadDetailResponse.FollowUpInfo (if different)
     @Mapping(target = "id", source = "id")
     @Mapping(target = "sequence", source = "sequence")
     @Mapping(target = "message", source = "message")
     @Mapping(target = "createdAt", source = "createdAt")
     LeadDetailResponse.FollowUpInfo toFollowUpInfo(FollowUp followUp);
-
-    // Map list of FollowUp to list of FollowUpInfo
-    List<LeadDetailResponse.FollowUpInfo> toFollowUpInfoList(List<FollowUp> followUps);
 }

@@ -24,4 +24,8 @@ public class FollowUp extends BaseEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String message;
 
+    @ManyToOne
+    @JoinColumn(name = "employee_id")
+    private User employee;
+
 }

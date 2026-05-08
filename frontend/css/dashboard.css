@@ -1245,3 +1245,5 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+.response-cell { display: flex; flex-direction: column; gap: 4px; } .response-text { font-size: 0.9rem; color: #333; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .response-author { font-size: 0.75rem; color: #ebb700; font-weight: 600; }

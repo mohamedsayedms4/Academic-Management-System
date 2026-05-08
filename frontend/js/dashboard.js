@@ -135,11 +135,17 @@ document.addEventListener('DOMContentLoaded', () => {
         initAddEmployeeForm();
     });
 
-    if (document.getElementById('search-employees')) {
-        document.getElementById('search-employees').oninput = () => loadEmployees();
+    document.getElementById('nav-leads').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('leads-list-view');
+        loadLeads();
+    });
+
+    if (document.getElementById('search-leads')) {
+        document.getElementById('search-leads').oninput = () => loadLeads();
     }
-    if (document.getElementById('filter-employees-role')) {
-        document.getElementById('filter-employees-role').onchange = () => loadEmployees();
+    if (document.getElementById('filter-leads-status')) {
+        document.getElementById('filter-leads-status').onchange = () => loadLeads();
     }
 
     // Load Initial Data
@@ -165,6 +171,8 @@ function showView(viewId) {
         document.getElementById('nav-invoices').parentElement.classList.add('active');
     } else if (viewId === 'employees-list-view' || viewId === 'add-employee-view') {
         document.getElementById('nav-employees').parentElement.classList.add('active');
+    } else if (viewId === 'leads-list-view') {
+        document.getElementById('nav-leads').parentElement.classList.add('active');
     }
 }
 
@@ -2463,6 +2471,96 @@ async function deleteUser(id) {
     } catch (error) {
         console.error('Error deleting user:', error);
     }
+}
+
+// ===============================
+// Leads (Integrated)
+// ===============================
+
+async function loadLeads() {
+    const search = document.getElementById('search-leads').value;
+    const status = document.getElementById('filter-leads-status').value;
+    
+    let url = 'http://localhost:8080/api/v1/leads';
+    if (status) {
+        url = `http://localhost:8080/api/v1/leads/status/${status}`;
+    }
+    
+    try {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            let leads = data.content || [];
+            
+            if (search) {
+                leads = leads.filter(l => l.fullName.toLowerCase().includes(search.toLowerCase()) || l.phoneNumber.includes(search));
+            }
+            
+            renderLeadsTable(leads);
+            loadLeadStats();
+        }
+    } catch (error) {
+        console.error('Error loading leads:', error);
+    }
+}
+
+async function loadLeadStats() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v1/leads/statistics', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const stats = await response.json();
+            document.getElementById('stat-total-leads').textContent = stats.total || 0;
+            document.getElementById('stat-opened-leads').textContent = stats.pending || 0; // mapping pending to opened
+            document.getElementById('stat-closed-leads').textContent = stats.closed || 0;
+            document.getElementById('stat-enrolled-leads').textContent = stats.completed || 0; // mapping completed to enrolled
+            // Some stats might not be in the basic API, but we'll show what we have
+        }
+    } catch (error) {
+        console.error('Error loading lead stats:', error);
+    }
+}
+
+function renderLeadsTable(leads) {
+    const tbody = document.getElementById('leads-list-tbody');
+    tbody.innerHTML = '';
+    
+    leads.forEach(l => {
+        const row = document.createElement('tr');
+        
+        // Find Response 1 and Response 2 from followUps
+        const followUps = l.followUps || [];
+        const resp1 = followUps.find(f => f.sequence === 1);
+        const resp2 = followUps.find(f => f.sequence === 2);
+        
+        const resp1Html = resp1 ? `
+            <div class="response-cell">
+                <span class="response-text">${resp1.message}</span>
+                <span class="response-author">By: ${resp1.employeeName || 'Unknown'}</span>
+            </div>
+        ` : '-';
+
+        const resp2Html = resp2 ? `
+            <div class="response-cell">
+                <span class="response-text">${resp2.message}</span>
+                <span class="response-author">By: ${resp2.employeeName || 'Unknown'}</span>
+            </div>
+        ` : '-';
+
+        row.innerHTML = `
+            <td>${l.phoneNumber}</td>
+            <td>${l.diploma ? l.diploma.title : '-'}</td>
+            <td>${formatDate(l.createdAt)}</td>
+            <td>${l.source || '-'}</td>
+            <td>${l.teleSales ? l.teleSales.fullName : '-'}</td>
+            <td>${resp1Html}</td>
+            <td>${resp2Html}</td>
+        `;
+        tbody.appendChild(row);
+    });
 }
 
 function showToast(message, type = 'info') {

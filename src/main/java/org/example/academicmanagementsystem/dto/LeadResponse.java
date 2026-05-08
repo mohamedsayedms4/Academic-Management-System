@@ -24,6 +24,7 @@ public class LeadResponse {
     private TeleSalesInfo teleSales; // Nested info about assigned telesales
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private java.util.List<FollowUpInfo> followUps;
 
     @Data
     @NoArgsConstructor
@@ -33,5 +34,15 @@ public class LeadResponse {
         private Long id;
         private String username;
         private String fullName;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class FollowUpInfo {
+        private Integer sequence;
+        private String message;
+        private String employeeName;
     }
 }
