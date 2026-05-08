@@ -30,8 +30,12 @@
                         </ul>
                     </li>
                     <li><a href="#" id="nav-invoices"><i class="fas fa-file-invoice-dollar"></i> <span>Invoices</span></a></li>
-                    <li class="has-submenu">
-                        <a href="#" id="nav-sales"><i class="fas fa-chart-line"></i> <span>Sales</span> <i class="fas fa-chevron-right arrow"></i></a>
+                    <li class="has-submenu" id="nav-sales-parent">
+                        <a href="#"><i class="fas fa-headset"></i> <span>Sales</span> <i class="fas fa-chevron-down arrow"></i></a>
+                        <ul class="submenu" id="sales-submenu">
+                            <li><a href="#" id="nav-sales-list">Tele sales</a></li>
+                            <li><a href="#" id="nav-earnings">Earnings</a></li>
+                        </ul>
                     </li>
                     <li class="has-submenu">
                         <a href="#" id="nav-finance"><i class="fas fa-wallet"></i> <span>Finance</span> <i class="fas fa-chevron-right arrow"></i></a>
@@ -894,7 +898,7 @@
                             <span class="section-number">2</span>
                             <h3>Enrollment Details</h3>
                         </div>
-                        <div class="form-grid">
+                        <div class="form-grid" id="enrollment-selectors">
                             <div class="form-group">
                                 <label>Target Round*</label>
                                 <select id="input-student-round" required>
@@ -907,6 +911,11 @@
                                     <option value="" disabled selected>Select Diploma</option>
                                 </select>
                             </div>
+                        </div>
+                        <div id="enrollment-summary-readonly" style="display: none; padding: 15px; background: #e3f2fd; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3;">
+                            <p style="margin: 0; font-weight: 600; color: #1976d2;">Enrollment for: <span id="readonly-enrollment-text"></span></p>
+                        </div>
+                        <div class="form-grid">
                             <div class="form-group">
                                 <label>Deposit amount*</label>
                                 <input type="number" id="input-student-deposit" placeholder="Enter deposit (e.g 500)" required>
@@ -982,6 +991,166 @@
                     </table>
                 </div>
                 <div class="pagination" id="invoices-pagination"></div>
+            </div>
+
+            <!-- 13. Sales List View -->
+            <div class="page-content" id="sales-list-view" style="display: none;">
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Sales</h1>
+                        <p>View and manage all Sales and their details.</p>
+                    </div>
+                </div>
+                <div class="content-controls">
+                    <div class="filters">
+                        <div class="control-item search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-sales" placeholder="Search...">
+                        </div>
+                        <div class="control-item select">
+                            <i class="fas fa-user-tag"></i>
+                            <select id="filter-sales-role">
+                                <option value="">Role</option>
+                                <option value="Tele sales">Tele sales</option>
+                                <option value="Moderator">Moderator</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                    </div>
+                    <button class="btn-save" id="btn-open-add-sales" style="background-color: #ebb700;"><i class="fas fa-plus"></i> Add New Sales</button>
+                </div>
+                <div class="table-container">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>User name</th>
+                                <th>Password</th>
+                                <th>Role</th>
+                                <th>Join Date</th>
+                                <th>Commission (%)</th>
+                                <th>Salary</th>
+                                <th>Pay method</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-list-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 14. Earnings List View -->
+            <div class="page-content" id="earnings-list-view" style="display: none;">
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Earnings</h1>
+                        <p>View and manage all tele sales earnings and their details.</p>
+                    </div>
+                </div>
+                <div class="content-controls">
+                    <div class="filters">
+                        <div class="control-item search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-earnings" placeholder="Search...">
+                        </div>
+                        <div class="control-item select">
+                            <i class="fas fa-sync"></i>
+                            <select id="filter-earnings-status">
+                                <option value="">Status</option>
+                                <option value="PAID">Paid</option>
+                                <option value="PENDING">Pending</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Total clients</th>
+                                <th>Commission amount</th>
+                                <th>Status</th>
+                                <th>Payment date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="earnings-list-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 15. Add/Edit Sales View -->
+            <div class="page-content" id="add-sales-view" style="display: none;">
+                <div class="breadcrumb">
+                    <span>Sales</span> <i class="fas fa-chevron-right"></i> <span class="active" id="sales-form-breadcrumb">Add new tele sales</span>
+                </div>
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1 id="sales-form-title">Add new tele sales</h1>
+                    </div>
+                </div>
+                <form id="form-add-sales" class="modern-form">
+                    <input type="hidden" id="sales-edit-id">
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number" style="background-color: #ebb700;"><i class="fas fa-info-circle"></i></span>
+                            <h3>Sales info</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Name*</label>
+                                <input type="text" id="input-sales-name" placeholder="Enter Sales name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone*</label>
+                                <input type="text" id="input-sales-phone" placeholder="Enter phone number" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Role*</label>
+                                <select id="input-sales-role" required>
+                                    <option value="" disabled selected>Select role</option>
+                                    <option value="Tele sales">Tele sales</option>
+                                    <option value="Moderator">Moderator</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Commission (%)*</label>
+                                <input type="number" id="input-sales-commission" placeholder="Enter Sales commission (e.g. 20%)" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Salary*</label>
+                                <input type="number" id="input-sales-salary" placeholder="Enter salary" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Method*</label>
+                                <select id="input-sales-pay-method" required>
+                                    <option value="" disabled selected>Select payment method</option>
+                                    <option value="InstaPay">InstaPay</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                    <option value="Vodafone Cash">Vodafone Cash</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Username*</label>
+                                <input type="text" id="input-sales-username" placeholder="Enter username" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Password*</label>
+                                <input type="text" id="input-sales-password" placeholder="Enter password" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 15px;">
+                        <button type="submit" class="btn-save" style="background-color: #ebb700; width: 200px;">Save</button>
+                        <button type="button" class="btn-cancel" id="btn-cancel-sales" style="background-color: #fff; color: #333; border: 1px solid #ddd; width: 200px;">Cancel</button>
+                    </div>
+                </form>
             </div>
 
             <!-- 12. Add New Invoice View -->

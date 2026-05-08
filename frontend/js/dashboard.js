@@ -134,6 +134,53 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('search-invoices').oninput = () => loadInvoices();
     }
 
+    // Sales Submenu
+    const navSalesParent = document.getElementById('nav-sales-parent');
+    const salesSubmenu = document.getElementById('sales-submenu');
+    if (navSalesParent) {
+        navSalesParent.addEventListener('click', (e) => {
+            e.preventDefault();
+            salesSubmenu.classList.toggle('show');
+            const arrow = navSalesParent.querySelector('.arrow');
+            if (arrow) {
+                arrow.classList.toggle('fa-chevron-down');
+                arrow.classList.toggle('fa-chevron-right');
+            }
+        });
+    }
+
+    document.getElementById('nav-sales-list').addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        showView('sales-list-view');
+        loadSales();
+    });
+
+    document.getElementById('nav-earnings').addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        showView('earnings-list-view');
+        loadEarnings();
+    });
+
+    document.getElementById('btn-open-add-sales').addEventListener('click', () => {
+        showView('add-sales-view');
+        initAddSalesForm();
+    });
+
+    if (document.getElementById('search-sales')) {
+        document.getElementById('search-sales').oninput = () => loadSales();
+    }
+    if (document.getElementById('filter-sales-role')) {
+        document.getElementById('filter-sales-role').onchange = () => loadSales();
+    }
+    if (document.getElementById('search-earnings')) {
+        document.getElementById('search-earnings').oninput = () => loadEarnings();
+    }
+    if (document.getElementById('filter-earnings-status')) {
+        document.getElementById('filter-earnings-status').onchange = () => loadEarnings();
+    }
+
     // Load Initial Data
     loadRounds();
     loadDiplomas();
@@ -155,6 +202,8 @@ function showView(viewId) {
         document.getElementById('nav-rounds').parentElement.classList.add('active');
     } else if (viewId === 'invoices-list-view' || viewId === 'add-invoice-view') {
         document.getElementById('nav-invoices').parentElement.classList.add('active');
+    } else if (viewId === 'sales-list-view' || viewId === 'add-sales-view' || viewId === 'earnings-list-view') {
+        document.getElementById('nav-sales-parent').classList.add('active');
     }
 }
 
@@ -1105,14 +1154,54 @@ function renderFutureEnrollmentsTable(students) {
     });
 }
 
-async function initAddStudentForm() {
+async function initAddStudentForm(preRoundId = null, preDiplomaId = null) {
     const form = document.getElementById('form-add-student');
     form.reset();
     
-    document.getElementById('btn-cancel-student').onclick = () => showView('future-enrollments-view');
+    // Reset visibility and required status
+    document.getElementById('enrollment-selectors').style.display = 'grid';
+    document.getElementById('enrollment-summary-readonly').style.display = 'none';
+    document.getElementById('input-student-round').required = true;
+    document.getElementById('input-student-diploma').required = true;
+
+    document.getElementById('btn-cancel-student').onclick = () => {
+        if (preRoundId) {
+            showView('diploma-details-view');
+        } else {
+            showView('future-enrollments-view');
+        }
+    };
 
     // Load Rounds, Diplomas, and Sales
     await loadOptionsForStudentForm();
+
+    if (preRoundId) {
+        // Hide selectors (remove required so browser doesn't complain about hidden focus)
+        document.getElementById('enrollment-selectors').style.display = 'none';
+        document.getElementById('input-student-round').required = false;
+        document.getElementById('input-student-diploma').required = false;
+
+        const summaryBox = document.getElementById('enrollment-summary-readonly');
+        summaryBox.style.display = 'block';
+        
+        const roundSelect = document.getElementById('input-student-round');
+        roundSelect.value = preRoundId;
+        
+        // Ensure onchange is awaited if it's a promise
+        if (roundSelect.onchange) {
+            await roundSelect.onchange();
+        }
+        
+        if (preDiplomaId) {
+            const diplomaSelect = document.getElementById('input-student-diploma');
+            diplomaSelect.value = preDiplomaId;
+            
+            // Set readonly text with safety checks
+            const roundText = roundSelect.selectedIndex >= 0 ? roundSelect.options[roundSelect.selectedIndex].text : 'Unknown Round';
+            const diplomaText = diplomaSelect.selectedIndex >= 0 ? diplomaSelect.options[diplomaSelect.selectedIndex].text : 'Unknown Diploma';
+            document.getElementById('readonly-enrollment-text').textContent = `${roundText} - ${diplomaText}`;
+        }
+    }
 
     form.onsubmit = async (e) => {
         e.preventDefault();
@@ -1140,12 +1229,20 @@ async function initAddStudentForm() {
             });
 
             if (response.ok) {
-                alert('Student enrolled successfully!');
-                showView('future-enrollments-view');
-                loadFutureEnrollments();
+                showToast('Student enrolled successfully', 'success');
+                if (preRoundId) {
+                    showView('diploma-details-view');
+                    loadDiplomaStudentsV2(currentDetailsRoundDiplomaId);
+                } else {
+                    showView('future-enrollments-view');
+                    loadFutureEnrollments();
+                }
+            } else {
+                showToast('Failed to enroll student', 'error');
             }
         } catch (error) {
             console.error('Error enrolling student:', error);
+            showToast('Error connecting to server', 'error');
         }
     };
 }
@@ -1927,6 +2024,12 @@ async function viewDiplomaDetailsV2(id) {
 
             // Postpone Target Round Lookup
             loadPostponeRounds();
+
+            // Fix Add Student button
+            document.getElementById('btn-add-student-to-diploma').onclick = () => {
+                showView('add-student-view');
+                initAddStudentForm(d.roundId, d.diplomaId);
+            };
         }
     } catch (error) {
         console.error('Error loading diploma details:', error);
@@ -2233,30 +2336,262 @@ function renderTasksTable(tasks) {
 }
 
 async function createTaskData(roundDiplomaId) {
-    const payload = {
-        title: document.getElementById('task-title-input').value,
-        description: document.getElementById('task-desc-input').value,
-        deadline: document.getElementById('task-deadline-input').value,
-        roundDiploma: { id: roundDiplomaId }
-    };
+    // ... existing content ...
+}
 
+// ===============================
+// Sales & Earnings (V2)
+// ===============================
+
+async function loadSales() {
+    const search = document.getElementById('search-sales').value;
+    const role = document.getElementById('filter-sales-role').value;
+    
+    let url = 'http://localhost:8080/api/v2/sales';
+    // Filters can be implemented on backend if needed, for now just fetch all
+    
     try {
-        const response = await fetch('http://localhost:8080/api/v2/tasks', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify(payload)
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-
         if (response.ok) {
-            showToast('Task created successfully', 'success');
-            document.getElementById('add-task-modal').style.display = 'none';
-            document.getElementById('form-add-student-task').reset();
-            loadTasksData(roundDiplomaId);
+            let sales = await response.json();
+            
+            // Local filtering for demonstration if backend doesn't support it yet
+            if (search) {
+                sales = sales.filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || s.phone.includes(search));
+            }
+            if (role) {
+                sales = sales.filter(s => s.role === role);
+            }
+            
+            renderSalesTable(sales);
         }
     } catch (error) {
-        console.error('Error creating task:', error);
+        console.error('Error loading sales:', error);
     }
+}
+
+function renderSalesTable(sales) {
+    const tbody = document.getElementById('sales-list-tbody');
+    tbody.innerHTML = '';
+    
+    sales.forEach(s => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${s.name}</td>
+            <td>${s.phone}</td>
+            <td>${s.username}</td>
+            <td>${s.password}</td>
+            <td>${s.role}</td>
+            <td>${formatDate(s.joinDate)}</td>
+            <td>${s.commission}%</td>
+            <td>${s.salary}</td>
+            <td>${s.paymentMethod}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="editSales(${s.id})"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteSales(${s.id})"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function initAddSalesForm() {
+    const form = document.getElementById('form-add-sales');
+    form.reset();
+    document.getElementById('sales-edit-id').value = '';
+    document.getElementById('sales-form-title').textContent = 'Add new tele sales';
+    document.getElementById('sales-form-breadcrumb').textContent = 'Add new tele sales';
+    
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const id = document.getElementById('sales-edit-id').value;
+        const payload = {
+            name: document.getElementById('input-sales-name').value,
+            phone: document.getElementById('input-sales-phone').value,
+            role: document.getElementById('input-sales-role').value,
+            commission: document.getElementById('input-sales-commission').value,
+            salary: document.getElementById('input-sales-salary').value,
+            paymentMethod: document.getElementById('input-sales-pay-method').value,
+            username: document.getElementById('input-sales-username').value,
+            password: document.getElementById('input-sales-password').value
+        };
+        
+        try {
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `http://localhost:8080/api/v2/sales/${id}` : 'http://localhost:8080/api/v2/sales';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (response.ok) {
+                showToast(id ? 'Sales updated successfully' : 'Sales added successfully', 'success');
+                showView('sales-list-view');
+                loadSales();
+            } else {
+                const err = await response.json();
+                showToast(err.message || 'Error saving sales', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving sales:', error);
+            showToast('An error occurred', 'error');
+        }
+    };
+    
+    document.getElementById('btn-cancel-sales').onclick = () => showView('sales-list-view');
+}
+
+async function editSales(id) {
+    try {
+        const response = await fetch('http://localhost:8080/api/v2/sales', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const sales = await response.json();
+        const sale = sales.find(s => s.id === id);
+        
+        if (sale) {
+            showView('add-sales-view');
+            initAddSalesForm();
+            
+            document.getElementById('sales-edit-id').value = sale.id;
+            document.getElementById('sales-form-title').textContent = 'Edit Sales Person';
+            document.getElementById('sales-form-breadcrumb').textContent = 'Edit sales';
+            
+            document.getElementById('input-sales-name').value = sale.name;
+            document.getElementById('input-sales-phone').value = sale.phone;
+            document.getElementById('input-sales-role').value = sale.role;
+            document.getElementById('input-sales-commission').value = sale.commission;
+            document.getElementById('input-sales-salary').value = sale.salary;
+            document.getElementById('input-sales-pay-method').value = sale.paymentMethod;
+            document.getElementById('input-sales-username').value = sale.username;
+            document.getElementById('input-sales-password').value = sale.password;
+        }
+    } catch (error) {
+        console.error('Error fetching sale details:', error);
+    }
+}
+
+async function deleteSales(id) {
+    if (!confirm('Are you sure you want to delete this sales person?')) return;
+    
+    try {
+        const response = await fetch(`http://localhost:8080/api/v2/sales/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (response.ok) {
+            showToast('Sales person deleted', 'success');
+            loadSales();
+        }
+    } catch (error) {
+        console.error('Error deleting sale:', error);
+    }
+}
+
+async function loadEarnings() {
+    const search = document.getElementById('search-earnings').value;
+    const status = document.getElementById('filter-earnings-status').value;
+    
+    try {
+        const response = await fetch('http://localhost:8080/api/v2/earnings', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            let earnings = await response.json();
+            
+            if (search) {
+                earnings = earnings.filter(e => e.salesName.toLowerCase().includes(search.toLowerCase()));
+            }
+            if (status) {
+                earnings = earnings.filter(e => e.status === status);
+            }
+            
+            renderEarningsTable(earnings);
+        }
+    } catch (error) {
+        console.error('Error loading earnings:', error);
+    }
+}
+
+function renderEarningsTable(earnings) {
+    const tbody = document.getElementById('earnings-list-tbody');
+    tbody.innerHTML = '';
+    
+    earnings.forEach(e => {
+        const row = document.createElement('tr');
+        const statusClass = e.status === 'PAID' ? 'paid' : 'pending';
+        const actionText = e.status === 'PAID' ? 'Revert to Pending' : 'Mark as Paid';
+        const actionFn = e.status === 'PAID' ? `revertEarnings(${e.id})` : `payEarnings(${e.id})`;
+        
+        row.innerHTML = `
+            <td>${e.salesName}</td>
+            <td>${e.totalClients}</td>
+            <td>${e.commissionAmount}</td>
+            <td><span class="status-badge ${statusClass}">${e.status}</span></td>
+            <td>${e.paymentDate ? formatDate(e.paymentDate) : '-'}</td>
+            <td>
+                <button class="btn-link" onclick="${actionFn}">${actionText}</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function payEarnings(id) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v2/earnings/${id}/pay`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            showToast('Earnings marked as paid', 'success');
+            loadEarnings();
+        }
+    } catch (error) {
+        console.error('Error paying earnings:', error);
+    }
+}
+
+async function revertEarnings(id) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v2/earnings/${id}/revert`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            showToast('Earnings reverted to pending', 'success');
+            loadEarnings();
+        }
+    } catch (error) {
+        console.error('Error reverting earnings:', error);
+    }
+}
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i>
+        <span>${message}</span>
+    `;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
 }
