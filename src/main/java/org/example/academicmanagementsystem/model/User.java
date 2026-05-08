@@ -37,6 +37,12 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Boolean active = true;
 
+    private Double baseSalary;
+
+    private String paymentMethod;
+
+    private Double commission; // Specific to sales-related roles
+
     // Relations
     @OneToMany(mappedBy = "teleSales")
     private List<Lead> managedLeads;

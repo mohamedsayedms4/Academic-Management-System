@@ -71,6 +71,9 @@ public class AuthService {
         user.setFullName(registerRequest.getFullName());
         user.setPhone(registerRequest.getPhone());
         user.setRole(registerRequest.getRole());
+        user.setBaseSalary(registerRequest.getBaseSalary());
+        user.setPaymentMethod(registerRequest.getPaymentMethod());
+        user.setCommission(registerRequest.getCommission());
         user.setActive(true);
 
         User savedUser = userRepository.save(user);

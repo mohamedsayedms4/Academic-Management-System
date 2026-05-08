@@ -16,4 +16,8 @@ public class UserResponse {
     private String fullName;
     private UserRole role;
     private Boolean active;
+    private String phone;
+    private Double baseSalary;
+    private String paymentMethod;
+    private Double commission;
 }

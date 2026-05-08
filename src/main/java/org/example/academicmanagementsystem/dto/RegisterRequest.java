@@ -15,4 +15,7 @@ public class RegisterRequest {
     private String fullName;
     private String phone;
     private UserRole role;
+    private Double baseSalary;
+    private String paymentMethod;
+    private Double commission;
 }

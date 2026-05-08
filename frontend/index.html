@@ -30,13 +30,7 @@
                         </ul>
                     </li>
                     <li><a href="#" id="nav-invoices"><i class="fas fa-file-invoice-dollar"></i> <span>Invoices</span></a></li>
-                    <li class="has-submenu" id="nav-sales-parent">
-                        <a href="#"><i class="fas fa-headset"></i> <span>Sales</span> <i class="fas fa-chevron-down arrow"></i></a>
-                        <ul class="submenu" id="sales-submenu">
-                            <li><a href="#" id="nav-sales-list">Tele sales</a></li>
-                            <li><a href="#" id="nav-earnings">Earnings</a></li>
-                        </ul>
-                    </li>
+                    <li><a href="#" id="nav-sales"><i class="fas fa-chart-line"></i> <span>Sales</span></a></li>
                     <li class="has-submenu">
                         <a href="#" id="nav-finance"><i class="fas fa-wallet"></i> <span>Finance</span> <i class="fas fa-chevron-right arrow"></i></a>
                     </li>
@@ -993,31 +987,34 @@
                 <div class="pagination" id="invoices-pagination"></div>
             </div>
 
-            <!-- 13. Sales List View -->
-            <div class="page-content" id="sales-list-view" style="display: none;">
+            <!-- 13. Employees List View -->
+            <div class="page-content" id="employees-list-view" style="display: none;">
                 <div class="content-header">
                     <div class="header-titles">
-                        <h1>Sales</h1>
-                        <p>View and manage all Sales and their details.</p>
+                        <h1>Employees</h1>
+                        <p>View and manage all employees and their details.</p>
                     </div>
                 </div>
                 <div class="content-controls">
                     <div class="filters">
                         <div class="control-item search">
                             <i class="fas fa-search"></i>
-                            <input type="text" id="search-sales" placeholder="Search...">
+                            <input type="text" id="search-employees" placeholder="Search...">
                         </div>
                         <div class="control-item select">
                             <i class="fas fa-user-tag"></i>
-                            <select id="filter-sales-role">
+                            <select id="filter-employees-role">
                                 <option value="">Role</option>
-                                <option value="Tele sales">Tele sales</option>
-                                <option value="Moderator">Moderator</option>
+                                <option value="ADMIN">Admin</option>
+                                <option value="MODERATOR">Moderator</option>
+                                <option value="TELESALES">Tele sales</option>
+                                <option value="ACCOUNTANT">Accountant</option>
+                                <option value="EMPLOYEE">Employee</option>
                             </select>
                             <i class="fas fa-chevron-down chevron"></i>
                         </div>
                     </div>
-                    <button class="btn-save" id="btn-open-add-sales" style="background-color: #ebb700;"><i class="fas fa-plus"></i> Add New Sales</button>
+                    <button class="btn-save" id="btn-open-add-employee" style="background-color: #ebb700;"><i class="fas fa-plus"></i> Add New Employee</button>
                 </div>
                 <div class="table-container">
                     <table class="modern-table">
@@ -1025,110 +1022,51 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Phone</th>
-                                <th>User name</th>
-                                <th>Password</th>
                                 <th>Role</th>
-                                <th>Join Date</th>
-                                <th>Commission (%)</th>
                                 <th>Salary</th>
                                 <th>Pay method</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="sales-list-tbody">
+                        <tbody id="employees-list-tbody">
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- 14. Earnings List View -->
-            <div class="page-content" id="earnings-list-view" style="display: none;">
-                <div class="content-header">
-                    <div class="header-titles">
-                        <h1>Earnings</h1>
-                        <p>View and manage all tele sales earnings and their details.</p>
-                    </div>
-                </div>
-                <div class="content-controls">
-                    <div class="filters">
-                        <div class="control-item search">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="search-earnings" placeholder="Search...">
-                        </div>
-                        <div class="control-item select">
-                            <i class="fas fa-sync"></i>
-                            <select id="filter-earnings-status">
-                                <option value="">Status</option>
-                                <option value="PAID">Paid</option>
-                                <option value="PENDING">Pending</option>
-                            </select>
-                            <i class="fas fa-chevron-down chevron"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table class="modern-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Total clients</th>
-                                <th>Commission amount</th>
-                                <th>Status</th>
-                                <th>Payment date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="earnings-list-tbody">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- 15. Add/Edit Sales View -->
-            <div class="page-content" id="add-sales-view" style="display: none;">
+            <!-- 14. Add/Edit Employee View -->
+            <div class="page-content" id="add-employee-view" style="display: none;">
                 <div class="breadcrumb">
-                    <span>Sales</span> <i class="fas fa-chevron-right"></i> <span class="active" id="sales-form-breadcrumb">Add new tele sales</span>
+                    <span>Employees</span> <i class="fas fa-chevron-right"></i> <span class="active" id="employee-form-breadcrumb">Add new employee</span>
                 </div>
                 <div class="content-header">
                     <div class="header-titles">
-                        <h1 id="sales-form-title">Add new tele sales</h1>
+                        <h1 id="employee-form-title">Add New employee</h1>
                     </div>
                 </div>
-                <form id="form-add-sales" class="modern-form">
-                    <input type="hidden" id="sales-edit-id">
+                <form id="form-add-employee" class="modern-form">
+                    <input type="hidden" id="employee-edit-id">
                     <div class="form-section">
                         <div class="section-header">
                             <span class="section-number" style="background-color: #ebb700;"><i class="fas fa-info-circle"></i></span>
-                            <h3>Sales info</h3>
+                            <h3>Employee Information</h3>
                         </div>
                         <div class="form-grid">
                             <div class="form-group">
-                                <label>Name*</label>
-                                <input type="text" id="input-sales-name" placeholder="Enter Sales name" required>
+                                <label>Employee name*</label>
+                                <input type="text" id="input-employee-name" placeholder="Enter employee name" required>
                             </div>
                             <div class="form-group">
-                                <label>Phone*</label>
-                                <input type="text" id="input-sales-phone" placeholder="Enter phone number" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Role*</label>
-                                <select id="input-sales-role" required>
-                                    <option value="" disabled selected>Select role</option>
-                                    <option value="Tele sales">Tele sales</option>
-                                    <option value="Moderator">Moderator</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Commission (%)*</label>
-                                <input type="number" id="input-sales-commission" placeholder="Enter Sales commission (e.g. 20%)" required>
+                                <label>Phone number*</label>
+                                <input type="text" id="input-employee-phone" placeholder="Enter employee phone number" required>
                             </div>
                             <div class="form-group">
                                 <label>Salary*</label>
-                                <input type="number" id="input-sales-salary" placeholder="Enter salary" required>
+                                <input type="number" id="input-employee-salary" placeholder="Enter salary" required>
                             </div>
                             <div class="form-group">
                                 <label>Payment Method*</label>
-                                <select id="input-sales-pay-method" required>
+                                <select id="input-employee-pay-method" required>
                                     <option value="" disabled selected>Select payment method</option>
                                     <option value="InstaPay">InstaPay</option>
                                     <option value="Cash">Cash</option>
@@ -1136,19 +1074,30 @@
                                     <option value="Vodafone Cash">Vodafone Cash</option>
                                 </select>
                             </div>
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label>Role*</label>
+                                <select id="input-employee-role" required>
+                                    <option value="" disabled selected>Select role</option>
+                                    <option value="ADMIN">Admin</option>
+                                    <option value="MODERATOR">Moderator</option>
+                                    <option value="TELESALES">Tele sales</option>
+                                    <option value="ACCOUNTANT">Accountant</option>
+                                    <option value="EMPLOYEE">Employee</option>
+                                </select>
+                            </div>
                             <div class="form-group">
                                 <label>Username*</label>
-                                <input type="text" id="input-sales-username" placeholder="Enter username" required>
+                                <input type="text" id="input-employee-username" placeholder="Enter username" required>
                             </div>
                             <div class="form-group">
                                 <label>Password*</label>
-                                <input type="text" id="input-sales-password" placeholder="Enter password" required>
+                                <input type="password" id="input-employee-password" placeholder="Enter password" required>
                             </div>
                         </div>
                     </div>
                     <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 15px;">
                         <button type="submit" class="btn-save" style="background-color: #ebb700; width: 200px;">Save</button>
-                        <button type="button" class="btn-cancel" id="btn-cancel-sales" style="background-color: #fff; color: #333; border: 1px solid #ddd; width: 200px;">Cancel</button>
+                        <button type="button" class="btn-cancel" id="btn-cancel-employee" style="background-color: #fff; color: #333; border: 1px solid #ddd; width: 200px;">Cancel</button>
                     </div>
                 </form>
             </div>
