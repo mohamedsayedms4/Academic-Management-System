@@ -15,7 +15,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Configuration
 @RequiredArgsConstructor
@@ -37,6 +39,8 @@ public class DataSeeder {
     private final DiplomaV2Repository diplomaV2Repository;
     private final RoundV2Repository roundV2Repository;
     private final InstructorV2Repository instructorV2Repository;
+    private final ExpenseRepository expenseRepository;
+    private final PayrollRecordRepository payrollRecordRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Bean
@@ -46,56 +50,42 @@ public class DataSeeder {
             seedV2Data();
 
             // Check if data already exists
-            if (userRepository.count() > 0) {
-                log.info("Database already contains data. Skipping seeding.");
-                return;
+            // 1. Seed Users (Idempotent)
+            List<User> users = seedUsers();
+            System.out.println(">>> Users synchronized: " + users.size());
+
+            // 2. Seed Salaries (If empty)
+            if (salaryRepository.count() == 0) {
+                List<Salary> salaries = seedSalaries(users);
+                System.out.println(">>> Seeded " + salaries.size() + " salaries");
+                
+                // 3. Seed PayrollRecords based on seeded salaries
+                seedPayrollRecordsFromSalaries(salaries);
+                System.out.println(">>> Seeded Payroll Records");
             }
 
-            log.info("Starting database seeding...");
+            // 4. Seed Expenses (If empty)
+            if (expenseRepository.count() == 0) {
+                seedExpenses();
+                System.out.println(">>> Seeded Expenses");
+            }
 
-            // Seed Users
-            List<User> users = seedUsers();
-            log.info("Seeded {} users", users.size());
+            // Check if alaa design data exists for rounds/diplomas (V2)
+            if (diplomaV2Repository.count() == 0) {
+                seedV2Data();
+                System.out.println(">>> Seeded V2 Design Data");
+            }
 
-            // Seed Diplomas
-            List<Diploma> diplomas = seedDiplomas();
-            log.info("Seeded {} diplomas", diplomas.size());
-
-            // Seed Leads
-            List<Lead> leads = seedLeads(users, diplomas);
-            log.info("Seeded {} leads", leads.size());
-
-            // Seed FollowUps
-            List<FollowUp> followUps = seedFollowUps(leads);
-            log.info("Seeded {} follow-ups", followUps.size());
-
-            // Seed Rounds and their Diplomas
-            List<Round> rounds = seedRounds(diplomas, users);
-            log.info("Seeded {} rounds", rounds.size());
-
-            // Seed Students
-            List<Student> students = seedStudents(rounds);
-            log.info("Seeded {} students", students.size());
-
-            // Seed Payments
-            List<Payment> payments = seedPayments(students, users);
-            log.info("Seeded {} payments", payments.size());
-
-            // Seed Tasks
-            List<Task> tasks = seedTasks(users);
-            log.info("Seeded {} tasks", tasks.size());
-
-            // Seed Complaints
-            List<Complaint> complaints = seedComplaints(students, users);
-            log.info("Seeded {} complaints", complaints.size());
-
-            // Seed Salaries
-            List<Salary> salaries = seedSalaries(users);
-            log.info("Seeded {} salaries", salaries.size());
-
-            // Seed Attendance
-            List<Attendance> attendances = seedAttendance(users);
-            log.info("Seeded {} attendance records", attendances.size());
+            // 5. Seed Diplomas/Rounds V1 (If empty)
+            if (diplomaRepository.count() == 0) {
+                List<Diploma> diplomas = seedDiplomas();
+                List<Round> rounds = seedRounds(diplomas, users);
+                List<Student> students = seedStudents(rounds);
+                seedPayments(students, users);
+                seedTasks(users);
+                seedComplaints(students, users);
+                System.out.println(">>> Seeded V1 Base Data (Diplomas, Rounds, Students)");
+            }
 
             log.info("Database seeding completed successfully!");
         };
@@ -104,52 +94,48 @@ public class DataSeeder {
     private List<User> seedUsers() {
         List<User> users = new ArrayList<>();
 
-        // Admin User
-        User admin = createUser("admin", "admin@academic.com", "admin123", "أحمد محمود", UserRole.ADMIN);
-        users.add(userRepository.save(admin));
+        // Helper to save only if not exists
+        autoSaveUser(users, "admin", "admin@academic.com", "admin123", "أحمد محمود", UserRole.ADMIN, 5000.0, "Full time", "Cash");
+        autoSaveUser(users, "moderator", "moderator@academic.com", "moderator123", "سارة علي", UserRole.MODERATOR, 5000.0, "Full time", "Cash");
+        autoSaveUser(users, "telesales1", "telesales1@academic.com", "telesales123", "محمد أحمد", UserRole.TELESALES, 5000.0, "Full time", "Cash");
+        autoSaveUser(users, "accountant", "accountant@academic.com", "accountant123", "نور الدين", UserRole.ACCOUNTANT, 5000.0, "Full time", "Cash");
+        
+        // Design users
+        autoSaveUser(users, "alaa", "alaa@academic.com", "alaa123", "Alaa Ehab", UserRole.MODERATOR, 11000.0, "Full time", "Insta");
+        autoSaveUser(users, "ahmed_ali", "ahmed@academic.com", "ahmed123", "Ahmed Ali", UserRole.EMPLOYEE, 12000.0, "Full time", "Cash");
+        autoSaveUser(users, "designer1", "designer1@academic.com", "pass123", "Alaa Ehab", UserRole.EMPLOYEE, 11000.0, "freelance", "Insta");
+        autoSaveUser(users, "lorem", "lorem@academic.com", "pass123", "Alaa Ehab", UserRole.EMPLOYEE, 11000.0, "freelance", "Insta");
 
-        // Moderator User
-        User moderator = createUser("moderator", "moderator@academic.com", "moderator123", "سارة علي",
-                UserRole.MODERATOR);
-        users.add(userRepository.save(moderator));
-
-        // TeleSales Users
-        User telesales1 = createUser("telesales1", "telesales1@academic.com", "telesales123", "محمد أحمد",
-                UserRole.TELESALES);
-        users.add(userRepository.save(telesales1));
-
-        User telesales2 = createUser("telesales2", "telesales2@academic.com", "telesales123", "فاطمة حسن",
-                UserRole.TELESALES);
-        users.add(userRepository.save(telesales2));
-
-        User telesales3 = createUser("telesales3", "telesales3@academic.com", "telesales123", "عمر خالد",
-                UserRole.TELESALES);
-        users.add(userRepository.save(telesales3));
-
-        // Accountant User
-        User accountant = createUser("accountant", "accountant@academic.com", "accountant123", "نور الدين",
-                UserRole.ACCOUNTANT);
-        users.add(userRepository.save(accountant));
-
-        // Employee Members (Instructors/Staff)
-        User employee1 = createUser("employee1", "employee1@academic.com", "employee123", "ليلى يوسف",
-                UserRole.EMPLOYEE);
-        users.add(userRepository.save(employee1));
-
-        User employee2 = createUser("employee2", "employee2@academic.com", "employee123", "كريم عادل",
-                UserRole.EMPLOYEE);
-        users.add(userRepository.save(employee2));
-
+        // Ensure we return all users from DB if list is empty (for subsequent seeding)
+        if (users.isEmpty()) {
+            return userRepository.findAll();
+        }
         return users;
     }
 
+    private void autoSaveUser(List<User> users, String username, String email, String pass, String name, UserRole role, Double sal, String type, String method) {
+        userRepository.findByUsername(username).ifPresentOrElse(
+            users::add,
+            () -> users.add(userRepository.save(createUser(username, email, pass, name, role, sal, type, method)))
+        );
+    }
+
     private User createUser(String username, String email, String password, String fullName, UserRole role) {
+        return createUser(username, email, password, fullName, role, 5000.0, "Full time", "Cash");
+    }
+
+    private User createUser(String username, String email, String password, String fullName, UserRole role, 
+                          Double baseSalary, String empType, String payMethod) {
         User user = new User();
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         user.setFullName(fullName);
         user.setRole(role);
+        user.setBaseSalary(baseSalary);
+        user.setEmploymentType(empType);
+        user.setPaymentMethod(payMethod);
+        user.setPhone("0125478541");
         return user;
     }
 
@@ -330,9 +316,18 @@ public class DataSeeder {
         User accountant = users.stream().filter(u -> u.getRole() == UserRole.ACCOUNTANT).findFirst()
                 .orElse(users.get(0));
 
-        // Ahmed Hassan paid 1st installment
-        payments.add(createPayment(students.get(0), new BigDecimal("4000.00"), LocalDateTime.of(2025, 1, 15, 10, 0),
-                PaymentType.INSTALLMENT, PaymentMethod.CASH, "RCP-001", "First Installment", 1, accountant));
+        // Distribution of payments over last 5 months
+        LocalDateTime now = LocalDateTime.now();
+        for (int i = 0; i < 5; i++) {
+            LocalDateTime month = now.minusMonths(i);
+            payments.add(createPayment(students.get(0), new BigDecimal(4000 + (i * 500)), month.withDayOfMonth(10),
+                    PaymentType.INSTALLMENT, PaymentMethod.CASH, "RCP-10"+i, "Installment " + (5-i), 1, accountant));
+            
+            if (students.size() > 1) {
+                payments.add(createPayment(students.get(1), new BigDecimal(16000), month.minusDays(5),
+                        PaymentType.FULL, PaymentMethod.BANK_TRANSFER, "RCP-20"+i, "Full payment", null, accountant));
+            }
+        }
 
         return paymentRepository.saveAll(payments);
     }
@@ -406,23 +401,84 @@ public class DataSeeder {
         List<Salary> salaries = new ArrayList<>();
         User accountant = users.stream().filter(u -> u.getRole() == UserRole.ACCOUNTANT).findFirst()
                 .orElse(users.get(0));
-        User employee1 = users.get(6);
 
-        salaries.add(createSalary(employee1, "2026-01", new BigDecimal("8000.00"), BigDecimal.ZERO, BigDecimal.ZERO,
-                new BigDecimal("8000.00"), SalaryStatus.PAID, accountant));
+        // Seed salaries for last 4 months (including current)
+        LocalDate today = LocalDate.now();
+        for (int i = 0; i < 4; i++) {
+            String monthLabel = today.minusMonths(i).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
+            
+            for (User u : users) {
+                if (u.getBaseSalary() != null) {
+                    BigDecimal base = BigDecimal.valueOf(u.getBaseSalary());
+                    BigDecimal bonus = new BigDecimal(500 + (Math.random() * 1000)).setScale(0, java.math.RoundingMode.HALF_UP);
+                    BigDecimal overtime = new BigDecimal(200 + (Math.random() * 800)).setScale(0, java.math.RoundingMode.HALF_UP);
+                    BigDecimal total = base.add(bonus).add(overtime);
+                    
+                    // For current month, maybe some are pending
+                    SalaryStatus status = (i == 0 && Math.random() > 0.5) ? SalaryStatus.PENDING : SalaryStatus.PAID;
+                    BigDecimal paidAmount = status == SalaryStatus.PAID ? total : BigDecimal.ZERO;
+                    
+                    salaries.add(createSalary(u, monthLabel, base, bonus, BigDecimal.ZERO, overtime, total, paidAmount, status, accountant));
+                }
+            }
+        }
         
         return salaryRepository.saveAll(salaries);
     }
 
+    private void seedPayrollRecordsFromSalaries(List<Salary> salaries) {
+        Map<String, List<Salary>> byMonth = salaries.stream().collect(Collectors.groupingBy(Salary::getMonth));
+        
+        byMonth.forEach((month, monthSalaries) -> {
+            if (payrollRecordRepository.findByMonth(month).isEmpty()) {
+                BigDecimal total = monthSalaries.stream().map(Salary::getNetSalary).reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal paid = monthSalaries.stream().map(Salary::getPaidAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                
+                PayrollRecord record = new PayrollRecord();
+                record.setMonth(month);
+                record.setTotalPayroll(total);
+                record.setPaidAmount(paid);
+                payrollRecordRepository.save(record);
+            }
+        });
+    }
+
+    private void seedExpenses() {
+        if (expenseRepository.count() > 0) return;
+        List<Expense> expenses = new ArrayList<>();
+        LocalDate now = LocalDate.now();
+
+        for (int i = 0; i < 6; i++) {
+            LocalDate month = now.minusMonths(i);
+            expenses.add(createExpense("Rent - Building A", new BigDecimal("25000"), month.withDayOfMonth(1), PaymentMethod.BANK_TRANSFER.name()));
+            expenses.add(createExpense("Electricity Bill", new BigDecimal(1200 + (Math.random() * 500)), month.withDayOfMonth(15), PaymentMethod.CASH.name()));
+            expenses.add(createExpense("Internet Fiber", new BigDecimal("850"), month.withDayOfMonth(5), PaymentMethod.CASH.name()));
+            expenses.add(createExpense("Marketing - Facebook Ads", new BigDecimal(5000 + (Math.random() * 2000)), month.withDayOfMonth(20), PaymentMethod.CARD.name()));
+        }
+        expenseRepository.saveAll(expenses);
+    }
+
+    private Expense createExpense(String title, BigDecimal amount, LocalDate date, String method) {
+        Expense e = new Expense();
+        e.setTitle(title);
+        e.setAmount(amount);
+        e.setExpenseDate(date);
+        e.setPaidAmount(amount);
+        e.setPaymentMethod(method);
+        return e;
+    }
+
     private Salary createSalary(User employee, String month, BigDecimal base, BigDecimal bonus, BigDecimal deduction,
-                                BigDecimal net, SalaryStatus status, User processedBy) {
+                                BigDecimal overtime, BigDecimal total, BigDecimal paidAmount, SalaryStatus status, User processedBy) {
         Salary salary = new Salary();
         salary.setEmployee(employee);
         salary.setMonth(month);
         salary.setBaseSalary(base);
         salary.setBonuses(bonus);
         salary.setDeductions(deduction);
-        salary.setNetSalary(net);
+        salary.setOvertime(overtime);
+        salary.setNetSalary(total);
+        salary.setPaidAmount(paidAmount);
         salary.setStatus(status);
         salary.setProcessedBy(processedBy);
         return salary;

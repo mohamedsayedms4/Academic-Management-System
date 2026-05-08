@@ -14,8 +14,9 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface LeadMapper {
 
-    // Map Lead entity to LeadResponse (without follow-ups)
+    // Map Lead entity to LeadResponse
     @Mapping(target = "teleSales", source = "teleSales")
+    @Mapping(target = "followUps", source = "followUps")
     LeadResponse toLeadResponse(Lead lead);
 
     // Map Lead entity to LeadDetailResponse (with follow-ups)

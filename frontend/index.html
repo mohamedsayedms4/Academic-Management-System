@@ -55,9 +55,14 @@
         <main class="main-content">
             <!-- Header -->
             <header class="top-header">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search...">
+                <div class="header-left">
+                    <button id="mobile-menu-toggle" class="mobile-menu-btn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search...">
+                    </div>
                 </div>
                 
                 <div class="header-actions">
@@ -1204,84 +1209,113 @@
                     </table>
                 </div>
             </div>
-            </div>
-
-            <!-- 16. Finance Overview View -->
-            <div class="page-content" id="finance-overview-view" style="display: none;">
-                <div class="content-header">
+            
+            <!-- 15. Finance Overview View -->
+            <div class="page-content" id="finance-overview-view" style="display: none; background-color: #f8f9fa; padding: 30px;">
+                <div class="content-header" style="margin-bottom: 30px;">
                     <div class="header-titles">
-                        <h1>Overview</h1>
-                    </div>
-                    <div class="header-controls">
-                        <select id="finance-overview-month" class="month-selector">
-                            <option value="2026-04">April 2026</option>
-                            <option value="2026-05">May 2026</option>
-                        </select>
+                        <h1 style="font-size: 1.5rem; font-weight: 700; color: #333;">Overview</h1>
                     </div>
                 </div>
-                
-                <div class="stats-grid finance-stats">
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #fff8e1; color: #ebb700;"><i class="fas fa-dollar-sign"></i></div>
-                        <div class="stat-info">
-                            <h3>Total Revenue</h3>
-                            <p id="finance-total-revenue">0</p>
-                            <small>Total expected this month</small>
+
+                <div class="overview-month-filter" style="margin-bottom: 25px;">
+                    <label style="display: block; font-size: 0.85rem; color: #666; margin-bottom: 8px; font-weight: 600;">Month</label>
+                    <select id="finance-overview-month" class="month-selector" style="width: 250px; background: #fff; border: 1px solid #ddd; padding: 10px 15px; border-radius: 8px; font-weight: 600;">
+                        <option value="2026-04">April 2026</option>
+                        <option value="2026-05">May 2026</option>
+                    </select>
+                </div>
+
+                <div class="finance-stats-row" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
+                    <!-- Total Revenue -->
+                    <div class="f-stat-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                        <div style="background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-dollar-sign" style="color: #ebb700; font-size: 20px;"></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.8rem; color: #888; font-weight: 600;">Total Revenue</span>
+                            <strong id="finance-total-revenue" style="display: block; font-size: 1.5rem; color: #000; margin: 4px 0;">0</strong>
+                            <small style="color: #bbb; font-size: 0.75rem;">Total expected this month</small>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #e8f5e9; color: #4caf50;"><i class="fas fa-hand-holding-usd"></i></div>
-                        <div class="stat-info">
-                            <h3>Collected</h3>
-                            <p id="finance-collected-revenue">0</p>
-                            <small>Received so far</small>
+                    <!-- Collected -->
+                    <div class="f-stat-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                        <div style="background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-coins" style="color: #ebb700; font-size: 20px;"></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.8rem; color: #888; font-weight: 600;">Collected</span>
+                            <strong id="finance-collected-revenue" style="display: block; font-size: 1.5rem; color: #000; margin: 4px 0;">0</strong>
+                            <small style="color: #bbb; font-size: 0.75rem;">Received so far</small>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #eceff1; color: #607d8b;"><i class="fas fa-hourglass-half"></i></div>
-                        <div class="stat-info">
-                            <h3>Pending</h3>
-                            <p id="finance-pending-revenue">0</p>
-                            <small>Left to collect</small>
+                    <!-- Pending -->
+                    <div class="f-stat-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                        <div style="background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-hourglass-half" style="color: #ebb700; font-size: 20px;"></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.8rem; color: #888; font-weight: 600;">Pending</span>
+                            <strong id="finance-pending-revenue" style="display: block; font-size: 1.5rem; color: #000; margin: 4px 0;">0</strong>
+                            <small style="color: #bbb; font-size: 0.75rem;">Left to collect</small>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #e3f2fd; color: #2196f3;"><i class="fas fa-chart-line"></i></div>
-                        <div class="stat-info">
-                            <h3>Net profit</h3>
-                            <p id="finance-net-profit">0</p>
-                            <small>After all expenses</small>
+                    <!-- Net Profit -->
+                    <div class="f-stat-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                        <div style="background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-chart-pie" style="color: #ebb700; font-size: 20px;"></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.8rem; color: #888; font-weight: 600;">Net profit</span>
+                            <strong id="finance-net-profit" style="display: block; font-size: 1.5rem; color: #000; margin: 4px 0;">0</strong>
+                            <small style="color: #bbb; font-size: 0.75rem;">After all expenses</small>
                         </div>
                     </div>
                 </div>
 
-                <div class="finance-charts-grid">
-                    <div class="chart-container-card">
-                        <h3>Financial Breakdown</h3>
-                        <div class="chart-wrapper">
-                            <canvas id="financial-breakdown-chart"></canvas>
+                <div class="f-charts-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px;">
+                    <!-- Financial Breakdown -->
+                    <div style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid #eee;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #333; margin-bottom: 25px;">Financial Breakdown</h3>
+                        <div style="display: flex; align-items: center; gap: 40px;">
+                            <div style="width: 240px; height: 240px; position: relative; flex-shrink: 0;">
+                                <canvas id="financial-breakdown-chart"></canvas>
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                    <span style="font-size: 0.8rem; color: #888; display: block; font-weight: 600;">Total</span>
+                                    <strong id="breakdown-total-val" style="font-size: 1.2rem; color: #000; font-weight: 700;">0</strong>
+                                </div>
+                            </div>
+                            <div id="breakdown-legend" style="flex: 1; display: flex; flex-direction: column; gap: 12px;"></div>
                         </div>
-                        <div id="breakdown-legend" class="chart-legend"></div>
+                        <p style="text-align: center; color: #bbb; font-size: 0.8rem; margin-top: 25px; font-weight: 600;">Based on actual data on April 2026</p>
                     </div>
-                    <div class="chart-container-card">
-                        <h3>Revenue vs Expenses</h3>
-                        <div class="chart-wrapper">
+
+                    <!-- Revenue vs Expenses -->
+                    <div style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid #eee;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                            <h3 style="font-size: 1.1rem; font-weight: 700; color: #333; margin: 0;">Revenue vs Expenses</h3>
+                            <div style="display: flex; gap: 20px; font-size: 0.8rem; color: #666; font-weight: 600;">
+                                <span><i class="fas fa-circle" style="color: #ebb700; font-size: 8px; margin-right: 5px;"></i> Revenue</span>
+                                <span><i class="fas fa-circle" style="color: #666; font-size: 8px; margin-right: 5px;"></i> Expenses</span>
+                            </div>
+                        </div>
+                        <div style="height: 250px;">
                             <canvas id="revenue-expenses-chart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <div class="table-container" style="margin-top: 30px;">
-                    <h3>Top Revenue Diploma</h3>
-                    <table class="modern-table">
+                <div style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid #eee;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: #333; margin-bottom: 20px;">Top Revenue Diploma</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
                         <thead>
-                            <tr>
-                                <th>Diploma</th>
-                                <th>Revenue</th>
-                                <th>Percentage</th>
+                            <tr style="border-bottom: 1px solid #f0f0f0;">
+                                <th style="padding: 15px 10px; text-align: left; font-size: 0.85rem; color: #333; font-weight: 700;">Diploma</th>
+                                <th style="padding: 15px 10px; text-align: left; font-size: 0.85rem; color: #333; font-weight: 700;">Revenue</th>
+                                <th style="padding: 15px 10px; text-align: right; font-size: 0.85rem; color: #333; font-weight: 700;">Percentage</th>
                             </tr>
                         </thead>
-                        <tbody id="top-diplomas-tbody">
+                        <tbody id="top-revenue-tbody">
                         </tbody>
                     </table>
                 </div>
@@ -1308,7 +1342,7 @@
 
                 <div class="stats-grid finance-stats" style="grid-template-columns: repeat(3, 1fr);">
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: #fff8e1; color: #ebb700;"><i class="fas fa-money-bill-wave"></i></div>
+                        <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
                         <div class="stat-info">
                             <h3>Total Payroll</h3>
                             <p id="salaries-total-payroll">0</p>
@@ -1316,7 +1350,7 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: #e8f5e9; color: #4caf50;"><i class="fas fa-check-double"></i></div>
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
                         <div class="stat-info">
                             <h3>Payed</h3>
                             <p id="salaries-paid-amount">0</p>
@@ -1324,7 +1358,7 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: #eceff1; color: #607d8b;"><i class="fas fa-wallet"></i></div>
+                        <div class="stat-icon"><i class="fas fa-wallet"></i></div>
                         <div class="stat-info">
                             <h3>Remaining</h3>
                             <p id="salaries-remaining-amount">0</p>
@@ -1351,7 +1385,7 @@
                     </div>
                     <div class="actions">
                         <button class="btn-save" id="btn-add-freelancer" style="background: #fff; color: #333; border: 1px solid #ddd;"><i class="fas fa-plus"></i> Add Freelancer</button>
-                        <button class="btn-save" id="btn-run-payroll" style="background: #ebb700;"><i class="fas fa-coins"></i> Run Payroll</button>
+                        <button class="btn-save" id="btn-run-payroll" style="background: #ebb700; color: #000; font-weight: 700;"><i class="fas fa-dollar-sign"></i> Run Payroll</button>
                     </div>
                 </div>
 
@@ -1381,6 +1415,16 @@
                 <div class="info-note" style="margin-top: 20px; color: #666; font-size: 0.85rem;">
                     <i class="fas fa-info-circle"></i> Overtime for moderators and tele sales is imported from their submitted working hours.
                 </div>
+
+                <div class="pagination" id="salaries-pagination" style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 5px;">
+                    <button class="page-btn"><i class="fas fa-chevron-left"></i></button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn">2</button>
+                    <button class="page-btn">3</button>
+                    <span>...</span>
+                    <button class="page-btn">8</button>
+                    <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
             </div>
 
             <!-- 18. Finance Expenses View -->
@@ -1404,7 +1448,7 @@
 
                 <div class="stats-grid finance-stats" style="grid-template-columns: repeat(3, 1fr);">
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: #fff8e1; color: #ebb700;"><i class="fas fa-receipt"></i></div>
+                        <div class="stat-icon"><i class="fas fa-receipt"></i></div>
                         <div class="stat-info">
                             <h3>Total Expenses</h3>
                             <p id="expenses-total-amount">0</p>
@@ -1412,7 +1456,7 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: #e8f5e9; color: #4caf50;"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
                         <div class="stat-info">
                             <h3>Paid</h3>
                             <p id="expenses-paid-amount">0</p>
@@ -1420,7 +1464,7 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: #eceff1; color: #607d8b;"><i class="fas fa-exclamation-circle"></i></div>
+                        <div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div>
                         <div class="stat-info">
                             <h3>Remaining</h3>
                             <p id="expenses-remaining-amount">0</p>
@@ -1454,6 +1498,136 @@
                             </tr>
                         </thead>
                         <tbody id="expenses-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 19. Add New Expense View (Full Page) -->
+            <div class="page-content" id="add-expense-view" style="display: none;">
+                <div class="breadcrumb">
+                    <span>Finance</span> <i class="fas fa-chevron-right"></i> <span>Add New Expenses</span>
+                </div>
+                <div class="content-header" style="margin-bottom: 30px;">
+                    <h1>Add New expenses</h1>
+                </div>
+
+                <div class="form-container-card" style="background: #fff; padding: 30px; border-radius: 16px; border: 1px solid #eee;">
+                    <div class="form-section-title" style="display: flex; align-items: center; gap: 10px; margin-bottom: 25px;">
+                        <i class="fas fa-square" style="color: #ebb700; font-size: 1.2rem;"></i>
+                        <h3 style="font-size: 1.1rem; font-weight: 600;">Expenses Information</h3>
+                    </div>
+                    <form id="form-add-expense-page" class="modern-form">
+                        <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem;">Title *</label>
+                                <input type="text" id="expense-page-title" placeholder="Enter expenses title" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem;">Amount *</label>
+                                <input type="number" id="expense-page-amount" placeholder="Enter expenses amount" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem;">Payment Method *</label>
+                                <select id="expense-page-pay-method" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                                    <option value="">Select payment method</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Insta">Insta</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem;">Date *</label>
+                                <input type="date" id="expense-page-date" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem;">Note (Optional)</label>
+                            <input type="text" id="expense-page-note" placeholder="Enter your note..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                        </div>
+                        <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 40px;">
+                            <button type="submit" class="btn-save" style="background: #ebb700; color: #000; padding: 12px 40px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">Save</button>
+                            <button type="button" class="btn-cancel" onclick="showView('finance-expenses-view')" style="background: #fff; border: 1px solid #ddd; padding: 12px 40px; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 20. Finance Revenue View -->
+            <div class="page-content" id="finance-revenue-view" style="display: none;">
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Revenue</h1>
+                        <p>Manage all your Revenue.</p>
+                    </div>
+                </div>
+
+                <div class="content-header-row" style="margin-bottom: 24px;">
+                    <div class="header-controls">
+                        <label>Month</label>
+                        <select id="finance-revenue-month" class="month-selector">
+                            <option value="2026-04">April 2026</option>
+                            <option value="2026-05">May 2026</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="stats-grid finance-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                        <div class="stat-info">
+                            <h3>Total</h3>
+                            <p id="revenue-total-amount">0</p>
+                            <small>Total expected</small>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <h3>Collected</h3>
+                            <p id="revenue-collected-amount">0</p>
+                            <small id="revenue-collected-percentage">0% of total expected</small>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-hourglass-start"></i></div>
+                        <div class="stat-info">
+                            <h3>Pending</h3>
+                            <p id="revenue-pending-amount">0</p>
+                            <small id="revenue-pending-percentage">0% of total expected</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="filters" style="display: flex; gap: 15px;">
+                        <div class="control-item search" style="position: relative;">
+                            <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999;"></i>
+                            <input type="text" id="search-revenue" placeholder="Search by diploma..." style="padding: 10px 10px 10px 40px; border: 1px solid #ddd; border-radius: 8px; width: 300px;">
+                        </div>
+                        <div class="control-item select" style="position: relative;">
+                            <i class="fas fa-filter" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999;"></i>
+                            <select id="filter-revenue-status" style="padding: 10px 30px 10px 40px; border: 1px solid #ddd; border-radius: 8px; appearance: none;">
+                                <option value="">Payment status</option>
+                                <option value="PAID">Paid</option>
+                                <option value="PENDING">Pending</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: #999; pointer-events: none;"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container" style="background: #fff; border-radius: 16px; border: 1px solid #eee; overflow: hidden;">
+                    <table class="modern-table">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 15px; text-align: left; font-weight: 600; color: #333;">Total</th>
+                                <th style="padding: 15px; text-align: left; font-weight: 600; color: #333;">Diploma</th>
+                                <th style="padding: 15px; text-align: left; font-weight: 600; color: #333;">Payed</th>
+                                <th style="padding: 15px; text-align: left; font-weight: 600; color: #333;">Remaining</th>
+                            </tr>
+                        </thead>
+                        <tbody id="revenue-tbody">
                         </tbody>
                     </table>
                 </div>
@@ -1596,19 +1770,19 @@
             <form id="form-add-freelancer" class="modern-form">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Name *</label>
+                        <label>Name <span style="color: #dc3545;">*</span></label>
                         <input type="text" id="freelancer-name" placeholder="Enter freelancer name" required>
                     </div>
                     <div class="form-group">
-                        <label>Phone *</label>
+                        <label>Phone <span style="color: #dc3545;">*</span></label>
                         <input type="text" id="freelancer-phone" placeholder="Enter phone number" required>
                     </div>
                     <div class="form-group">
-                        <label>Salary *</label>
+                        <label>Salary <span style="color: #dc3545;">*</span></label>
                         <input type="number" id="freelancer-salary" placeholder="Enter salary" required>
                     </div>
                     <div class="form-group">
-                        <label>Payment Method *</label>
+                        <label>Payment Method <span style="color: #dc3545;">*</span></label>
                         <select id="freelancer-pay-method" required>
                             <option value="">Select payment method</option>
                             <option value="Cash">Cash</option>
@@ -1618,12 +1792,12 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Role *</label>
+                    <label>Role <span style="color: #dc3545;">*</span></label>
                     <input type="text" id="freelancer-role" placeholder="Enter role" required>
                 </div>
                 <div class="modal-actions">
-                    <button type="submit" class="btn-save" style="background: #ebb700;"><i class="fas fa-plus"></i> Add Freelancer</button>
-                    <button type="button" class="btn-cancel" onclick="document.getElementById('add-freelancer-modal').style.display='none'">Cancel</button>
+                    <button type="submit" class="btn-save-design"><i class="fas fa-plus"></i> Add Freelancer</button>
+                    <button type="button" class="btn-cancel-design" onclick="document.getElementById('add-freelancer-modal').style.display='none'">Cancel</button>
                 </div>
             </form>
         </div>
@@ -1631,15 +1805,15 @@
 
     <!-- Finance: Payroll Already Exists Modal -->
     <div id="payroll-exists-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content delete-modal">
-            <div class="modal-icon" style="color: #dc3545; background: #ffebee;">
+        <div class="modal-content">
+            <div class="modal-icon-design" style="color: #dc3545;">
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
-            <h2>Payroll already exists</h2>
+            <h2 style="text-align: center;">Payroll already exists</h2>
             <p>Salaries for this month have already been generated.</p>
-            <div class="modal-actions" style="flex-direction: column; gap: 10px;">
-                <button id="btn-view-payroll" class="btn-save" style="background: #ebb700; width: 100%;">View payroll</button>
-                <button id="btn-regenerate-payroll" class="btn-cancel" style="width: 100%;">Regenerate</button>
+            <div class="modal-actions" style="flex-direction: column; gap: 10px; max-width: 300px; margin: 30px auto 0 auto;">
+                <button id="btn-view-payroll" class="btn-save-design" style="width: 100%;">View payroll</button>
+                <button id="btn-regenerate-payroll" class="btn-cancel-design" style="width: 100%;">Regenerate</button>
             </div>
         </div>
     </div>

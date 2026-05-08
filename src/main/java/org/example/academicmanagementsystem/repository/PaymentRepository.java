@@ -35,4 +35,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Query("SELECT p FROM Payment p WHERE p.student = :student ORDER BY p.paymentDate DESC")
     List<Payment> findRecentPaymentsByStudent(@Param("student") Student student, Pageable pageable);
+
+    @Query("SELECT p.student.roundDiploma.diploma.name, SUM(p.amount) FROM Payment p " +
+           "WHERE p.paymentDate BETWEEN :start AND :end " +
+           "GROUP BY p.student.roundDiploma.diploma.name")
+    List<Object[]> getRevenueByDiplomaInRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("SELECT p.student.roundDiploma.diploma.name, SUM(p.amount) FROM Payment p " +
+           "GROUP BY p.student.roundDiploma.diploma.name")
+    List<Object[]> getAllTimeRevenueByDiploma();
 }
