@@ -9,7 +9,9 @@ import org.example.academicmanagementsystem.model.User;
 import org.example.academicmanagementsystem.model.UserRole;
 import org.example.academicmanagementsystem.repository.UserRepository;
 import org.example.academicmanagementsystem.security.JwtTokenProvider;
+import org.example.academicmanagementsystem.security.UserDetailsImpl;
 import org.example.academicmanagementsystem.util.TestDataBuilder;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -45,13 +47,43 @@ class AuthServiceTest {
     private JwtTokenProvider tokenProvider;
 
     @Mock
-    private UserMapper userMapper;
-
-    @Mock
     private Authentication authentication;
 
-    @InjectMocks
+    private final UserMapper userMapper = new UserMapper() {
+        @Override
+        public UserResponse toUserResponse(User user) {
+            if (user == null) return null;
+            return UserResponse.builder()
+                    .id(user.getId())
+                    .username(user.getUsername())
+                    .fullName(user.getFullName())
+                    .role(user.getRole())
+                    .active(user.getActive())
+                    .build();
+        }
+
+        @Override
+        public User toUser(RegisterRequest registerRequest) {
+            if (registerRequest == null) return null;
+            User user = new User();
+            user.setUsername(registerRequest.getUsername());
+            user.setEmail(registerRequest.getEmail());
+            user.setFullName(registerRequest.getFullName());
+            user.setPhone(registerRequest.getPhone());
+            user.setRole(registerRequest.getRole());
+            user.setBaseSalary(registerRequest.getBaseSalary());
+            user.setPaymentMethod(registerRequest.getPaymentMethod());
+            user.setCommission(registerRequest.getCommission());
+            return user;
+        }
+    };
+
     private AuthService authService;
+
+    @BeforeEach
+    void setUp() {
+        authService = new AuthService(authenticationManager, userRepository, passwordEncoder, tokenProvider, userMapper);
+    }
 
     @Test
     void shouldLoginSuccessfully() {
@@ -116,7 +148,6 @@ class AuthServiceTest {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encoded_password");
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
-        when(userMapper.toUserResponse(any(User.class))).thenReturn(expectedResponse);
 
         // When
         UserResponse response = authService.register(registerRequest);
@@ -179,7 +210,6 @@ class AuthServiceTest {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(userMapper.toUserResponse(any(User.class))).thenReturn(new UserResponse());
 
         // When
         authService.register(registerRequest);

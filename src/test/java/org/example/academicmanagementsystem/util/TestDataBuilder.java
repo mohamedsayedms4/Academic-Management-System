@@ -15,7 +15,6 @@ public class TestDataBuilder {
 
     public static User createTestUser(String username, UserRole role) {
         User user = new User();
-        user.setId(1L);
         user.setUsername(username);
         user.setEmail(username + "@test.com");
         user.setPassword(passwordEncoder.encode("password123"));

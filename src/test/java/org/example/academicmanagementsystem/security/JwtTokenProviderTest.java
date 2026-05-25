@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class JwtTokenProviderTest {
@@ -37,8 +37,8 @@ class JwtTokenProviderTest {
 
     @BeforeEach
     void setUp() {
-        when(jwtConfig.getSecret()).thenReturn(testSecret);
-        when(jwtConfig.getExpiration()).thenReturn(testExpiration);
+        lenient().when(jwtConfig.getSecret()).thenReturn(testSecret);
+        lenient().when(jwtConfig.getExpiration()).thenReturn(testExpiration);
     }
 
     @Test
