@@ -2398,7 +2398,7 @@ function renderDiplomaStudentsV2(students) {
     });
 }
 
-async function handleInlineAccountChange(id, password, itStatus) {
+async function handleInlineAccountChange(id, password, itStatus, status) {
     try {
         const student = window.currentDiplomaStudentsV2.find(s => s.id === id);
         if (!student) return;
@@ -2406,6 +2406,7 @@ async function handleInlineAccountChange(id, password, itStatus) {
         const body = {};
         if (password !== null) body.password = password;
         if (itStatus !== null) body.itStatus = itStatus;
+        if (status !== null && status !== undefined) body.status = status;
 
         const response = await fetch(`http://localhost:8080/api/v2/students/${id}/account-info`, {
             method: 'PUT',
@@ -2417,9 +2418,15 @@ async function handleInlineAccountChange(id, password, itStatus) {
         });
 
         if (response.ok) {
-            showToast('Account info updated', 'success');
+            showToast('Student info updated', 'success');
             if (password !== null) student.password = password;
             if (itStatus !== null) student.itStatus = itStatus;
+            if (status !== null && status !== undefined) student.status = status;
+            
+            // If status changed, refresh table to show correct badges
+            if (status !== null && status !== undefined) {
+                renderDiplomaStudentsV2(window.currentDiplomaStudentsV2);
+            }
         } else {
             showToast('Failed to update account info', 'error');
             // Revert UI by re-rendering
@@ -2445,9 +2452,8 @@ function handleInlineStatusChange(selectElement, id, name, oldStatus) {
     } else if (newStatus === 'POSTPONED') {
         postponeStudent(id, name);
     } else if (newStatus === 'ACTIVE' || newStatus === 'FUTURE_ENROLLMENT') {
-        // Just call restore endpoint for Active or we might need another endpoint for FUTURE_ENROLLMENT
-        // Wait, there's no endpoint for FUTURE_ENROLLMENT explicitly, but if restoreEnrollment sets it to ACTIVE, we'll use that.
-        restoreStudent(id);
+        // Change status directly using the new endpoint
+        handleInlineAccountChange(id, null, null, newStatus);
     }
 }
 

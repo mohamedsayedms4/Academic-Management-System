@@ -71,6 +71,7 @@ public class StudentV2Controller {
     public ResponseEntity<StudentResponseV2> updateAccountInfo(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         String password = body.containsKey("password") ? (String) body.get("password") : null;
         Boolean itStatus = body.containsKey("itStatus") ? (Boolean) body.get("itStatus") : null;
-        return ResponseEntity.ok(studentService.updateAccountInfo(id, password, itStatus));
+        StudentStatus status = body.containsKey("status") ? StudentStatus.valueOf((String) body.get("status")) : null;
+        return ResponseEntity.ok(studentService.updateAccountInfo(id, password, itStatus, status));
     }
 }

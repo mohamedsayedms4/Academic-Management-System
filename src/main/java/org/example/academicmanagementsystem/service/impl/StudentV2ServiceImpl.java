@@ -121,11 +121,12 @@ public class StudentV2ServiceImpl implements StudentV2Service {
 
     @Override
     @Transactional
-    public StudentResponseV2 updateAccountInfo(Long id, String password, Boolean itStatus) {
+    public StudentResponseV2 updateAccountInfo(Long id, String password, Boolean itStatus, StudentStatus status) {
         StudentV2 student = studentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
-        student.setPassword(password);
-        student.setItStatus(itStatus != null ? itStatus : false);
+        if (password != null) student.setPassword(password);
+        if (itStatus != null) student.setItStatus(itStatus);
+        if (status != null) student.setStatus(status);
         return mapToResponse(studentRepository.save(student));
     }
 

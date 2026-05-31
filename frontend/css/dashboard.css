@@ -1076,8 +1076,7 @@ li.has-submenu#nav-finance-parent.active > a {
 
 .inline-edit-select {
     border: 1px solid transparent;
-    background: transparent;
-    padding: 2px 8px;
+    padding: 4px 10px;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
@@ -1085,6 +1084,8 @@ li.has-submenu#nav-finance-parent.active > a {
     appearance: none;
     -webkit-appearance: none;
     transition: all 0.2s;
+    text-align: center;
+    text-align-last: center;
 }
 
 .inline-edit-select:hover, .inline-edit-select:focus {
