@@ -48,6 +48,7 @@ public class AttendanceV2ServiceImpl implements AttendanceV2Service {
                 attendance.setDate(request.getDate());
             }
             attendance.setStatus(record.getStatus());
+            attendance.setTaskSubmitted(record.getTaskSubmitted() != null ? record.getTaskSubmitted() : false);
             attendance.setNotes(record.getNotes());
             attendanceRepository.save(attendance);
         }
@@ -65,6 +66,23 @@ public class AttendanceV2ServiceImpl implements AttendanceV2Service {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<org.example.academicmanagementsystem.dto.SessionSummaryResponse> getSessionsSummary(Long roundDiplomaId) {
+        RoundDiplomaV2 rd = roundDiplomaRepository.findById(roundDiplomaId)
+                .orElseThrow(() -> new RuntimeException("RoundDiploma not found"));
+                
+        // We need the total students count for this roundDiploma to set in the summary
+        long totalStudents = studentRepository.countByRoundAndDiplomaAndStatusNot(rd.getRound(), rd.getDiploma(), org.example.academicmanagementsystem.model.StudentStatus.CANCELLED);
+        
+        List<org.example.academicmanagementsystem.dto.SessionSummaryResponse> summaries = attendanceRepository.getSessionsSummary(roundDiplomaId);
+        for (org.example.academicmanagementsystem.dto.SessionSummaryResponse summary : summaries) {
+            summary.setTotalStudentsCount(totalStudents);
+            summary.setDayOfWeek(summary.getSessionDate().getDayOfWeek().toString());
+        }
+        return summaries;
+    }
+
     private AttendanceV2Response mapToResponse(StudentAttendanceV2 a) {
         return AttendanceV2Response.builder()
                 .id(a.getId())
@@ -73,6 +91,8 @@ public class AttendanceV2ServiceImpl implements AttendanceV2Service {
                 .roundDiplomaId(a.getRoundDiploma().getId())
                 .date(a.getDate())
                 .status(a.getStatus())
+                .taskSubmitted(a.getTaskSubmitted())
+                .studentPhone(a.getStudent().getPhone())
                 .notes(a.getNotes())
                 .build();
     }

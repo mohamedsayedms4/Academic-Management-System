@@ -15,5 +15,7 @@ public class AttendanceV2Response {
     private Long roundDiplomaId;
     private LocalDate date;
     private AttendanceStatus status;
+    private Boolean taskSubmitted;
+    private String studentPhone;
     private String notes;
 }

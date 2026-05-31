@@ -31,5 +31,8 @@ public class StudentAttendanceV2 extends BaseEntity {
     @Column(nullable = false)
     private AttendanceStatus status = AttendanceStatus.PRESENT;
 
+    @Column(nullable = false)
+    private Boolean taskSubmitted = false;
+
     private String notes;
 }

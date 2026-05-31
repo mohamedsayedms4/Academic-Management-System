@@ -9,4 +9,5 @@ import java.util.List;
 public interface AttendanceV2Service {
     void saveBulkAttendance(AttendanceV2Request request);
     List<AttendanceV2Response> getAttendanceByDiplomaAndDate(Long roundDiplomaId, LocalDate date);
+    List<org.example.academicmanagementsystem.dto.SessionSummaryResponse> getSessionsSummary(Long roundDiplomaId);
 }

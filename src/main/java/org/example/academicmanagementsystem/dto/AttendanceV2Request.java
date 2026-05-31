@@ -16,6 +16,7 @@ public class AttendanceV2Request {
     public static class StudentAttendanceRecord {
         private Long studentId;
         private AttendanceStatus status;
+        private Boolean taskSubmitted;
         private String notes;
     }
 }

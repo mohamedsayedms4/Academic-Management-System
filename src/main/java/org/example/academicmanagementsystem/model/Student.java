@@ -29,6 +29,7 @@ public class Student extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "round_diploma_id", nullable = false)
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private RoundDiploma roundDiploma;
 
     @Column(nullable = false, precision = 10, scale = 2)

@@ -33,7 +33,13 @@
                         </ul>
                     </li>
                     <li id="li-invoices"><a href="#" id="nav-invoices"><i class="fas fa-file-invoice-dollar"></i> <span>Invoices</span></a></li>
-                    <li id="li-sales"><a href="#" id="nav-sales"><i class="fas fa-chart-line"></i> <span>Sales</span></a></li>
+                    <li id="li-sales" class="has-submenu">
+                        <a href="#" id="nav-sales-parent"><i class="fas fa-chart-line"></i> <span>Sales</span> <i class="fas fa-chevron-down arrow"></i></a>
+                        <ul class="submenu" id="sales-submenu">
+                            <li><a href="#" id="nav-sales-list">Sales</a></li>
+                            <li><a href="#" id="nav-sales-earnings">Earnings</a></li>
+                        </ul>
+                    </li>
                     <li id="li-finance" class="has-submenu">
                         <a href="#" id="nav-finance-parent"><i class="fas fa-wallet"></i> <span>Finance</span> <i class="fas fa-chevron-down arrow"></i></a>
                         <ul class="submenu" id="finance-submenu">
@@ -557,49 +563,85 @@
                 </div>
 
                 <div id="attendance-tab" class="tab-content" style="display: none;">
-                    <div class="attendance-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 12px;">
-                        <div class="date-selector" style="display: flex; align-items: center; gap: 15px;">
-                            <label style="font-weight: 600;">Attendance Date:</label>
-                            <input type="date" id="attendance-date-picker" style="padding: 8px 15px; border: 1px solid #ddd; border-radius: 8px;">
-                            <button class="btn-save" id="btn-load-attendance" style="padding: 8px 20px; font-size: 14px;">Load Date</button>
+                    
+                    <!-- 1. Sessions List -->
+                    <div id="sessions-list-container">
+                        <div class="content-controls">
+                            <div class="filters">
+                                <div class="control-item search">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="search-sessions" placeholder="Search sessions...">
+                                </div>
+                            </div>
+                            <button class="btn-save" id="btn-open-add-session" style="background-color: #ebb700;"><i class="fas fa-plus"></i> Add New Session</button>
                         </div>
-                        <button class="btn-save" id="btn-save-attendance" style="background-color: #28a745;"><i class="fas fa-check-circle"></i> Save Attendance</button>
-                    </div>
 
-                    <div class="table-container">
-                        <table class="modern-table attendance-table">
-                            <thead>
-                                <tr>
-                                    <th>Student Name</th>
-                                    <th>Status</th>
-                                    <th>Notes</th>
-                                </tr>
-                            </thead>
-                            <tbody id="attendance-tbody">
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="tasks-section" style="margin-top: 40px;">
-                        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <h3>Course Tasks</h3>
-                            <button class="btn-save" id="btn-open-add-task" style="background-color: #ebb700;"><i class="fas fa-plus"></i> New Task</button>
-                        </div>
                         <div class="table-container">
                             <table class="modern-table">
                                 <thead>
                                     <tr>
-                                        <th>Task Title</th>
-                                        <th>Deadline</th>
-                                        <th>Total Submissions</th>
+                                        <th>Session Date</th>
+                                        <th>Day</th>
+                                        <th>Attendance</th>
+                                        <th>Task Submissions</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tasks-tbody">
+                                <tbody id="sessions-tbody">
+                                    <!-- Sessions will be loaded here -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
+
+                    <!-- 2. Session Details (Hidden by default) -->
+                    <div id="session-details-container" style="display: none;">
+                        <div class="content-controls">
+                            <div class="filters">
+                                <div class="control-item search">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="search-session-students" placeholder="Search students...">
+                                </div>
+                                <div class="control-item select">
+                                    <i class="far fa-calendar-check"></i>
+                                    <select id="filter-session-attendance">
+                                        <option value="">Attendance status</option>
+                                        <option value="PRESENT">Present</option>
+                                        <option value="ABSENT">Absent</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down chevron"></i>
+                                </div>
+                                <div class="control-item select">
+                                    <i class="fas fa-tasks"></i>
+                                    <select id="filter-session-task">
+                                        <option value="">Task status</option>
+                                        <option value="SUBMITTED">Submitted</option>
+                                        <option value="NOT_SUBMITTED">Not Submitted</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down chevron"></i>
+                                </div>
+                            </div>
+                            <button class="btn-save" id="btn-save-session-details" style="background-color: #ebb700;">Save Changes</button>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Student name</th>
+                                        <th>Phone</th>
+                                        <th>Attendance</th>
+                                        <th>Task</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="session-details-tbody">
+                                    <!-- Students for session will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -1046,7 +1088,7 @@
                             <input type="text" id="search-invoices" placeholder="Search...">
                         </div>
                     </div>
-                    <button class="btn-save" id="btn-add-invoice-nav" style="background-color: #ebb700;">
+                    <button class="btn-save" id="btn-add-invoice-nav" onclick="openAddInvoiceView()" style="background-color: #ebb700;">
                         <i class="fas fa-plus"></i> Add New Invoice
                     </button>
                 </div>
@@ -1068,6 +1110,85 @@
                     </table>
                 </div>
                 <div class="pagination" id="invoices-pagination"></div>
+            </div>
+
+            <!-- 12. Add/Edit Invoice View -->
+            <div class="page-content" id="add-invoice-view" style="display: none;">
+                <div class="breadcrumb">
+                    <span>Invoices</span> <i class="fas fa-chevron-right"></i> <span class="active" id="invoice-form-breadcrumb">Add New invoice</span>
+                </div>
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1 id="invoice-form-title">Add New Invoice</h1>
+                    </div>
+                </div>
+                <form id="form-add-invoice" class="modern-form">
+                    <input type="hidden" id="invoice-edit-id">
+                    
+                    <!-- Section 1: Invoice Details -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">1</span>
+                            <h3>Invoice Details</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Invoice Date *</label>
+                                <div class="input-with-icon">
+                                    <input type="date" id="input-invoice-date" placeholder="Select Date" required>
+                                    <i class="far fa-calendar-alt"></i>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Amount *</label>
+                                <input type="number" id="input-invoice-amount" placeholder="Enter Invoice amount" step="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Customer info -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">2</span>
+                            <h3>Customer info</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label>Quick Select from Students (Optional)</label>
+                                <select id="select-invoice-student">
+                                    <option value="">-- Choose a student to autofill Name & Phone --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Name *</label>
+                                <input type="text" id="input-invoice-name" placeholder="Enter customer name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone *</label>
+                                <input type="text" id="input-invoice-phone" placeholder="Enter phone number" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Additional info -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">3</span>
+                            <h3>Additional info</h3>
+                        </div>
+                        <div class="form-grid" style="grid-template-columns: 1fr;">
+                            <div class="form-group">
+                                <label>Notes (Optional)</label>
+                                <input type="text" id="input-invoice-notes" placeholder="Enter your notes.....">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 15px;">
+                        <button type="submit" class="btn-save" style="background-color: #ebb700; width: 200px;">Save</button>
+                        <button type="button" class="btn-cancel" id="btn-cancel-invoice" style="background-color: #fff; color: #333; border: 1px solid #ddd; width: 200px;">Cancel</button>
+                    </div>
+                </form>
             </div>
 
             <!-- 13. Employees List View -->
@@ -1183,6 +1304,166 @@
                         <button type="button" class="btn-cancel" id="btn-cancel-employee" style="background-color: #fff; color: #333; border: 1px solid #ddd; width: 200px;">Cancel</button>
                     </div>
                 </form>
+            </div>
+
+            <!-- 14b. Sales List View -->
+            <div class="page-content" id="sales-list-view" style="display: none;">
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Sales</h1>
+                        <p>View and manage all Telesales and Moderators.</p>
+                    </div>
+                </div>
+                <div class="content-controls">
+                    <div class="filters">
+                        <div class="control-item search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-sales" placeholder="Search...">
+                        </div>
+                        <div class="control-item select">
+                            <i class="fas fa-user-tag"></i>
+                            <select id="filter-sales-role">
+                                <option value="">Role</option>
+                                <option value="TELESALES">Tele sales</option>
+                                <option value="MODERATOR">Moderator</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                    </div>
+                    <button class="btn-save" id="btn-open-add-sales" style="background-color: #ebb700;"><i class="fas fa-plus"></i> Add New Sales</button>
+                </div>
+                <div class="table-container">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Role</th>
+                                <th>Salary</th>
+                                <th>Commission (%)</th>
+                                <th>Pay method</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-list-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 14c. Add/Edit Sales View -->
+            <div class="page-content" id="add-sales-view" style="display: none;">
+                <div class="breadcrumb">
+                    <span>Sales</span> <i class="fas fa-chevron-right"></i> <span class="active" id="sales-form-breadcrumb">Add new sales</span>
+                </div>
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1 id="sales-form-title">Add New Sales</h1>
+                    </div>
+                </div>
+                <form id="form-add-sales" class="modern-form">
+                    <input type="hidden" id="sales-edit-id">
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number" style="background-color: #ebb700;"><i class="fas fa-info-circle"></i></span>
+                            <h3>Sales Information</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Name*</label>
+                                <input type="text" id="input-sales-name" placeholder="Enter customer name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone*</label>
+                                <input type="text" id="input-sales-phone" placeholder="Enter phone number" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Salary*</label>
+                                <input type="number" id="input-sales-salary" placeholder="Enter salary" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Commission (%)*</label>
+                                <input type="number" id="input-sales-commission" placeholder="Enter commission percentage" step="0.1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Method*</label>
+                                <select id="input-sales-pay-method" required>
+                                    <option value="" disabled selected>Select payment method</option>
+                                    <option value="InstaPay">InstaPay</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                    <option value="Vodafone Cash">Vodafone Cash</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Role*</label>
+                                <select id="input-sales-role" required>
+                                    <option value="" disabled selected>Select role</option>
+                                    <option value="TELESALES">Tele sales</option>
+                                    <option value="MODERATOR">Moderator</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Username*</label>
+                                <input type="text" id="input-sales-username" placeholder="Enter username" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Password*</label>
+                                <input type="password" id="input-sales-password" placeholder="Enter password">
+                                <small id="sales-password-help" style="color: #888; font-size: 11px; margin-top: 4px; display: block;"></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 15px;">
+                        <button type="submit" class="btn-save" style="background-color: #ebb700; width: 200px;">Save</button>
+                        <button type="button" class="btn-cancel" id="btn-cancel-sales" style="background-color: #fff; color: #333; border: 1px solid #ddd; width: 200px;">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 14d. Sales Earnings View -->
+            <div class="page-content" id="sales-earnings-view" style="display: none;">
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1>Earnings</h1>
+                        <p>Track commissions and payments for Telesales and Moderators.</p>
+                    </div>
+                </div>
+                <div class="content-controls">
+                    <div class="filters">
+                        <div class="control-item search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-earnings" placeholder="Search...">
+                        </div>
+                        <div class="control-item select">
+                            <i class="fas fa-filter"></i>
+                            <select id="filter-earnings-status">
+                                <option value="">Payment status</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="PAID">Paid</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                    </div>
+                    <button class="btn-save" id="btn-recalculate-earnings" style="background-color: #ebb700;"><i class="fas fa-sync"></i> Calculate Earnings</button>
+                </div>
+                <div class="table-container">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Total Clients</th>
+                                <th>Commission Amount</th>
+                                <th>Status</th>
+                                <th>Payment Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-earnings-tbody">
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- 15. Leads List View -->
@@ -2433,5 +2714,30 @@
             </form>
         </div>
     </div>
+
+    <!-- Add Session Modal -->
+    <div id="add-session-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add new session</h2>
+                <button type="button" class="close-modal" id="close-add-session-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <p style="color: #6c757d; margin-bottom: 20px;">Create a new session to track attendance & tasks.</p>
+            <form id="form-add-session">
+                <div class="form-group">
+                    <label>Date <span class="required">*</span></label>
+                    <div class="control-item date" style="position: relative;">
+                        <input type="date" id="add-session-date" class="flatpickr" placeholder="Select session date" required>
+                        <i class="far fa-calendar-alt" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
+                    </div>
+                </div>
+                <div class="form-actions" style="margin-top: 30px;">
+                    <button type="submit" class="btn-save" style="background-color: #ebb700;">Create Session</button>
+                    <button type="button" class="btn-cancel" id="btn-cancel-add-session">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </body>
 </html>

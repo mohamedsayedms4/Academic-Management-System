@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -39,9 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
         loadRounds();
     });
 
-    document.getElementById('nav-diplomas').addEventListener('click', (e) => {
+    document.getElementById('nav-diplomas').addEventListener('click', async (e) => {
         e.preventDefault();
         showView('diplomas-list-view');
+        await populateDiplomaInstructorFilter();
         loadDiplomasV2();
     });
 
@@ -118,6 +119,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Sales Submenu
+    const navSalesParent = document.getElementById('nav-sales-parent');
+    const salesSubmenu = document.getElementById('sales-submenu');
+    if (navSalesParent) {
+        navSalesParent.addEventListener('click', (e) => {
+            e.preventDefault();
+            salesSubmenu.classList.toggle('show');
+            const arrow = navSalesParent.querySelector('.arrow');
+            if (arrow) {
+                arrow.classList.toggle('fa-chevron-down');
+                arrow.classList.toggle('fa-chevron-right');
+            }
+        });
+    }
+
     document.getElementById('nav-cancelled-students').addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -143,6 +159,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('search-future-students')) {
         document.getElementById('search-future-students').oninput = () => loadFutureEnrollments();
     }
+    if (document.getElementById('search-invoices')) {
+        document.getElementById('search-invoices').oninput = () => loadInvoices();
+    }
 
     // Logout logic
     document.getElementById('btn-logout').addEventListener('click', (e) => {
@@ -158,6 +177,13 @@ document.addEventListener('DOMContentLoaded', () => {
         loadInvoices();
     });
 
+    if (document.getElementById('btn-add-invoice-nav')) {
+        document.getElementById('btn-add-invoice-nav').addEventListener('click', () => {
+            showView('add-invoice-view');
+            initAddInvoiceForm();
+        });
+    }
+
     document.getElementById('nav-employees').addEventListener('click', (e) => {
         e.preventDefault();
         showView('employees-list-view');
@@ -167,6 +193,47 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-open-add-employee').addEventListener('click', () => {
         showView('add-employee-view');
         initAddEmployeeForm();
+    });
+
+    // Sales & Earnings navigation
+    document.getElementById('nav-sales-list').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('sales-list-view');
+        loadSalesUsers();
+    });
+
+    document.getElementById('btn-open-add-sales').addEventListener('click', () => {
+        showView('add-sales-view');
+        initAddSalesForm();
+    });
+
+    document.getElementById('nav-sales-earnings').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('sales-earnings-view');
+        loadSalesEarnings();
+    });
+
+    if (document.getElementById('search-sales')) {
+        document.getElementById('search-sales').oninput = () => loadSalesUsers();
+    }
+    if (document.getElementById('filter-sales-role')) {
+        document.getElementById('filter-sales-role').onchange = () => loadSalesUsers();
+    }
+    if (document.getElementById('search-earnings')) {
+        document.getElementById('search-earnings').oninput = () => loadSalesEarnings();
+    }
+    if (document.getElementById('filter-earnings-status')) {
+        document.getElementById('filter-earnings-status').onchange = () => loadSalesEarnings();
+    }
+    if (document.getElementById('btn-recalculate-earnings')) {
+        document.getElementById('btn-recalculate-earnings').onclick = () => recalculateEarnings();
+    }
+    document.getElementById('form-add-sales').onsubmit = (e) => {
+        e.preventDefault();
+        saveSalesUser();
+    };
+    document.getElementById('btn-cancel-sales').addEventListener('click', () => {
+        showView('sales-list-view');
     });
 
     document.getElementById('nav-leads').addEventListener('click', (e) => {
@@ -331,6 +398,20 @@ function showView(viewId) {
         document.getElementById('nav-invoices').parentElement.classList.add('active');
     } else if (viewId === 'employees-list-view' || viewId === 'add-employee-view') {
         document.getElementById('nav-employees').parentElement.classList.add('active');
+    } else if (viewId === 'sales-list-view' || viewId === 'add-sales-view' || viewId === 'sales-earnings-view') {
+        const parent = document.getElementById('nav-sales-parent');
+        if (parent) {
+            parent.parentElement.classList.add('active');
+            const submenu = document.getElementById('sales-submenu');
+            if (submenu) submenu.classList.add('show');
+        }
+        if (viewId === 'sales-list-view' || viewId === 'add-sales-view') {
+            const navLink = document.getElementById('nav-sales-list');
+            if (navLink) navLink.classList.add('active');
+        } else if (viewId === 'sales-earnings-view') {
+            const navLink = document.getElementById('nav-sales-earnings');
+            if (navLink) navLink.classList.add('active');
+        }
     } else if (viewId === 'leads-list-view' || viewId === 'telesales-lead-details-view') {
         document.getElementById('nav-leads').parentElement.classList.add('active');
     } else if (viewId === 'work-hours-view') {
@@ -1627,15 +1708,67 @@ function renderInvoicesTable(invoices) {
     });
 }
 
+async function loadStudentsForInvoiceForm() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v1/students?page=0&size=500', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            const students = data.content || [];
+            const select = document.getElementById('select-invoice-student');
+            select.innerHTML = '<option value="">-- Choose a student to autofill Name & Phone --</option>';
+            
+            students.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.setAttribute('data-phone', s.phone || '');
+                opt.textContent = `${s.name} (${s.phone || 'No Phone'})`;
+                select.appendChild(opt);
+            });
+            
+            select.onchange = () => {
+                const selectedOpt = select.options[select.selectedIndex];
+                if (selectedOpt && select.value !== '') {
+                    const studentName = selectedOpt.textContent.split(' (')[0];
+                    const studentPhone = selectedOpt.getAttribute('data-phone');
+                    document.getElementById('input-invoice-name').value = studentName;
+                    document.getElementById('input-invoice-phone').value = studentPhone;
+                }
+            };
+        }
+    } catch (error) {
+        console.error('Error loading students for invoice dropdown:', error);
+    }
+}
+
+function openAddInvoiceView() {
+    showView('add-invoice-view');
+    initAddInvoiceForm();
+}
+
 function initAddInvoiceForm() {
     const form = document.getElementById('form-add-invoice');
     form.reset();
+    
+    // Reset edit ID and title/breadcrumb to Add Mode
+    document.getElementById('invoice-edit-id').value = '';
+    document.getElementById('invoice-form-title').textContent = 'Add New Invoice';
+    document.getElementById('invoice-form-breadcrumb').textContent = 'Add New invoice';
+    
+    // Clear student dropdown
+    const studentSelect = document.getElementById('select-invoice-student');
+    if (studentSelect) {
+        studentSelect.innerHTML = '<option value="">-- Choose a student to autofill Name & Phone --</option>';
+    }
+    loadStudentsForInvoiceForm();
     
     document.getElementById('btn-cancel-invoice').onclick = () => showView('invoices-list-view');
 
     form.onsubmit = async (e) => {
         e.preventDefault();
         
+        const id = document.getElementById('invoice-edit-id').value;
         const payload = {
             invoiceDate: document.getElementById('input-invoice-date').value,
             amount: parseFloat(document.getElementById('input-invoice-amount').value),
@@ -1645,8 +1778,11 @@ function initAddInvoiceForm() {
         };
 
         try {
-            const response = await fetch('http://localhost:8080/api/v2/invoices', {
-                method: 'POST',
+            const url = id ? `http://localhost:8080/api/v2/invoices/${id}` : 'http://localhost:8080/api/v2/invoices';
+            const method = id ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1655,15 +1791,16 @@ function initAddInvoiceForm() {
             });
 
             if (response.ok) {
-                alert('Invoice saved successfully!');
+                showToast(id ? 'Invoice updated successfully!' : 'Invoice saved successfully!', 'success');
                 showView('invoices-list-view');
                 loadInvoices();
             } else {
                 const err = await response.json();
-                alert('Error: ' + (err.message || 'Failed to save invoice'));
+                showToast('Error: ' + (err.message || 'Failed to save invoice'), 'error');
             }
         } catch (error) {
             console.error('Error saving invoice:', error);
+            showToast('Error connecting to server', 'error');
         }
     };
 }
@@ -1676,16 +1813,54 @@ async function deleteInvoice(id) {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (response.ok) {
+                showToast('Invoice deleted successfully', 'success');
                 loadInvoices();
+            } else {
+                showToast('Failed to delete invoice', 'error');
             }
         } catch (error) {
             console.error('Error deleting invoice:', error);
+            showToast('Error connecting to server', 'error');
         }
     }
 }
 
-function editInvoice(id) {
-    alert('Edit Invoice Coming Soon!');
+async function editInvoice(id) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v2/invoices/${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const inv = await response.json();
+            
+            showView('add-invoice-view');
+            
+            document.getElementById('invoice-edit-id').value = inv.id;
+            document.getElementById('invoice-form-title').textContent = 'Edit Invoice';
+            document.getElementById('invoice-form-breadcrumb').textContent = 'Edit invoice';
+            
+            // Clear and load student options
+            const studentSelect = document.getElementById('select-invoice-student');
+            if (studentSelect) {
+                studentSelect.innerHTML = '<option value="">-- Choose a student to autofill Name & Phone --</option>';
+            }
+            await loadStudentsForInvoiceForm();
+            
+            document.getElementById('input-invoice-date').value = inv.invoiceDate;
+            document.getElementById('input-invoice-amount').value = inv.amount;
+            document.getElementById('input-invoice-name').value = inv.customerName;
+            document.getElementById('input-invoice-phone').value = inv.customerPhone;
+            document.getElementById('input-invoice-notes').value = inv.notes || '';
+            
+            // Reapply flatpickr to ensure it's correctly updated if flatpickr is active
+            applyCustomDatePickers();
+        } else {
+            showToast('Failed to load invoice details', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading invoice for edit:', error);
+        showToast('Error connecting to server', 'error');
+    }
 }
 
 function renderPagination(containerId, data, loadFn) {
@@ -1721,6 +1896,24 @@ function renderPagination(containerId, data, loadFn) {
 // ===============================
 // Diplomas (V2)
 // ===============================
+
+async function populateDiplomaInstructorFilter() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v2/instructors/all', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const instructors = await response.json();
+            const select = document.getElementById('filter-diploma-instructor');
+            // Store current value to re-select it if possible
+            const currentVal = select.value;
+            populateSelect('filter-diploma-instructor', instructors, 'name', 'id', 'Instructor');
+            if (currentVal) select.value = currentVal;
+        }
+    } catch (error) {
+        console.error('Error fetching instructors for filter:', error);
+    }
+}
 
 async function loadDiplomasV2(page = 0) {
     const search = document.getElementById('search-diplomas-v2').value;
@@ -1898,11 +2091,14 @@ function populateSelect(id, items, labelKey, valueKey, defaultLabel = 'Select') 
     if (!select) return;
     select.innerHTML = `<option value="">${defaultLabel}</option>`;
     items.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item[valueKey];
-        opt.textContent = item[labelKey];
-        select.appendChild(opt);
+        const option = document.createElement('option');
+        option.value = item[valueKey];
+        option.textContent = item[labelKey];
+        select.appendChild(option);
     });
+    
+    // Notify custom select wrappers if they exist
+    select.dispatchEvent(new Event('optionsChanged'));
 }
 
 function updateV2InstallmentAmounts() {
@@ -2560,84 +2756,211 @@ async function loadPostponeRounds() {
 // Attendance & Tasks V2
 // ===============================
 
+let currentSessionDate = null;
+let currentRoundDiplomaId = null;
+
 function initAttendanceTab(roundDiplomaId) {
-    const datePicker = document.getElementById('attendance-date-picker');
-    if (!datePicker.value) {
-        datePicker.value = new Date().toISOString().split('T')[0];
-    }
+    roundDiplomaId = parseInt(roundDiplomaId);
+    currentRoundDiplomaId = roundDiplomaId;
+    console.log('[Attendance] initAttendanceTab called with roundDiplomaId:', roundDiplomaId, typeof roundDiplomaId);
+    document.getElementById('sessions-list-container').style.display = 'block';
+    document.getElementById('session-details-container').style.display = 'none';
     
-    document.getElementById('btn-load-attendance').onclick = () => loadAttendanceData(roundDiplomaId, datePicker.value);
-    document.getElementById('btn-save-attendance').onclick = () => saveAttendanceData(roundDiplomaId);
-    
-    document.getElementById('btn-open-add-task').onclick = () => {
-        document.getElementById('add-task-modal').style.display = 'flex';
+    // Add New Session
+    document.getElementById('btn-open-add-session').onclick = () => {
+        document.getElementById('add-session-modal').style.display = 'flex';
     };
-
-    document.getElementById('form-add-student-task').onsubmit = (e) => {
+    document.getElementById('close-add-session-btn').onclick = () => {
+        document.getElementById('add-session-modal').style.display = 'none';
+    };
+    document.getElementById('btn-cancel-add-session').onclick = () => {
+        document.getElementById('add-session-modal').style.display = 'none';
+    };
+    
+    document.getElementById('form-add-session').onsubmit = async (e) => {
         e.preventDefault();
-        createTaskData(roundDiplomaId);
+        const date = document.getElementById('add-session-date').value;
+        if (!date) return;
+        
+        // Save empty attendance for this date to create the session
+        await createEmptySession(roundDiplomaId, date);
+        document.getElementById('add-session-modal').style.display = 'none';
+        document.getElementById('form-add-session').reset();
+        
+        // Reload sessions
+        loadSessionsSummary(roundDiplomaId);
     };
 
-    loadAttendanceData(roundDiplomaId, datePicker.value);
-    loadTasksData(roundDiplomaId);
+    // Save Session Details
+    document.getElementById('btn-save-session-details').onclick = () => {
+        console.log('[Attendance] Save Changes clicked, currentSessionDate:', currentSessionDate);
+        if (currentSessionDate) {
+            saveSessionDetails(roundDiplomaId, currentSessionDate);
+        }
+    };
+    
+    loadSessionsSummary(roundDiplomaId);
 }
 
-async function loadAttendanceData(roundDiplomaId, date) {
+async function createEmptySession(roundDiplomaId, date) {
     try {
-        // First get students in this diploma
+        roundDiplomaId = parseInt(roundDiplomaId);
+        console.log('[Attendance] createEmptySession called:', { roundDiplomaId, date });
+        
+        // We get students and send a bulk update with default values
+        const stdResponse = await fetch(`http://localhost:8080/api/v2/students/round-diploma/${roundDiplomaId}?size=200`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const stdData = await stdResponse.json();
+        const students = stdData.content;
+        console.log('[Attendance] Found students:', students ? students.length : 0);
+        
+        if (!students || students.length === 0) {
+            showToast('No students found for this diploma', 'error');
+            return;
+        }
+        
+        const records = students.map(s => ({
+            studentId: s.id,
+            status: 'PRESENT',
+            taskSubmitted: false,
+            notes: ''
+        }));
+        
+        const payload = { roundDiplomaId: roundDiplomaId, date: date, records: records };
+        console.log('[Attendance] Sending bulk POST payload:', JSON.stringify(payload));
+        
+        const response = await fetch('http://localhost:8080/api/v2/attendance/bulk', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        console.log('[Attendance] createEmptySession response status:', response.status);
+        if (response.ok) {
+            showToast('Session created successfully', 'success');
+        } else {
+            const errText = await response.text();
+            console.error('[Attendance] createEmptySession failed:', response.status, errText);
+            showToast('Failed to create session: ' + response.status, 'error');
+        }
+    } catch (e) {
+        console.error('[Attendance] Failed to create empty session', e);
+        showToast('Error creating session', 'error');
+    }
+}
+
+async function loadSessionsSummary(roundDiplomaId) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v2/attendance/diploma/${roundDiplomaId}/sessions`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const summaries = await response.json();
+            renderSessionsTable(summaries);
+        }
+    } catch (error) {
+        console.error('Error loading sessions:', error);
+    }
+}
+
+function renderSessionsTable(summaries) {
+    const tbody = document.getElementById('sessions-tbody');
+    tbody.innerHTML = '';
+    
+    summaries.forEach(s => {
+        const attPercent = s.totalStudentsCount > 0 ? Math.round((s.attendedCount / s.totalStudentsCount) * 100) : 0;
+        const taskPercent = s.totalStudentsCount > 0 ? Math.round((s.tasksSubmittedCount / s.totalStudentsCount) * 100) : 0;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${formatDate(s.sessionDate)}</td>
+            <td>${s.dayOfWeek.charAt(0) + s.dayOfWeek.slice(1).toLowerCase()}</td>
+            <td class="session-stat">${s.attendedCount}/${s.totalStudentsCount} <span>(${attPercent}%)</span></td>
+            <td class="session-stat">${s.tasksSubmittedCount}/${s.totalStudentsCount} <span>(${taskPercent}%)</span></td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="openSessionDetails('${s.sessionDate}')" title="View Details"><i class="fas fa-eye"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function openSessionDetails(date) {
+    currentSessionDate = date;
+    document.getElementById('sessions-list-container').style.display = 'none';
+    document.getElementById('session-details-container').style.display = 'block';
+    
+    // Update breadcrumb
+    const diplomaName = document.getElementById('details-diploma-name-breadcrumb').textContent;
+    document.querySelector('.breadcrumb').innerHTML = `
+        <a href="#" onclick="showView('diplomas-list-view'); return false;">Diplomas</a> <i class="fas fa-chevron-right"></i> 
+        <a href="#" onclick="showDiplomaDetails(${currentRoundDiplomaId}); return false;">${diplomaName}</a> <i class="fas fa-chevron-right"></i> 
+        <span class="active">${formatDate(date)}</span>
+    `;
+    
+    loadSessionDetails(currentRoundDiplomaId, date);
+}
+
+async function loadSessionDetails(roundDiplomaId, date) {
+    try {
         const stdResponse = await fetch(`http://localhost:8080/api/v2/students/round-diploma/${roundDiplomaId}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const stdData = await stdResponse.json();
         const students = stdData.content;
 
-        // Then get attendance records for this date
         const attResponse = await fetch(`http://localhost:8080/api/v2/attendance/diploma/${roundDiplomaId}?date=${date}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const attendanceRecords = await attResponse.json();
 
-        renderAttendanceTable(students, attendanceRecords);
+        renderSessionDetailsTable(students, attendanceRecords);
     } catch (error) {
-        console.error('Error loading attendance data:', error);
+        console.error('Error loading session details:', error);
     }
 }
 
-function renderAttendanceTable(students, records) {
-    const tbody = document.getElementById('attendance-tbody');
+function renderSessionDetailsTable(students, records) {
+    const tbody = document.getElementById('session-details-tbody');
     tbody.innerHTML = '';
-
+    
     const recordMap = new Map(records.map(r => [r.studentId, r]));
 
     students.forEach(s => {
         const record = recordMap.get(s.id);
-        const currentStatus = record ? record.status : 'PRESENT';
-        const currentNotes = record ? record.notes : '';
+        const isPresent = record ? record.status === 'PRESENT' : false;
+        const taskSubmitted = record ? record.taskSubmitted : false;
+        const notes = record ? record.notes : '';
 
         const row = document.createElement('tr');
+        row.dataset.studentId = s.id;
         row.innerHTML = `
             <td>${s.name}</td>
-            <td>
-                <div class="attendance-status-group" data-student-id="${s.id}">
-                    <label class="attendance-radio present ${currentStatus === 'PRESENT' ? 'active' : ''}">
-                        <input type="radio" name="att-${s.id}" value="PRESENT" ${currentStatus === 'PRESENT' ? 'checked' : ''}> P
-                    </label>
-                    <label class="attendance-radio absent ${currentStatus === 'ABSENT' ? 'active' : ''}">
-                        <input type="radio" name="att-${s.id}" value="ABSENT" ${currentStatus === 'ABSENT' ? 'checked' : ''}> A
-                    </label>
-                    <label class="attendance-radio excused ${currentStatus === 'EXCUSED' ? 'active' : ''}">
-                        <input type="radio" name="att-${s.id}" value="EXCUSED" ${currentStatus === 'EXCUSED' ? 'checked' : ''}> E
-                    </label>
-                </div>
+            <td>${s.phone}</td>
+            <td class="clickable-cell" style="cursor: pointer; text-align: center;">
+                <div class="custom-checkbox ${isPresent ? 'checked' : ''}" data-type="attendance"></div>
             </td>
-            <td><input type="text" class="att-notes" value="${currentNotes}" style="width: 100%; border: none; background: transparent;" placeholder="..."></td>
+            <td class="clickable-cell" style="cursor: pointer; text-align: center;">
+                <div class="custom-checkbox ${taskSubmitted ? 'checked' : ''}" data-type="task"></div>
+            </td>
+            <td>
+                <input type="text" class="note-input" value="${notes || ''}">
+            </td>
         `;
-
-        // UI helper for radio appearance
-        row.querySelectorAll('.attendance-radio').forEach(label => {
-            label.onclick = () => {
-                row.querySelectorAll('.attendance-radio').forEach(l => l.classList.remove('active'));
-                label.classList.add('active');
+        
+        row.querySelectorAll('.clickable-cell').forEach(cell => {
+            cell.onclick = (e) => {
+                // If they clicked the input directly, it will also toggle it which is fine
+                const cb = cell.querySelector('.custom-checkbox');
+                if (cb) {
+                    cb.classList.toggle('checked');
+                }
             };
         });
 
@@ -2645,34 +2968,51 @@ function renderAttendanceTable(students, records) {
     });
 }
 
-async function saveAttendanceData(roundDiplomaId) {
-    const date = document.getElementById('attendance-date-picker').value;
+async function saveSessionDetails(roundDiplomaId, date) {
+    roundDiplomaId = parseInt(roundDiplomaId);
     const records = [];
-
-    document.querySelectorAll('.attendance-status-group').forEach(group => {
-        const studentId = group.getAttribute('data-student-id');
-        const status = group.querySelector('input:checked').value;
-        const notes = group.closest('tr').querySelector('.att-notes').value;
-        records.push({ studentId: parseInt(studentId), status, notes });
+    const rows = document.querySelectorAll('#session-details-tbody tr');
+    
+    rows.forEach(row => {
+        const studentId = row.dataset.studentId;
+        const isPresent = row.querySelector('.custom-checkbox[data-type="attendance"]').classList.contains('checked');
+        const taskSubmitted = row.querySelector('.custom-checkbox[data-type="task"]').classList.contains('checked');
+        const notes = row.querySelector('.note-input').value;
+        
+        records.push({
+            studentId: parseInt(studentId),
+            status: isPresent ? 'PRESENT' : 'ABSENT',
+            taskSubmitted: taskSubmitted,
+            notes: notes
+        });
     });
 
-    const payload = { roundDiplomaId, date, records };
+    const payload = { roundDiplomaId: roundDiplomaId, date: date, records: records };
+    console.log('[Attendance] saveSessionDetails payload:', JSON.stringify(payload));
 
     try {
         const response = await fetch('http://localhost:8080/api/v2/attendance/bulk', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
         });
 
+        console.log('[Attendance] saveSessionDetails response status:', response.status);
         if (response.ok) {
-            showToast('Attendance saved successfully', 'success');
+            showToast('Session details saved successfully', 'success');
+            // Background reload the session summary so it's fresh when user goes back
+            loadSessionsSummary(roundDiplomaId);
+        } else {
+            const errText = await response.text();
+            console.error('[Attendance] saveSessionDetails failed:', response.status, errText);
+            showToast('Failed to save: ' + response.status, 'error');
         }
     } catch (error) {
-        console.error('Error saving attendance:', error);
+        console.error('[Attendance] Error saving session details:', error);
+        showToast('Error saving session details', 'error');
     }
 }
 
@@ -4206,6 +4546,12 @@ function applyCustomSelects() {
 
         updateDropdown();
 
+        // Listen for dynamic option updates
+        select.addEventListener('optionsChanged', () => {
+            updateDropdown();
+            textSpan.textContent = select.options[select.selectedIndex]?.text || '';
+        });
+
         wrapper.addEventListener('click', (e) => {
             e.stopPropagation();
             const wasActive = wrapper.classList.contains('active');
@@ -4305,6 +4651,304 @@ function applyCustomDatePickers() {
             dateFormat: 'Y-m-d',
             disableMobile: true
         });
+    }
+}
+
+// ==========================================
+// Sales & Earnings Management Logic
+// ==========================================
+
+let cachedSalesUsers = [];
+
+async function loadSalesUsers() {
+    const search = document.getElementById('search-sales').value.toLowerCase();
+    const role = document.getElementById('filter-sales-role').value;
+    
+    try {
+        const response = await fetch('http://localhost:8080/api/v1/users', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const allUsers = await response.json();
+            
+            // Filter to include TELESALES and MODERATOR roles
+            let salesUsers = allUsers.filter(u => u.role === 'TELESALES' || u.role === 'MODERATOR');
+            
+            // Apply search filter
+            if (search) {
+                salesUsers = salesUsers.filter(u => 
+                    u.fullName.toLowerCase().includes(search) || 
+                    (u.phone && u.phone.includes(search))
+                );
+            }
+            
+            // Apply role filter
+            if (role) {
+                salesUsers = salesUsers.filter(u => u.role === role);
+            }
+            
+            cachedSalesUsers = salesUsers;
+            renderSalesTable(salesUsers);
+        } else {
+            showToast('Failed to load sales users', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading sales users:', error);
+        showToast('Error loading sales users', 'error');
+    }
+}
+
+function renderSalesTable(users) {
+    const tbody = document.getElementById('sales-list-tbody');
+    tbody.innerHTML = '';
+    
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #888;">No sales users found.</td></tr>';
+        return;
+    }
+    
+    users.forEach(u => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${u.fullName}</td>
+            <td>${u.phone || '-'}</td>
+            <td>${u.role === 'TELESALES' ? 'Tele sales' : 'Moderator'}</td>
+            <td>${u.baseSalary || '0'} EGP</td>
+            <td>${u.commission || '0'}%</td>
+            <td>${u.paymentMethod || '-'}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="editSalesUser(${u.id})" title="Edit"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteSalesUser(${u.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function initAddSalesForm() {
+    const form = document.getElementById('form-add-sales');
+    form.reset();
+    document.getElementById('sales-edit-id').value = '';
+    document.getElementById('sales-form-title').textContent = 'Add New Sales';
+    document.getElementById('sales-form-breadcrumb').textContent = 'Add new sales';
+    
+    const passwordInput = document.getElementById('input-sales-password');
+    passwordInput.required = true;
+    document.getElementById('sales-password-help').textContent = '';
+}
+
+async function editSalesUser(id) {
+    const user = cachedSalesUsers.find(u => u.id === id);
+    if (!user) return;
+    
+    showView('add-sales-view');
+    document.getElementById('sales-edit-id').value = user.id;
+    document.getElementById('sales-form-title').textContent = `Edit "${user.fullName}"`;
+    document.getElementById('sales-form-breadcrumb').textContent = 'Edit sales';
+    
+    document.getElementById('input-sales-name').value = user.fullName;
+    document.getElementById('input-sales-phone').value = user.phone || '';
+    document.getElementById('input-sales-salary').value = user.baseSalary || '';
+    document.getElementById('input-sales-commission').value = user.commission || '';
+    document.getElementById('input-sales-pay-method').value = user.paymentMethod || '';
+    document.getElementById('input-sales-role').value = user.role;
+    document.getElementById('input-sales-username').value = user.username;
+    
+    const passwordInput = document.getElementById('input-sales-password');
+    passwordInput.value = '';
+    passwordInput.required = false;
+    document.getElementById('sales-password-help').textContent = 'Leave blank to keep current password';
+}
+
+async function saveSalesUser() {
+    const id = document.getElementById('sales-edit-id').value;
+    const username = document.getElementById('input-sales-username').value;
+    
+    const payload = {
+        username: username,
+        fullName: document.getElementById('input-sales-name').value,
+        phone: document.getElementById('input-sales-phone').value,
+        role: document.getElementById('input-sales-role').value,
+        baseSalary: parseFloat(document.getElementById('input-sales-salary').value),
+        commission: parseFloat(document.getElementById('input-sales-commission').value),
+        paymentMethod: document.getElementById('input-sales-pay-method').value,
+        password: document.getElementById('input-sales-password').value,
+        email: username + "@direction.academy" // Autogenerated unique email
+    };
+    
+    try {
+        let url = 'http://localhost:8080/api/auth/register';
+        let method = 'POST';
+        
+        if (id) {
+            url = `http://localhost:8080/api/v1/users/${id}`;
+            method = 'PUT';
+        }
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        if (response.ok) {
+            showToast(id ? 'Sales user updated successfully' : 'Sales user registered successfully', 'success');
+            showView('sales-list-view');
+            loadSalesUsers();
+        } else {
+            const err = await response.json();
+            showToast(err.message || 'Error saving sales user', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving sales user:', error);
+        showToast('Error saving sales user', 'error');
+    }
+}
+
+async function deleteSalesUser(id) {
+    if (!confirm('Are you sure you want to delete this sales user?')) return;
+    
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/users/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (response.ok) {
+            showToast('Sales user deleted successfully', 'success');
+            loadSalesUsers();
+        } else {
+            showToast('Failed to delete sales user', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting sales user:', error);
+        showToast('Error deleting sales user', 'error');
+    }
+}
+
+// Earnings Logic
+
+async function loadSalesEarnings() {
+    const search = document.getElementById('search-earnings').value.toLowerCase();
+    const status = document.getElementById('filter-earnings-status').value;
+    
+    try {
+        let url = 'http://localhost:8080/api/v1/earnings';
+        const params = [];
+        if (search) params.push(`search=${encodeURIComponent(search)}`);
+        if (status) params.push(`status=${encodeURIComponent(status)}`);
+        if (params.length > 0) {
+            url += '?' + params.join('&');
+        }
+        
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (response.ok) {
+            const earnings = await response.json();
+            renderSalesEarningsTable(earnings);
+        } else {
+            showToast('Failed to load earnings', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading earnings:', error);
+        showToast('Error loading earnings', 'error');
+    }
+}
+
+function renderSalesEarningsTable(earnings) {
+    const tbody = document.getElementById('sales-earnings-tbody');
+    tbody.innerHTML = '';
+    
+    if (earnings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #888;">No earnings records found.</td></tr>';
+        return;
+    }
+    
+    earnings.forEach(e => {
+        const row = document.createElement('tr');
+        
+        const isPaid = e.status === 'PAID';
+        const statusBadge = isPaid
+            ? '<span style="background: #e8f5e9; color: #4caf50; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Paid</span>'
+            : '<span style="background: #fff8e1; color: #ebb700; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Pending</span>';
+            
+        const paymentDateStr = e.paymentDate ? e.paymentDate : '-';
+        
+        const actionButton = isPaid
+            ? `<button class="btn-action edit" onclick="toggleEarningStatus(${e.id}, 'PENDING')" title="Revert to Pending" style="background-color: #f5f5f5; color: #666; border: 1px solid #ddd; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 500;"><i class="fas fa-undo"></i> Revert</button>`
+            : `<button class="btn-action save" onclick="toggleEarningStatus(${e.id}, 'PAID')" title="Mark as Paid" style="background-color: #ebb700; color: #000; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700;"><i class="fas fa-check"></i> Mark Paid</button>`;
+            
+        row.innerHTML = `
+            <td>${e.telesalesName}</td>
+            <td>${e.telesalesPhone || '-'}</td>
+            <td>${e.totalClients || 0}</td>
+            <td>${e.commissionAmount || 0} EGP</td>
+            <td>${statusBadge}</td>
+            <td>${paymentDateStr}</td>
+            <td>${actionButton}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function toggleEarningStatus(id, newStatus) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/earnings/${id}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        
+        if (response.ok) {
+            showToast(newStatus === 'PAID' ? 'Commission marked as paid' : 'Earning reverted to pending', 'success');
+            loadSalesEarnings();
+        } else {
+            showToast('Failed to update payment status', 'error');
+        }
+    } catch (error) {
+        console.error('Error toggling earning status:', error);
+        showToast('Error updating payment status', 'error');
+    }
+}
+
+async function recalculateEarnings() {
+    try {
+        const btn = document.getElementById('btn-recalculate-earnings');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculating...';
+        }
+        
+        const response = await fetch('http://localhost:8080/api/v1/earnings/calculate', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (response.ok) {
+            showToast('Earnings recalculated successfully', 'success');
+            loadSalesEarnings();
+        } else {
+            showToast('Failed to calculate earnings', 'error');
+        }
+    } catch (error) {
+        console.error('Error recalculating earnings:', error);
+        showToast('Error calculating earnings', 'error');
+    } finally {
+        const btn = document.getElementById('btn-recalculate-earnings');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync"></i> Calculate Earnings';
+        }
     }
 }
 
