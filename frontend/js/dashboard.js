@@ -618,6 +618,7 @@ function initAddDiplomaForm() {
             <td><button type="button" class="btn-delete-inst"><i class="fas fa-trash"></i></button></td>
         `;
         installmentsTbody.appendChild(row);
+        applyCustomDatePickers();
         
         // Add listeners to new row
         row.querySelector('.inst-percent').addEventListener('input', updateInstallmentAmounts);
@@ -1813,6 +1814,7 @@ async function initAddDiplomaV2Form() {
 
         tbody.appendChild(row);
         updateV2PaymentSummary();
+        applyCustomDatePickers();
     };
 
     form.onsubmit = async (e) => {
@@ -1936,11 +1938,23 @@ function updateV2PaymentSummary() {
         amountSpan.style.color = '#28a745';
         document.getElementById('v2-payment-summary').style.borderColor = '#28a745';
         document.getElementById('v2-payment-summary').style.backgroundColor = '#f4fff4';
+        const saveBtn = document.querySelector('#form-add-diploma-v2 .btn-save');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.style.backgroundColor = '#ebb700';
+            saveBtn.style.cursor = 'pointer';
+        }
     } else {
         percentSpan.style.color = '#dc3545';
         amountSpan.style.color = '#dc3545';
-        document.getElementById('v2-payment-summary').style.borderColor = '#ddd';
-        document.getElementById('v2-payment-summary').style.backgroundColor = '#fff';
+        document.getElementById('v2-payment-summary').style.borderColor = '#dc3545';
+        document.getElementById('v2-payment-summary').style.backgroundColor = '#fae3e5';
+        const saveBtn = document.querySelector('#form-add-diploma-v2 .btn-save');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.style.backgroundColor = '#e0e0e0';
+            saveBtn.style.cursor = 'not-allowed';
+        }
     }
 }
 
@@ -2061,6 +2075,7 @@ function addV2InstallmentRowEdit(num, percent = 0, amount = 0, date = "") {
     };
     
     tbody.appendChild(row);
+    applyCustomDatePickers();
 }
 
 function initEditDiplomaFormLogic() {
@@ -2164,11 +2179,23 @@ function updateV2PaymentSummaryEdit() {
         amountSpan.style.color = '#28a745';
         document.getElementById('edit-v2-payment-summary').style.borderColor = '#28a745';
         document.getElementById('edit-v2-payment-summary').style.backgroundColor = '#f4fff4';
+        const saveBtn = document.querySelector('#form-edit-diploma-v2 .btn-save');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.style.backgroundColor = '#ebb700';
+            saveBtn.style.cursor = 'pointer';
+        }
     } else {
         percentSpan.style.color = '#dc3545';
         amountSpan.style.color = '#dc3545';
-        document.getElementById('edit-v2-payment-summary').style.borderColor = '#ddd';
-        document.getElementById('edit-v2-payment-summary').style.backgroundColor = '#fff';
+        document.getElementById('edit-v2-payment-summary').style.borderColor = '#dc3545';
+        document.getElementById('edit-v2-payment-summary').style.backgroundColor = '#fae3e5';
+        const saveBtn = document.querySelector('#form-edit-diploma-v2 .btn-save');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.style.backgroundColor = '#e0e0e0';
+            saveBtn.style.cursor = 'not-allowed';
+        }
     }
 }
 
@@ -2258,8 +2285,11 @@ async function viewDiplomaDetailsV2(id) {
             
             // Search logic
             document.getElementById('search-details-students').oninput = (e) => {
-                loadDiplomaStudentsV2(id, e.target.value);
+                applyDetailsFilters();
             };
+            
+            document.getElementById('filter-details-it-status').onchange = () => applyDetailsFilters();
+            document.getElementById('filter-details-student-status').onchange = () => applyDetailsFilters();
 
             // Postpone Target Round Lookup
             loadPostponeRounds();
@@ -2303,11 +2333,32 @@ async function loadDiplomaStudentsV2(id, search = '') {
         });
         if (response.ok) {
             const data = await response.json();
-            renderDiplomaStudentsV2(data.content);
+            window.currentDiplomaStudentsV2 = data.content;
+            applyDetailsFilters();
         }
     } catch (error) {
         console.error('Error loading diploma students:', error);
     }
+}
+
+function applyDetailsFilters() {
+    let filtered = window.currentDiplomaStudentsV2 || [];
+    const search = document.getElementById('search-details-students').value.toLowerCase();
+    const itStatus = document.getElementById('filter-details-it-status').value;
+    const studentStatus = document.getElementById('filter-details-student-status').value;
+
+    if (search) {
+        filtered = filtered.filter(s => s.name.toLowerCase().includes(search) || s.phone.includes(search));
+    }
+    if (itStatus !== '') {
+        const hasIt = itStatus === 'true';
+        filtered = filtered.filter(s => s.itStatus === hasIt);
+    }
+    if (studentStatus !== '') {
+        filtered = filtered.filter(s => s.status === studentStatus);
+    }
+    
+    renderDiplomaStudentsV2(filtered);
 }
 
 function renderDiplomaStudentsV2(students) {
@@ -2316,14 +2367,22 @@ function renderDiplomaStudentsV2(students) {
     
     students.forEach(s => {
         const statusClass = s.status === 'ACTIVE' ? 'status-active' : s.status === 'CANCELLED' ? 'status-cancelled' : 'status-postponed';
+        const formattedStatus = s.status ? s.status.replace(/_/g, ' ').replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.substr(1).toLowerCase()) : '-';
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${s.name}</td>
             <td>${s.phone}</td>
-            <td><span class="status-badge ${statusClass}">${s.status}</span></td>
-            <td><input type="checkbox" ${s.itStatus ? 'checked' : ''} disabled></td>
+            <td>
+                <select class="inline-edit-select status-badge ${statusClass}" onchange="handleInlineStatusChange(this, ${s.id}, '${s.name}', '${s.status}')">
+                    <option value="ACTIVE" ${s.status === 'ACTIVE' ? 'selected' : ''}>Active</option>
+                    <option value="POSTPONED" ${s.status === 'POSTPONED' ? 'selected' : ''}>Postponed</option>
+                    <option value="CANCELLED" ${s.status === 'CANCELLED' ? 'selected' : ''}>Cancelled</option>
+                    <option value="FUTURE_ENROLLMENT" ${s.status === 'FUTURE_ENROLLMENT' ? 'selected' : ''}>Future Enrollment</option>
+                </select>
+            </td>
+            <td><input type="checkbox" class="inline-checkbox" ${s.itStatus ? 'checked' : ''} onchange="handleInlineAccountChange(${s.id}, null, this.checked)"></td>
             <td>${s.email || '-'}</td>
-            <td>••••••••</td>
+            <td><input type="text" class="inline-edit-input" value="${s.password || ''}" placeholder="••••••••" onchange="handleInlineAccountChange(${s.id}, this.value, null)"></td>
             <td>${s.notes || '-'}</td>
             <td>${formatDate(s.enrollmentDate)}</td>
             <td>${s.totalAmount || '0'}</td>
@@ -2337,6 +2396,77 @@ function renderDiplomaStudentsV2(students) {
         `;
         tbody.appendChild(row);
     });
+}
+
+async function handleInlineAccountChange(id, password, itStatus) {
+    try {
+        const student = window.currentDiplomaStudentsV2.find(s => s.id === id);
+        if (!student) return;
+
+        const body = {};
+        if (password !== null) body.password = password;
+        if (itStatus !== null) body.itStatus = itStatus;
+
+        const response = await fetch(`http://localhost:8080/api/v2/students/${id}/account-info`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (response.ok) {
+            showToast('Account info updated', 'success');
+            if (password !== null) student.password = password;
+            if (itStatus !== null) student.itStatus = itStatus;
+        } else {
+            showToast('Failed to update account info', 'error');
+            // Revert UI by re-rendering
+            renderDiplomaStudentsV2(window.currentDiplomaStudentsV2);
+        }
+    } catch (error) {
+        console.error('Error updating account info:', error);
+        showToast('Error connecting to server', 'error');
+        renderDiplomaStudentsV2(window.currentDiplomaStudentsV2);
+    }
+}
+
+function handleInlineStatusChange(selectElement, id, name, oldStatus) {
+    const newStatus = selectElement.value;
+    
+    // Reset immediately to old status in the UI, wait for the actual operation to succeed before showing new status
+    selectElement.value = oldStatus;
+
+    if (newStatus === oldStatus) return;
+
+    if (newStatus === 'CANCELLED') {
+        cancelStudent(id, name);
+    } else if (newStatus === 'POSTPONED') {
+        postponeStudent(id, name);
+    } else if (newStatus === 'ACTIVE' || newStatus === 'FUTURE_ENROLLMENT') {
+        // Just call restore endpoint for Active or we might need another endpoint for FUTURE_ENROLLMENT
+        // Wait, there's no endpoint for FUTURE_ENROLLMENT explicitly, but if restoreEnrollment sets it to ACTIVE, we'll use that.
+        restoreStudent(id);
+    }
+}
+
+async function restoreStudent(id) {
+    if (!confirm('Are you sure you want to mark this student as Active?')) return;
+    try {
+        const response = await fetch(`http://localhost:8080/api/v2/students/${id}/restore`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            showToast('Student activated successfully', 'success');
+            loadDiplomaStudentsV2(currentDetailsRoundDiplomaId);
+        } else {
+            showToast('Failed to activate student', 'error');
+        }
+    } catch (error) {
+        console.error('Error restoring student:', error);
+    }
 }
 
 function cancelStudent(id, name) {

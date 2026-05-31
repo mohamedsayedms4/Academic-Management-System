@@ -66,4 +66,11 @@ public class StudentV2Controller {
     public ResponseEntity<StudentResponseV2> postponeEnrollment(@PathVariable Long id, @RequestBody Map<String, Long> body) {
         return ResponseEntity.ok(studentService.postponeEnrollment(id, body.get("targetRoundId")));
     }
+
+    @PutMapping("/{id}/account-info")
+    public ResponseEntity<StudentResponseV2> updateAccountInfo(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        String password = body.containsKey("password") ? (String) body.get("password") : null;
+        Boolean itStatus = body.containsKey("itStatus") ? (Boolean) body.get("itStatus") : null;
+        return ResponseEntity.ok(studentService.updateAccountInfo(id, password, itStatus));
+    }
 }

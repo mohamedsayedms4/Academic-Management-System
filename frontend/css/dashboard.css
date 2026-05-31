@@ -1001,21 +1001,42 @@ li.has-submenu#nav-finance-parent.active > a {
     border-bottom-color: #ebb700;
 }
 
-.group-bg-yellow { background-color: #fff9e6 !important; color: #856404 !important; }
-.group-bg-blue { background-color: #e7f3ff !important; color: #004085 !important; }
+.group-bg-yellow { background-color: #fff9e6 !important; color: #ebb700 !important; }
+.group-bg-blue { background-color: #f0f8ff !important; color: #0d6efd !important; }
 .group-bg-light { background-color: #f8f9fa !important; color: #383d41 !important; }
 
 .details-table thead tr.header-groups th {
-    padding: 8px;
-    font-size: 12px;
+    padding: 10px 8px;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border: none;
+    text-align: center;
+}
+
+.details-table thead tr:nth-child(2) th {
+    text-transform: capitalize !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    padding: 12px 10px !important;
+    border-bottom: 1px solid #eee;
+    text-align: left;
 }
 
 .details-table {
     border-collapse: separate;
     border-spacing: 0;
+    width: 100%;
+}
+
+.details-table tbody td {
+    padding: 12px 10px !important;
+    font-size: 13px !important;
+    color: #555;
+    border-bottom: 1px solid #f5f5f5;
+    white-space: nowrap;
+    vertical-align: middle;
 }
 
 .details-table th, .details-table td {
@@ -1032,8 +1053,50 @@ li.has-submenu#nav-finance-parent.active > a {
 .status-active { background: #e8f5e9; color: #2e7d32; }
 .status-cancelled { background: #ffebee; color: #c62828; }
 .status-postponed { background: #fff3e0; color: #ef6c00; }
+.status-future_enrollment { background: #fff3e0; color: #ef6c00; }
 .status-badge.paid { background: #e8f5e9; color: #2e7d32; }
 .status-badge.pending { background: #fff3e0; color: #ef6c00; }
+
+.inline-edit-input {
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #333;
+    width: 100px;
+    transition: all 0.2s;
+}
+
+.inline-edit-input:hover, .inline-edit-input:focus {
+    border: 1px solid #ddd;
+    background: #fff;
+    outline: none;
+}
+
+.inline-edit-select {
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: all 0.2s;
+}
+
+.inline-edit-select:hover, .inline-edit-select:focus {
+    border-color: #ddd;
+    outline: none;
+}
+
+.inline-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
 
 .clickable-name {
     color: #007bff;

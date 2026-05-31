@@ -45,6 +45,10 @@ public class StudentV2 extends BaseEntity {
 
     private String discount;
 
+    private String password;
+
+    private Boolean itStatus = false;
+
     @Enumerated(EnumType.STRING)
     private StudentStatus status = StudentStatus.FUTURE_ENROLLMENT;
 

@@ -119,6 +119,16 @@ public class StudentV2ServiceImpl implements StudentV2Service {
         return mapToResponse(studentRepository.save(student));
     }
 
+    @Override
+    @Transactional
+    public StudentResponseV2 updateAccountInfo(Long id, String password, Boolean itStatus) {
+        StudentV2 student = studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+        student.setPassword(password);
+        student.setItStatus(itStatus != null ? itStatus : false);
+        return mapToResponse(studentRepository.save(student));
+    }
+
     private StudentResponseV2 mapToResponse(StudentV2 student) {
         BigDecimal totalAmount = BigDecimal.ZERO;
         if (student.getRound() != null && student.getDiploma() != null) {
@@ -138,6 +148,8 @@ public class StudentV2ServiceImpl implements StudentV2Service {
                 .depositAmount(student.getDepositAmount())
                 .salesPersonName(student.getSalesPerson() != null ? student.getSalesPerson().getFullName() : "N/A")
                 .discount(student.getDiscount())
+                .password(student.getPassword())
+                .itStatus(student.getItStatus())
                 .status(student.getStatus())
                 .cancellationDate(student.getCancellationDate())
                 .cancellationReason(student.getCancellationReason())

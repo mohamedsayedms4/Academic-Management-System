@@ -25,6 +25,8 @@ public class StudentResponseV2 {
     private BigDecimal depositAmount;
     private String salesPersonName;
     private String discount;
+    private String password;
+    private Boolean itStatus;
     private StudentStatus status;
     private LocalDate cancellationDate;
     private String cancellationReason;
