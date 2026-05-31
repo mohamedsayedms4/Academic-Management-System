@@ -16,6 +16,13 @@ public interface RoundDiplomaV2Repository extends JpaRepository<RoundDiplomaV2, 
            "LOWER(rd.instructor.name) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<RoundDiplomaV2> searchDiplomas(@Param("search") String search, Pageable pageable);
 
+    @Query("SELECT rd FROM RoundDiplomaV2 rd WHERE rd.instructor.id = :instructorId AND (" +
+           "LOWER(rd.diploma.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(rd.instructor.name) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<RoundDiplomaV2> searchDiplomasByInstructor(@Param("search") String search, @Param("instructorId") Long instructorId, Pageable pageable);
+
+    Page<RoundDiplomaV2> findByInstructorId(Long instructorId, Pageable pageable);
+
     java.util.List<RoundDiplomaV2> findByRound(org.example.academicmanagementsystem.model.RoundV2 round);
 
     java.util.Optional<RoundDiplomaV2> findByRoundAndDiploma(org.example.academicmanagementsystem.model.RoundV2 round, org.example.academicmanagementsystem.model.DiplomaV2 diploma);

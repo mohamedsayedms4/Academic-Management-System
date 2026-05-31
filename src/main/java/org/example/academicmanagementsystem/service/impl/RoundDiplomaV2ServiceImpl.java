@@ -64,14 +64,19 @@ public class RoundDiplomaV2ServiceImpl implements RoundDiplomaV2Service {
     }
 
     @Override
-    public Page<RoundDiplomaV2Response> getDiplomas(String search, Pageable pageable) {
-        Page<RoundDiplomaV2> results;
-        if (search != null && !search.isEmpty()) {
-            results = roundDiplomaRepository.searchDiplomas(search, pageable);
+    @Transactional(readOnly = true)
+    public Page<RoundDiplomaV2Response> getDiplomas(String search, Long instructorId, Pageable pageable) {
+        Page<RoundDiplomaV2> diplomas;
+        if (search != null && !search.isEmpty() && instructorId != null) {
+            diplomas = roundDiplomaRepository.searchDiplomasByInstructor(search, instructorId, pageable);
+        } else if (search != null && !search.isEmpty()) {
+            diplomas = roundDiplomaRepository.searchDiplomas(search, pageable);
+        } else if (instructorId != null) {
+            diplomas = roundDiplomaRepository.findByInstructorId(instructorId, pageable);
         } else {
-            results = roundDiplomaRepository.findAll(pageable);
+            diplomas = roundDiplomaRepository.findAll(pageable);
         }
-        return results.map(this::mapToResponse);
+        return diplomas.map(this::mapToResponse);
     }
 
     @Override

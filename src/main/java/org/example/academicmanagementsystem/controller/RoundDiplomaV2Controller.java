@@ -25,8 +25,9 @@ public class RoundDiplomaV2Controller {
     @GetMapping
     public ResponseEntity<Page<RoundDiplomaV2Response>> getDiplomas(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long instructorId,
             Pageable pageable) {
-        return ResponseEntity.ok(roundDiplomaService.getDiplomas(search, pageable));
+        return ResponseEntity.ok(roundDiplomaService.getDiplomas(search, instructorId, pageable));
     }
 
     @GetMapping("/{id}")

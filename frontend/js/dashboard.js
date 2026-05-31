@@ -1728,6 +1728,7 @@ async function loadDiplomasV2(page = 0) {
     
     let url = `http://localhost:8080/api/v2/round-diplomas?page=${page}&size=10`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (instructorId) url += `&instructorId=${instructorId}`;
     
     try {
         const response = await fetch(url, {
