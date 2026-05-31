@@ -305,6 +305,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Apply custom styling to all existing and future select elements
     applyCustomSelects();
+    
+    // Apply flatpickr to all date inputs
+    applyCustomDatePickers();
 });
 
 function showView(viewId) {
@@ -4157,3 +4160,14 @@ function renderDelayedStudentsTable(students) {
         tbody.appendChild(tr);
     });
 }
+
+// Function to initialize flatpickr on all date inputs
+function applyCustomDatePickers() {
+    if (typeof flatpickr !== 'undefined') {
+        flatpickr('input[type="date"]', {
+            dateFormat: 'Y-m-d',
+            disableMobile: true
+        });
+    }
+}
+
