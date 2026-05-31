@@ -172,7 +172,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('nav-leads').addEventListener('click', (e) => {
         e.preventDefault();
         showView('leads-list-view');
-        loadLeads();
+        if (userData.role === 'MODERATOR') {
+            loadModeratorLeads();
+        } else if (userData.role === 'TELESALES') {
+            loadTelesalesLeads();
+        } else {
+            loadLeads();
+        }
+    });
+
+    document.getElementById('nav-work-hours').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('work-hours-view');
+        loadWorkHours();
+        loadWeeklyHours();
+    });
+
+    document.getElementById('nav-leaderboard').addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('leaderboard-view');
+        loadLeaderboard();
     });
 
     if (document.getElementById('search-leads')) {
@@ -180,6 +199,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (document.getElementById('filter-leads-status')) {
         document.getElementById('filter-leads-status').onchange = () => loadLeads();
+    }
+
+    if (document.getElementById('mod-search-leads')) {
+        document.getElementById('mod-search-leads').oninput = () => loadModeratorLeads();
+    }
+    if (document.getElementById('mod-filter-diploma')) {
+        document.getElementById('mod-filter-diploma').onchange = () => loadModeratorLeads();
+    }
+    if (document.getElementById('mod-filter-status')) {
+        document.getElementById('mod-filter-status').onchange = () => loadModeratorLeads();
     }
 
     // Finance Navigation
@@ -233,9 +262,49 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Load Initial Data
-    showView('dashboard-view');
-    loadRounds();
-    loadDiplomas();
+    if (userData.role === 'MODERATOR' || userData.role === 'TELESALES') {
+        const hideIds = ['li-home', 'li-diplomas', 'li-rounds', 'li-instructors', 'li-students', 'li-invoices', 'li-sales', 'li-finance', 'li-employees'];
+        hideIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+
+        const showIds = ['li-work-hours', 'li-leaderboard'];
+        showIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'block';
+        });
+
+        if (userData.role === 'MODERATOR') {
+            document.getElementById('leads-moderator-layout').style.display = 'block';
+            document.getElementById('leads-admin-layout').style.display = 'none';
+            if (document.getElementById('leads-telesales-layout')) {
+                document.getElementById('leads-telesales-layout').style.display = 'none';
+            }
+
+            showView('leads-list-view');
+            loadModeratorLeads();
+            loadDiplomasForModeratorForm();
+            setupModeratorListeners();
+        } else { // TELESALES
+            if (document.getElementById('leads-telesales-layout')) {
+                document.getElementById('leads-telesales-layout').style.display = 'block';
+            }
+            document.getElementById('leads-admin-layout').style.display = 'none';
+            document.getElementById('leads-moderator-layout').style.display = 'none';
+
+            showView('leads-list-view');
+            loadTelesalesLeads();
+            loadDiplomasForTelesalesForm();
+            setupTelesalesListeners();
+        }
+    } else {
+        showView('dashboard-view');
+        loadRounds();
+    }
+
+    // Apply custom styling to all existing and future select elements
+    applyCustomSelects();
 });
 
 function showView(viewId) {
@@ -259,8 +328,12 @@ function showView(viewId) {
         document.getElementById('nav-invoices').parentElement.classList.add('active');
     } else if (viewId === 'employees-list-view' || viewId === 'add-employee-view') {
         document.getElementById('nav-employees').parentElement.classList.add('active');
-    } else if (viewId === 'leads-list-view') {
+    } else if (viewId === 'leads-list-view' || viewId === 'telesales-lead-details-view') {
         document.getElementById('nav-leads').parentElement.classList.add('active');
+    } else if (viewId === 'work-hours-view') {
+        document.getElementById('nav-work-hours').parentElement.classList.add('active');
+    } else if (viewId === 'leaderboard-view') {
+        document.getElementById('nav-leaderboard').parentElement.classList.add('active');
     } else if (viewId.startsWith('finance-')) {
         const parent = document.getElementById('nav-finance-parent');
         if (parent) {
@@ -278,16 +351,84 @@ function showView(viewId) {
 
 async function loadRounds() {
     try {
-        const response = await fetch('http://localhost:8080/api/v2/rounds?size=10', {
+        // Fetch rounds for grouping
+        const roundsResponse = await fetch('http://localhost:8080/api/v2/rounds?size=100', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
 
-        if (!response.ok) throw new Error('Failed to fetch rounds');
+        if (!roundsResponse.ok) throw new Error('Failed to fetch rounds');
+        const roundsData = await roundsResponse.json();
+        const rounds = roundsData.content || [];
 
-        const data = await response.json();
-        renderDashboardTable(data.content || []);
+        // Fetch round-diplomas for detailed installment data
+        const diplomasResponse = await fetch('http://localhost:8080/api/v2/round-diplomas?size=200', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        let roundDiplomas = [];
+        if (diplomasResponse.ok) {
+            const diplomasData = await diplomasResponse.json();
+            roundDiplomas = diplomasData.content || [];
+        }
+
+        // Group round-diplomas by roundId
+        const diplomasByRound = {};
+        roundDiplomas.forEach(rd => {
+            if (!diplomasByRound[rd.roundId]) {
+                diplomasByRound[rd.roundId] = [];
+            }
+            diplomasByRound[rd.roundId].push(rd);
+        });
+
+        // Merge: attach detailed diplomas to each round
+        const enrichedRounds = rounds.map(round => ({
+            ...round,
+            detailedDiplomas: diplomasByRound[round.id] || []
+        }));
+
+        // Populate Diploma filter from v2 round-diplomas data
+        const filterDiploma = document.getElementById('filter-diploma');
+        filterDiploma.innerHTML = '<option value="">Diploma</option>';
+        const uniqueDiplomas = {};
+        roundDiplomas.forEach(rd => {
+            if (rd.diplomaId && !uniqueDiplomas[rd.diplomaId]) {
+                uniqueDiplomas[rd.diplomaId] = rd.diplomaName;
+            }
+        });
+        Object.entries(uniqueDiplomas).forEach(([id, name]) => {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = name;
+            filterDiploma.appendChild(opt);
+        });
+
+        // Populate Round filter from v2 rounds data
+        const filterRound = document.getElementById('filter-round');
+        filterRound.innerHTML = '<option value="">Round</option>';
+        rounds.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.id;
+            opt.textContent = r.name;
+            filterRound.appendChild(opt);
+        });
+
+        // Also populate Rounds list filter
+        const filterList = document.getElementById('filter-round-list-diploma');
+        if (filterList) {
+            filterList.innerHTML = '<option value="">Diploma</option>';
+            Object.entries(uniqueDiplomas).forEach(([id, name]) => {
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = name;
+                filterList.appendChild(opt);
+            });
+        }
+
+        renderDashboardTable(enrichedRounds);
     } catch (error) {
         console.error('Error loading rounds:', error);
     }
@@ -295,7 +436,7 @@ async function loadRounds() {
 
 async function loadDiplomas() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/diplomas', {
+        const response = await fetch('http://localhost:8080/api/v2/diplomas', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -336,17 +477,18 @@ function renderDashboardTable(rounds) {
     }
 
     rounds.forEach(round => {
+        const diplomas = round.detailedDiplomas || [];
         // Round Group Header Row
         const groupRow = document.createElement('tr');
         groupRow.className = 'round-group-row';
-        const diplomaCount = round.diplomas ? round.diplomas.length : 0;
+        groupRow.style.cursor = 'pointer';
         groupRow.innerHTML = `
             <td>
                 <div class="round-info">
-                    <i class="fas fa-chevron-down"></i>
+                    <i class="fas fa-chevron-down round-toggle"></i>
                     <span>${round.name}</span>
                     <span class="start-date">Starts ${formatDate(round.startDate)}</span>
-                    <span class="round-badge">${diplomaCount} diplomas</span>
+                    <span class="round-badge">${diplomas.length} diplomas</span>
                 </div>
             </td>
             <td></td>
@@ -358,22 +500,47 @@ function renderDashboardTable(rounds) {
         `;
         tbody.appendChild(groupRow);
 
-        // Render each diploma name within the round (Simplified for V2)
-        if (round.diplomas && round.diplomas.length > 0) {
-            round.diplomas.forEach(d => {
+        // Create diploma rows for this round
+        const diplomaRows = [];
+        if (diplomas.length > 0) {
+            diplomas.forEach(d => {
                 const diplomaRow = document.createElement('tr');
+                diplomaRow.className = 'diploma-detail-row';
+                diplomaRow.style.cursor = 'pointer'; // Make it clickable
                 diplomaRow.innerHTML = `
                     <td></td>
-                    <td>${d.name}</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>-</td>
+                    <td>${d.diplomaName || d.name || '-'}</td>
+                    <td>${d.currentEnrollment != null ? d.currentEnrollment : (d.totalStudents || '-')}</td>
+                    <td>${renderInstallmentCell(d.installment1Date)}</td>
+                    <td>${renderInstallmentCell(d.installment2Date)}</td>
+                    <td>${renderInstallmentCell(d.installment3Date)}</td>
+                    <td>${renderInstallmentCell(d.installment4Date)}</td>
                 `;
+                // Add click listener to open Delayed Students view
+                diplomaRow.addEventListener('click', (e) => {
+                    e.stopPropagation(); // prevent bubbling if needed
+                    openDelayedStudents(d.id, d.diplomaName || d.name, round.name);
+                });
+
                 tbody.appendChild(diplomaRow);
+                diplomaRows.push(diplomaRow);
             });
         }
+
+        // Toggle collapse/expand on round header click
+        groupRow.addEventListener('click', () => {
+            const icon = groupRow.querySelector('.round-toggle');
+            const isCollapsed = icon.classList.contains('fa-chevron-right');
+            if (isCollapsed) {
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+                diplomaRows.forEach(row => row.style.display = '');
+            } else {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+                diplomaRows.forEach(row => row.style.display = 'none');
+            }
+        });
     });
 }
 
@@ -2614,13 +2781,348 @@ async function loadLeadStats() {
         if (response.ok) {
             const stats = await response.json();
             document.getElementById('stat-total-leads').textContent = stats.total || 0;
-            document.getElementById('stat-opened-leads').textContent = stats.pending || 0; // mapping pending to opened
+            document.getElementById('stat-opened-leads').textContent = stats.opened !== undefined ? stats.opened : (stats.pending || 0);
             document.getElementById('stat-closed-leads').textContent = stats.closed || 0;
-            document.getElementById('stat-enrolled-leads').textContent = stats.completed || 0; // mapping completed to enrolled
-            // Some stats might not be in the basic API, but we'll show what we have
+            document.getElementById('stat-enrolled-leads').textContent = stats.enrolled !== undefined ? stats.enrolled : (stats.completed || 0);
+            document.getElementById('stat-countries-leads').textContent = stats.countries || 0;
+            document.getElementById('stat-no-responses-leads').textContent = stats.noResponses || 0;
         }
     } catch (error) {
         console.error('Error loading lead stats:', error);
+    }
+}
+
+// ==========================================
+// Telesales Leads & Call Attempts Logic
+// ==========================================
+
+async function loadDiplomasForTelesalesForm() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v1/diplomas', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const diplomas = await response.json();
+            const filterSelect = document.getElementById('tele-filter-diploma');
+            if (filterSelect) {
+                filterSelect.innerHTML = '<option value="">Diploma</option>';
+                diplomas.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.textContent = d.name;
+                    filterSelect.appendChild(opt);
+                });
+            }
+        }
+    } catch (e) {
+        console.error("Error loading diplomas for telesales form:", e);
+    }
+}
+
+async function loadTelesalesLeads(page = 0) {
+    const search = document.getElementById('tele-search-leads').value;
+    const diplomaId = document.getElementById('tele-filter-diploma').value;
+    const status = document.getElementById('tele-filter-status').value;
+    const attempts = document.getElementById('tele-filter-attempts').value;
+
+    let url = `http://localhost:8080/api/v1/leads?page=${page}&size=50`;
+    try {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            let leads = data.content || [];
+
+            // Filter ONLY those leads assigned to current Tele Sales user!
+            leads = leads.filter(l => l.teleSales && l.teleSales.username === userData.username);
+
+            // Client-side filtering
+            if (search) {
+                leads = leads.filter(l => l.phoneNumber.includes(search) || (l.moderatorNotes && l.moderatorNotes.toLowerCase().includes(search.toLowerCase())));
+            }
+            if (diplomaId) {
+                leads = leads.filter(l => l.diploma && l.diploma.id == diplomaId);
+            }
+            if (status) {
+                leads = leads.filter(l => l.status === status);
+            }
+            if (attempts !== "") {
+                leads = leads.filter(l => {
+                    const count = l.followUps ? l.followUps.length : 0;
+                    return count == parseInt(attempts);
+                });
+            }
+
+            renderTelesalesLeadsTable(leads);
+            renderTelesalesLeadsPagination(data, page);
+        }
+    } catch (e) {
+        console.error("Error loading telesales leads:", e);
+    }
+}
+
+function renderTelesalesLeadsTable(leads) {
+    const tbody = document.getElementById('tele-leads-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (leads.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 25px; color: #888;">No leads assigned to you.</td></tr>';
+        return;
+    }
+
+    leads.forEach(l => {
+        const row = document.createElement('tr');
+        const count = l.followUps ? l.followUps.length : 0;
+        
+        // Status Badges
+        let statusBadge = '';
+        if (l.status === 'OPEN') statusBadge = '<span class="status-pill open" style="background: #e8f5e9; color: #4caf50; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Open</span>';
+        else if (l.status === 'CLOSED') statusBadge = '<span class="status-pill closed" style="background: #ffebee; color: #f44336; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Closed</span>';
+        else if (l.status === 'ENROLLED') statusBadge = '<span class="status-pill enrolled" style="background: #e3f2fd; color: #2196f3; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Enrolled</span>';
+        else statusBadge = `<span class="status-pill other" style="background: #f5f5f5; color: #666; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">${l.status}</span>`;
+
+        // Format Inquiry Date
+        let dateStr = '-';
+        if (l.createdAt) {
+            const date = new Date(l.createdAt);
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            dateStr = `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        row.innerHTML = `
+            <td style="padding: 15px; font-weight: 600; color: #333;">${l.phoneNumber}</td>
+            <td style="padding: 15px; color: #555;">${l.diploma ? l.diploma.name : '-'}</td>
+            <td style="padding: 15px; color: #666;">${dateStr}</td>
+            <td style="padding: 15px; text-align: left;">${statusBadge}</td>
+            <td style="padding: 15px; color: #777; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${l.moderatorNotes || '-'}</td>
+            <td style="padding: 15px; text-align: center; font-weight: 600; color: #444;">${count}/3</td>
+            <td style="padding: 15px; text-align: center;">
+                <button onclick="viewTelesalesLead(${l.id})" style="background: #f5f5f5; border: 1px solid #ddd; width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #555; cursor: pointer; transition: all 0.2s;">
+                    <i class="far fa-eye"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderTelesalesLeadsPagination(data, currentPage) {
+    const container = document.getElementById('tele-leads-pagination');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    if (!data.totalPages || data.totalPages <= 1) return;
+
+    // Previous Button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    prevBtn.disabled = currentPage === 0;
+    prevBtn.onclick = () => loadTelesalesLeads(currentPage - 1);
+    container.appendChild(prevBtn);
+
+    // Page Numbers
+    for (let i = 0; i < data.totalPages; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+        pageBtn.textContent = i + 1;
+        pageBtn.onclick = () => loadTelesalesLeads(i);
+        container.appendChild(pageBtn);
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    nextBtn.disabled = currentPage === data.totalPages - 1;
+    nextBtn.onclick = () => loadTelesalesLeads(currentPage + 1);
+    container.appendChild(nextBtn);
+}
+
+function setupTelesalesListeners() {
+    const search = document.getElementById('tele-search-leads');
+    const dip = document.getElementById('tele-filter-diploma');
+    const status = document.getElementById('tele-filter-status');
+    const att = document.getElementById('tele-filter-attempts');
+
+    if (search) search.oninput = () => loadTelesalesLeads();
+    if (dip) dip.onchange = () => loadTelesalesLeads();
+    if (status) status.onchange = () => loadTelesalesLeads();
+    if (att) att.onchange = () => loadTelesalesLeads();
+
+    const form = document.getElementById('form-add-call-attempt');
+    if (form) {
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            submitTelesalesCallAttempt();
+        };
+    }
+
+    const cancelBtn = document.getElementById('btn-cancel-call');
+    if (cancelBtn) {
+        cancelBtn.onclick = () => {
+            showView('leads-list-view');
+            loadTelesalesLeads();
+        };
+    }
+}
+
+async function viewTelesalesLead(id) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/leads/${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const lead = await response.json();
+            
+            // Show details view
+            showView('telesales-lead-details-view');
+
+            // Populate lead info block
+            document.getElementById('det-lead-phone').textContent = lead.phoneNumber || '-';
+            document.getElementById('det-lead-diploma').textContent = lead.diploma ? lead.diploma.name : '-';
+            document.getElementById('det-lead-notes').textContent = lead.moderatorNotes || '-';
+
+            // Format Inquiry Date
+            let dateStr = '-';
+            if (lead.createdAt) {
+                const date = new Date(lead.createdAt);
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                dateStr = `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+            }
+            document.getElementById('det-lead-date').textContent = dateStr;
+
+            // Status Badge
+            let statusBadge = '';
+            if (lead.status === 'OPEN') statusBadge = '<span class="status-pill open" style="background: #e8f5e9; color: #4caf50; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Open</span>';
+            else if (lead.status === 'CLOSED') statusBadge = '<span class="status-pill closed" style="background: #ffebee; color: #f44336; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Closed</span>';
+            else if (lead.status === 'ENROLLED') statusBadge = '<span class="status-pill enrolled" style="background: #e3f2fd; color: #2196f3; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Enrolled</span>';
+            else statusBadge = `<span class="status-pill other" style="background: #f5f5f5; color: #666; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">${lead.status}</span>`;
+            
+            document.getElementById('det-lead-status').innerHTML = statusBadge;
+
+            // Follow-ups attempts count
+            const followUps = lead.followUps || [];
+            const count = followUps.length;
+            document.getElementById('det-lead-attempts').textContent = `${count}/3`;
+
+            // Set Call Attempt Form values
+            document.getElementById('call-lead-id').value = lead.id;
+            document.getElementById('call-date-input').valueAsDate = new Date();
+            document.getElementById('call-response-input').value = '';
+            document.getElementById('call-status-input').value = lead.status;
+
+            // Manage attempts layout & banners
+            const formFields = document.querySelectorAll('#form-add-call-attempt input, #form-add-call-attempt textarea, #form-add-call-attempt select, #form-add-call-attempt button');
+            const saveBtn = document.getElementById('btn-save-call');
+            if (count >= 3) {
+                document.getElementById('call-attempts-info-banner').style.display = 'none';
+                document.getElementById('call-attempts-max-banner').style.display = 'block';
+                // Disable form fields
+                formFields.forEach(f => {
+                    if (f.id !== 'btn-cancel-call') f.disabled = true;
+                });
+                if (saveBtn) {
+                    saveBtn.style.opacity = '0.5';
+                    saveBtn.style.cursor = 'not-allowed';
+                    saveBtn.disabled = true;
+                }
+            } else {
+                document.getElementById('call-attempts-info-banner').style.display = 'block';
+                document.getElementById('call-attempts-max-banner').style.display = 'none';
+                // Enable form fields
+                formFields.forEach(f => f.disabled = false);
+                if (saveBtn) {
+                    saveBtn.style.opacity = '1';
+                    saveBtn.style.cursor = 'pointer';
+                    saveBtn.disabled = false;
+                }
+            }
+
+            // Populate Call History
+            const tbody = document.getElementById('call-history-tbody');
+            if (tbody) {
+                tbody.innerHTML = '';
+
+                if (followUps.length === 0) {
+                    document.getElementById('no-calls-placeholder').style.display = 'flex';
+                    document.getElementById('call-history-table-container').style.display = 'none';
+                } else {
+                    document.getElementById('no-calls-placeholder').style.display = 'none';
+                    document.getElementById('call-history-table-container').style.display = 'block';
+
+                    followUps.forEach(f => {
+                        const row = document.createElement('tr');
+                        
+                        let fDateStr = '-';
+                        if (f.createdAt) {
+                            const date = new Date(f.createdAt);
+                            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                            fDateStr = `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+                        }
+
+                        let fStatusBadge = '-';
+                        if (f.status) {
+                            if (f.status === 'OPEN') fStatusBadge = '<span class="status-pill open" style="background: #e8f5e9; color: #4caf50; padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block;">Open</span>';
+                            else if (f.status === 'CLOSED') fStatusBadge = '<span class="status-pill closed" style="background: #ffebee; color: #f44336; padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block;">Closed</span>';
+                            else if (f.status === 'ENROLLED') fStatusBadge = '<span class="status-pill enrolled" style="background: #e3f2fd; color: #2196f3; padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block;">Enrolled</span>';
+                            else fStatusBadge = `<span class="status-pill other" style="background: #f5f5f5; color: #666; padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block;">${f.status}</span>`;
+                        }
+
+                        row.innerHTML = `
+                            <td style="padding: 10px 15px; color: #555;">${fDateStr}</td>
+                            <td style="padding: 10px 15px; color: #333;">${f.message}</td>
+                            <td style="padding: 10px 15px;">${fStatusBadge}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Error loading lead details:", e);
+    }
+}
+
+async function submitTelesalesCallAttempt() {
+    const leadId = document.getElementById('call-lead-id').value;
+    const callDate = document.getElementById('call-date-input').value;
+    const responseText = document.getElementById('call-response-input').value;
+    const status = document.getElementById('call-status-input').value;
+
+    let customDate = null;
+    if (callDate) {
+        customDate = new Date(callDate).toISOString().split('.')[0];
+    }
+
+    const payload = {
+        message: responseText,
+        status: status,
+        createdAt: customDate
+    };
+
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/leads/${leadId}/follow-ups`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            showToast('Call attempt added successfully', 'success');
+            viewTelesalesLead(leadId);
+        } else {
+            const err = await response.json();
+            showToast(err.message || 'Failed to save call attempt', 'error');
+        }
+    } catch (e) {
+        console.error("Error submitting call attempt:", e);
+        showToast('Connection error, failed to save call attempt', 'error');
     }
 }
 
@@ -3066,5 +3568,592 @@ function renderRevenueTable(records) {
             <td style="padding: 15px; color: #ebb700; font-weight: 600;">${(r.remaining || 0).toLocaleString()}</td>
         `;
         tbody.appendChild(row);
+    });
+}
+
+// ==========================================
+// Moderator Logic & Dynamic Bindings
+// ==========================================
+function setupModeratorListeners() {
+    const leadForm = document.getElementById('form-moderator-add-lead');
+    if (leadForm) {
+        leadForm.onsubmit = async (e) => {
+            e.preventDefault();
+            await submitModeratorAddLead();
+        };
+    }
+
+    const hoursForm = document.getElementById('form-work-hours-entry');
+    if (hoursForm) {
+        hoursForm.onsubmit = async (e) => {
+            e.preventDefault();
+            await submitAttendanceEntry();
+        };
+    }
+    
+    // Set default date to today in forms
+    const leadDate = document.getElementById('mod-lead-date');
+    if (leadDate) leadDate.valueAsDate = new Date();
+    
+    const hoursDate = document.getElementById('attendance-entry-date');
+    if (hoursDate) hoursDate.valueAsDate = new Date();
+}
+
+async function loadDiplomasForModeratorForm() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v1/diplomas', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const diplomas = await response.json();
+            const formSelect = document.getElementById('mod-lead-diploma');
+            const filterSelect = document.getElementById('mod-filter-diploma');
+            
+            formSelect.innerHTML = '<option value="" disabled selected>Select diploma</option>';
+            filterSelect.innerHTML = '<option value="">Diploma</option>';
+            
+            diplomas.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = d.name;
+                formSelect.appendChild(opt.cloneNode(true));
+                filterSelect.appendChild(opt.cloneNode(true));
+            });
+        }
+    } catch (e) {
+        console.error("Error loading diplomas for moderator form:", e);
+    }
+}
+
+async function loadModeratorLeads(page = 0) {
+    const search = document.getElementById('mod-search-leads').value;
+    const diplomaId = document.getElementById('mod-filter-diploma').value;
+    const status = document.getElementById('mod-filter-status').value;
+
+    let url = `http://localhost:8080/api/v1/leads?page=${page}&size=10`;
+    try {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            let leads = data.content || [];
+
+            // Client-side filtering
+            if (search) {
+                leads = leads.filter(l => l.phoneNumber.includes(search) || (l.moderatorNotes && l.moderatorNotes.toLowerCase().includes(search.toLowerCase())));
+            }
+            if (diplomaId) {
+                leads = leads.filter(l => l.diploma && l.diploma.id == diplomaId);
+            }
+            if (status) {
+                leads = leads.filter(l => l.status === status);
+            }
+
+            renderModeratorLeadsTable(leads);
+            renderModeratorLeadsPagination(data, page);
+        }
+    } catch (e) {
+        console.error("Error loading moderator leads:", e);
+    }
+}
+
+function renderModeratorLeadsTable(leads) {
+    const tbody = document.getElementById('mod-leads-tbody');
+    tbody.innerHTML = '';
+
+    if (leads.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #888;">No leads found.</td></tr>';
+        return;
+    }
+
+    leads.forEach(l => {
+        const row = document.createElement('tr');
+        const statusClass = (l.status || 'OPEN').toLowerCase();
+        
+        row.innerHTML = `
+            <td style="padding: 12px; font-weight: 600;">${l.phoneNumber}</td>
+            <td style="padding: 12px;">${l.diploma ? l.diploma.name : '-'}</td>
+            <td style="padding: 12px;">${formatDate(l.createdAt)}</td>
+            <td style="padding: 12px; text-align: center;">
+                <span class="status-pill ${statusClass}">${l.status || 'OPEN'}</span>
+            </td>
+            <td style="padding: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${l.moderatorNotes || '-'}</td>
+            <td style="padding: 12px; text-align: center;">
+                <div style="display: flex; gap: 8px; justify-content: center;">
+                    <button class="btn-action edit" onclick="editModeratorLead(${l.id})" style="background: #e3f2fd; border-radius: 50%; width: 32px; height: 32px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #1976d2;"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="btn-action delete" onclick="deleteModeratorLead(${l.id})" style="background: #ffebee; border-radius: 50%; width: 32px; height: 32px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #dc3545;"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function submitModeratorAddLead() {
+    const phone = document.getElementById('mod-lead-phone').value;
+    const date = document.getElementById('mod-lead-date').value;
+    const diplomaId = document.getElementById('mod-lead-diploma').value;
+    const status = document.getElementById('mod-lead-status').value;
+    const notes = document.getElementById('mod-lead-notes').value;
+
+    const payload = {
+        fullName: "Lead (" + phone + ")",
+        phoneNumber: phone,
+        diplomaId: parseInt(diplomaId),
+        status: status,
+        moderatorNotes: notes,
+        source: 'MODERATOR_ENTRY'
+    };
+
+    try {
+        const response = await fetch('http://localhost:8080/api/v1/leads/admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            showToast('Lead added successfully', 'success');
+            document.getElementById('form-moderator-add-lead').reset();
+            document.getElementById('mod-lead-date').valueAsDate = new Date();
+            loadModeratorLeads();
+        } else {
+            const err = await response.json();
+            showToast(err.message || 'Failed to add lead', 'error');
+        }
+    } catch (e) {
+        console.error("Error submitting lead:", e);
+        showToast('An error occurred while saving lead', 'error');
+    }
+}
+
+async function editModeratorLead(id) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/leads/${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const l = await response.json();
+            document.getElementById('mod-lead-phone').value = l.phoneNumber;
+            document.getElementById('mod-lead-diploma').value = l.diploma ? l.diploma.id : '';
+            document.getElementById('mod-lead-status').value = l.status || 'OPEN';
+            document.getElementById('mod-lead-notes').value = l.moderatorNotes || '';
+            document.getElementById('form-moderator-add-lead').scrollIntoView({ behavior: 'smooth' });
+        }
+    } catch (e) {
+        console.error("Error loading lead edit:", e);
+    }
+}
+
+async function deleteModeratorLead(id) {
+    if (!confirm('Are you sure you want to delete this lead? Only Admins can execute deletes.')) return;
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/leads/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (response.ok) {
+            showToast('Lead deleted successfully', 'success');
+            loadModeratorLeads();
+        } else {
+            showToast('Only admins have delete permissions', 'error');
+        }
+    } catch (e) {
+        console.error("Error deleting lead:", e);
+        showToast('Unauthorized operation', 'error');
+    }
+}
+
+function renderModeratorLeadsPagination(data, currentPage) {
+    const container = document.getElementById('mod-leads-pagination');
+    container.innerHTML = '';
+    if (!data || data.totalPages <= 1) return;
+
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    prevBtn.disabled = currentPage === 0;
+    prevBtn.onclick = () => loadModeratorLeads(currentPage - 1);
+    container.appendChild(prevBtn);
+
+    for (let i = 0; i < data.totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.className = `page-btn ${currentPage === i ? 'active' : ''}`;
+        btn.textContent = i + 1;
+        btn.onclick = () => loadModeratorLeads(i);
+        container.appendChild(btn);
+    }
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    nextBtn.disabled = currentPage === data.totalPages - 1;
+    nextBtn.onclick = () => loadModeratorLeads(currentPage + 1);
+    container.appendChild(nextBtn);
+}
+
+// Work Hours
+async function loadWorkHours(page = 0) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/attendance/my-attendance?page=${page}&size=10`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            renderWorkHoursTable(data.content || []);
+            renderWorkHoursPagination(data, page);
+        }
+    } catch (e) {
+        console.error("Error loading work hours:", e);
+    }
+}
+
+function renderWorkHoursTable(entries) {
+    const tbody = document.getElementById('work-hours-tbody');
+    tbody.innerHTML = '';
+
+    if (entries.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px; color: #888;">No work hours entry logged yet.</td></tr>';
+        return;
+    }
+
+    entries.forEach(entry => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td style="padding: 15px;">${formatDate(entry.date)}</td>
+            <td style="padding: 15px; font-weight: 600;">${entry.totalHours} hrs</td>
+            <td style="padding: 15px; text-align: center;">
+                <div style="display: flex; gap: 8px; justify-content: center;">
+                    <button class="btn-action edit" onclick="editAttendance(${entry.id})" style="background: #e3f2fd; border-radius: 50%; width: 32px; height: 32px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #1976d2;"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="btn-action delete" onclick="deleteAttendance(${entry.id})" style="background: #ffebee; border-radius: 50%; width: 32px; height: 32px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #dc3545;"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+async function loadWeeklyHours() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v1/attendance/weekly-hours', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('weekly-hours-val').textContent = (data.weeklyHours || 0) + " hrs";
+        }
+    } catch (e) {
+        console.error("Error loading weekly hours:", e);
+    }
+}
+
+async function submitAttendanceEntry() {
+    const id = document.getElementById('attendance-edit-id').value;
+    const date = document.getElementById('attendance-entry-date').value;
+    const hours = document.getElementById('attendance-entry-hours').value;
+
+    const payload = {
+        date: date,
+        totalHours: parseFloat(hours)
+    };
+
+    let url = 'http://localhost:8080/api/v1/attendance';
+    let method = 'POST';
+
+    if (id) {
+        url = `http://localhost:8080/api/v1/attendance/${id}`;
+        method = 'PUT';
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            showToast(id ? 'Work hour entry updated' : 'Work hour entry added', 'success');
+            document.getElementById('form-work-hours-entry').reset();
+            document.getElementById('attendance-edit-id').value = '';
+            document.getElementById('attendance-entry-date').valueAsDate = new Date();
+            document.getElementById('btn-submit-attendance-text').textContent = 'Add Entry';
+            loadWorkHours();
+            loadWeeklyHours();
+        } else {
+            showToast('Failed to save entry', 'error');
+        }
+    } catch (e) {
+        console.error("Error saving attendance entry:", e);
+        showToast('An error occurred', 'error');
+    }
+}
+
+async function editAttendance(id) {
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/attendance/my-attendance?size=100`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            const record = data.content.find(r => r.id === id);
+            if (record) {
+                document.getElementById('attendance-edit-id').value = record.id;
+                document.getElementById('attendance-entry-date').value = record.date;
+                document.getElementById('attendance-entry-hours').value = record.totalHours;
+                document.getElementById('btn-submit-attendance-text').textContent = 'Save changes';
+                document.getElementById('form-work-hours-entry').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    } catch (e) {
+        console.error("Error setting up edit form:", e);
+    }
+}
+
+async function deleteAttendance(id) {
+    if (!confirm('Are you sure you want to delete this work hours log?')) return;
+
+    try {
+        const response = await fetch(`http://localhost:8080/api/v1/attendance/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (response.ok) {
+            showToast('Hours entry deleted', 'success');
+            loadWorkHours();
+            loadWeeklyHours();
+        } else {
+            showToast('Failed to delete entry', 'error');
+        }
+    } catch (e) {
+        console.error("Error deleting attendance:", e);
+    }
+}
+
+function renderWorkHoursPagination(data, currentPage) {
+    const container = document.getElementById('work-hours-pagination');
+    container.innerHTML = '';
+    if (!data || data.totalPages <= 1) return;
+
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    prevBtn.disabled = currentPage === 0;
+    prevBtn.onclick = () => loadWorkHours(currentPage - 1);
+    container.appendChild(prevBtn);
+
+    for (let i = 0; i < data.totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.className = `page-btn ${currentPage === i ? 'active' : ''}`;
+        btn.textContent = i + 1;
+        btn.onclick = () => loadWorkHours(i);
+        container.appendChild(btn);
+    }
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    nextBtn.disabled = currentPage === data.totalPages - 1;
+    nextBtn.onclick = () => loadWorkHours(currentPage + 1);
+    container.appendChild(nextBtn);
+}
+
+// Leaderboard
+async function loadLeaderboard() {
+    try {
+        const response = await fetch('http://localhost:8080/api/v1/leads/leaderboard', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            const list = await response.json();
+            
+            const first = list[0] || { fullName: 'No moderator', leadCount: 0 };
+            const second = list[1] || { fullName: 'No moderator', leadCount: 0 };
+            const third = list[2] || { fullName: 'No moderator', leadCount: 0 };
+
+            document.getElementById('podium-1-name').textContent = first.fullName;
+            document.getElementById('podium-1-count').textContent = first.leadCount + " leads";
+            document.getElementById('podium-1-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(first.fullName)}&background=ebb700&color=fff&size=100`;
+
+            document.getElementById('podium-2-name').textContent = second.fullName;
+            document.getElementById('podium-2-count').textContent = second.leadCount + " leads";
+            document.getElementById('podium-2-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(second.fullName)}&background=0088cc&color=fff&size=80`;
+
+            document.getElementById('podium-3-name').textContent = third.fullName;
+            document.getElementById('podium-3-count').textContent = third.leadCount + " leads";
+            document.getElementById('podium-3-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(third.fullName)}&background=f4511e&color=fff&size=80`;
+
+            const tbody = document.getElementById('leaderboard-tbody');
+            tbody.innerHTML = '';
+
+            const remaining = list.slice(3);
+            if (remaining.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px; color: #888;">No other rankings.</td></tr>';
+                return;
+            }
+
+            remaining.forEach((m, idx) => {
+                const rank = idx + 4;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="padding: 15px; font-weight: 700;">#${rank}</td>
+                    <td style="padding: 15px;">${m.fullName}</td>
+                    <td style="padding: 15px; text-align: right; font-weight: 600;">${m.leadCount}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    } catch (e) {
+        console.error("Error loading leaderboard:", e);
+    }
+}
+
+// Function to convert standard selects into custom styled dropdowns globally
+function applyCustomSelects() {
+    document.querySelectorAll('.control-item.select').forEach(wrapper => {
+        if (wrapper.dataset.customized) return;
+        wrapper.dataset.customized = "true";
+
+        const select = wrapper.querySelector('select');
+        if (!select) return;
+
+        select.style.display = 'none';
+        
+        const textSpan = document.createElement('span');
+        textSpan.className = 'custom-select-text';
+        textSpan.textContent = select.options[select.selectedIndex]?.text || '';
+        
+        // Insert textSpan before the chevron
+        const chevron = wrapper.querySelector('.chevron');
+        if (chevron) {
+            wrapper.insertBefore(textSpan, chevron);
+        } else {
+            wrapper.appendChild(textSpan);
+        }
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'custom-select-dropdown';
+        wrapper.appendChild(dropdown);
+
+        const updateDropdown = () => {
+            dropdown.innerHTML = '';
+            Array.from(select.options).forEach(opt => {
+                const item = document.createElement('div');
+                item.className = 'custom-select-item';
+                item.textContent = opt.text;
+                if (opt.selected) item.classList.add('selected');
+                
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    select.value = opt.value;
+                    textSpan.textContent = opt.text;
+                    dropdown.classList.remove('show');
+                    wrapper.classList.remove('active');
+                    select.dispatchEvent(new Event('change'));
+                });
+                dropdown.appendChild(item);
+            });
+        };
+
+        updateDropdown();
+
+        wrapper.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const wasActive = wrapper.classList.contains('active');
+            
+            // Close all other custom selects
+            document.querySelectorAll('.control-item.select.active').forEach(w => {
+                w.classList.remove('active');
+                w.querySelector('.custom-select-dropdown')?.classList.remove('show');
+            });
+
+            if (!wasActive) {
+                updateDropdown();
+                dropdown.classList.add('show');
+                wrapper.classList.add('active');
+            }
+        });
+
+        document.addEventListener('click', () => {
+            dropdown.classList.remove('show');
+            wrapper.classList.remove('active');
+        });
+
+        // Sync text when options change via code (e.g. loadRounds filling the filter)
+        const observer = new MutationObserver(() => {
+            textSpan.textContent = select.options[select.selectedIndex]?.text || '';
+            updateDropdown();
+        });
+        observer.observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['value'] });
+    });
+}
+
+// --------------------------------------------------------------------------------------
+// Delayed Students / Diploma Details View Logic
+// --------------------------------------------------------------------------------------
+
+async function openDelayedStudents(roundDiplomaId, diplomaName, roundName) {
+    showView('delayed-students-view');
+    
+    // Optional: update the title to reflect the specific diploma
+    // const titleEl = document.getElementById('delayed-students-title');
+    // if (titleEl) titleEl.textContent = `Students: ${diplomaName} - ${roundName}`;
+    
+    try {
+        const response = await fetch(`http://localhost:8080/api/v2/students/round-diploma/${roundDiplomaId}?size=100`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch students for diploma');
+
+        const data = await response.json();
+        renderDelayedStudentsTable(data.content || []);
+    } catch (error) {
+        console.error('Error loading diploma students:', error);
+        renderDelayedStudentsTable([]);
+    }
+}
+
+function renderDelayedStudentsTable(students) {
+    const tbody = document.getElementById('delayed-students-tbody');
+    tbody.innerHTML = '';
+
+    if (!students || students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">No students found for this diploma.</td></tr>';
+        return;
+    }
+
+    students.forEach(student => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #eee';
+        tr.style.fontSize = '14px';
+
+        // Placeholder logic for IT checkbox and Password since they are not in the response
+        const dummyPassword = 'Xdk1!01F3-8V\\paKh';
+        const notes = student.notes || 'No notes';
+
+        tr.innerHTML = `
+            <td style="padding: 15px; color: #333; font-weight: 500;">${student.name || '-'}</td>
+            <td style="padding: 15px; color: #555;">${student.phone || '-'}</td>
+            <td style="padding: 15px; text-align: center;"><input type="checkbox" style="width:16px; height:16px; accent-color: var(--primary-color);"></td>
+            <td style="padding: 15px; color: #555;">${student.email || '-'}</td>
+            <td style="padding: 15px; color: #555;">${dummyPassword}</td>
+            <td style="padding: 15px; color: #777;">${notes}</td>
+            <td style="padding: 15px; color: #333;">${student.roundName || '-'}</td>
+            <td style="padding: 15px; color: #333;">${student.diplomaName || '-'}</td>
+        `;
+
+        tbody.appendChild(tr);
     });
 }

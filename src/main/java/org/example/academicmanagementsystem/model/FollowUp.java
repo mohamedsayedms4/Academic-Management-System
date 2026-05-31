@@ -28,4 +28,7 @@ public class FollowUp extends BaseEntity {
     @JoinColumn(name = "employee_id")
     private User employee;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private LeadStatus status;
 }

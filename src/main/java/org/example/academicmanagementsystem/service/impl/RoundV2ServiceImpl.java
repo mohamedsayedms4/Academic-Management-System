@@ -25,6 +25,7 @@ public class RoundV2ServiceImpl implements RoundV2Service {
 
     private final RoundV2Repository roundRepository;
     private final DiplomaV2Repository diplomaRepository;
+    private final org.example.academicmanagementsystem.repository.RoundDiplomaV2Repository roundDiplomaRepository;
 
     @Override
     @Transactional
@@ -91,13 +92,13 @@ public class RoundV2ServiceImpl implements RoundV2Service {
     }
 
     private RoundResponseV2 mapToResponse(RoundV2 round) {
-        List<DiplomaResponseV2> diplomaResponses = round.getDiplomas() != null ? 
-                round.getDiplomas().stream()
-                .map(d -> DiplomaResponseV2.builder()
-                        .id(d.getId())
-                        .name(d.getName())
+        List<org.example.academicmanagementsystem.model.RoundDiplomaV2> rds = roundDiplomaRepository.findByRound(round);
+        List<DiplomaResponseV2> diplomaResponses = rds.stream()
+                .map(rd -> DiplomaResponseV2.builder()
+                        .id(rd.getDiploma().getId())
+                        .name(rd.getDiploma().getName())
                         .build())
-                .collect(Collectors.toList()) : List.of();
+                .collect(Collectors.toList());
 
         return RoundResponseV2.builder()
                 .id(round.getId())

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Service
@@ -119,6 +120,13 @@ public class StudentV2ServiceImpl implements StudentV2Service {
     }
 
     private StudentResponseV2 mapToResponse(StudentV2 student) {
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        if (student.getRound() != null && student.getDiploma() != null) {
+            totalAmount = roundDiplomaRepository.findByRoundAndDiploma(student.getRound(), student.getDiploma())
+                .map(org.example.academicmanagementsystem.model.RoundDiplomaV2::getTotalPrice)
+                .orElse(BigDecimal.ZERO);
+        }
+
         return StudentResponseV2.builder()
                 .id(student.getId())
                 .name(student.getName())
@@ -134,6 +142,8 @@ public class StudentV2ServiceImpl implements StudentV2Service {
                 .cancellationDate(student.getCancellationDate())
                 .cancellationReason(student.getCancellationReason())
                 .enrollmentDate(student.getEnrollmentDate())
+                .totalAmount(totalAmount)
+                .paidAmount(student.getDepositAmount() != null ? student.getDepositAmount() : BigDecimal.ZERO)
                 .build();
     }
 }

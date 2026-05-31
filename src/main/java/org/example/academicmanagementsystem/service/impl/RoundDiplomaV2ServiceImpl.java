@@ -50,6 +50,16 @@ public class RoundDiplomaV2ServiceImpl implements RoundDiplomaV2Service {
         mapRequestToEntity(request, rd);
 
         RoundDiplomaV2 saved = roundDiplomaRepository.save(rd);
+
+        // Ensure the diploma is also added to the ManyToMany relationship
+        if (round.getDiplomas() == null) {
+            round.setDiplomas(new java.util.HashSet<>());
+        }
+        if (!round.getDiplomas().contains(diploma)) {
+            round.getDiplomas().add(diploma);
+            roundRepository.save(round);
+        }
+
         return mapToResponse(saved);
     }
 

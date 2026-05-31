@@ -38,4 +38,11 @@ public interface LeadService {
     Integer LeadCancelled();
 
     Page<LeadResponse> getLeadsByStatus(Pageable pageable , LeadStatus leadStatus );
+
+    java.util.Map<String, Integer> getLeadStatistics();
+
+    LeadDetailResponse addFollowUp(Long leadId, org.example.academicmanagementsystem.dto.FollowUpRequest request);
+
+    java.util.List<org.example.academicmanagementsystem.dto.ModeratorLeaderboardResponse> getModeratorLeaderboard();
 }
+

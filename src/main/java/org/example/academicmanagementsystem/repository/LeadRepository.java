@@ -30,4 +30,9 @@ public interface LeadRepository extends JpaRepository<Lead, Long> {
     // Find All leads as a page filtering by status
     Page <Lead> findLeadsByStatus(LeadStatus status,
                                   Pageable pageable);
+
+    // Find count of leads created by a moderator in this week
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(l) FROM Lead l WHERE l.createdBy = :username AND l.createdAt >= :startDate")
+    long countByCreatedByAndCreatedAtGreaterThanEqual(@org.springframework.data.repository.query.Param("username") String username, @org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate);
 }
+

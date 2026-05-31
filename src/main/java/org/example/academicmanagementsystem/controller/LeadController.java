@@ -97,14 +97,14 @@ public class LeadController {
     @GetMapping("/statistics")
     @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
     public ResponseEntity<Map<String, Integer>> getLeadStatistics() {
-        Map<String, Integer> statistics = new HashMap<>();
-        statistics.put("total", leadService.count());
-        statistics.put("completed", leadService.LeadCompleted());
-        statistics.put("inProgress", leadService.LeadInProgress());
-        statistics.put("pending", leadService.LeadPending());
-        statistics.put("cancelled", leadService.LeadCancelled());
+        return ResponseEntity.ok(leadService.getLeadStatistics());
+    }
 
-        return ResponseEntity.ok(statistics);
+    // Get moderator leaderboard - accessible by all authenticated users
+    @GetMapping("/leaderboard")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<java.util.List<org.example.academicmanagementsystem.dto.ModeratorLeaderboardResponse>> getModeratorLeaderboard() {
+        return ResponseEntity.ok(leadService.getModeratorLeaderboard());
     }
 
     // Filter leads by status - accessible by all authenticated users
@@ -130,6 +130,16 @@ public class LeadController {
         Map<String, Integer> response = new HashMap<>();
         response.put("count", leadService.count());
         return ResponseEntity.ok(response);
+    }
+
+    // Add call attempt / follow-up - accessible by ADMIN, MODERATOR, TELESALES
+    @PostMapping("/{id}/follow-ups")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR', 'TELESALES')")
+    public ResponseEntity<LeadDetailResponse> addFollowUp(
+            @PathVariable Long id,
+            @RequestBody org.example.academicmanagementsystem.dto.FollowUpRequest followUpRequest) {
+        LeadDetailResponse updatedLead = leadService.addFollowUp(id, followUpRequest);
+        return ResponseEntity.ok(updatedLead);
     }
 
     // Health check endpoint - public access

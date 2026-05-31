@@ -87,6 +87,17 @@ public class DataSeeder {
                 System.out.println(">>> Seeded V1 Base Data (Diplomas, Rounds, Students)");
             }
 
+            // Always refresh moderator seeded leads to guarantee fresh timestamps for the current week's leaderboard
+            java.util.List<String> seededPhones = java.util.List.of(
+                "01099882211", "01099882212", "01099882213", "01099882214", "01099882215",
+                "01077665541", "01077665542", "01077665543"
+            );
+            for (String phone : seededPhones) {
+                leadRepository.findByPhoneNumber(phone).forEach(leadRepository::delete);
+            }
+            seedLeads(users, diplomaRepository.findAll());
+            System.out.println(">>> Seeded fresh moderator leads for active week");
+ 
             log.info("Database seeding completed successfully!");
         };
     }
@@ -159,18 +170,25 @@ public class DataSeeder {
     private List<Lead> seedLeads(List<User> users, List<Diploma> diplomas) {
         List<Lead> leads = new ArrayList<>();
 
-        // Get telesales users (indices 2, 3, 4)
-        User telesales1 = users.get(2);
-        User telesales2 = users.get(3);
-        User telesales3 = users.get(4);
+        User telesales = users.stream().filter(u -> u.getRole() == UserRole.TELESALES).findFirst().orElse(users.get(0));
+        Diploma dip = diplomas.isEmpty() ? null : diplomas.get(0);
 
-        leads.add(createLead("أحمد محمد", "01234567890", diplomas.get(0), "Very interested in AI", LeadStatus.OPEN,
-                telesales1, null, null));
-        leads.add(createLead("سارة أحمد", "01123456789", diplomas.get(1), "Looking for evening classes", LeadStatus.OPEN,
-                telesales2, null, null));
-        leads.add(createLead("فاطمة كمال", "01156789012", diplomas.get(4), "Completed enrollment process", LeadStatus.CLOSED,
-                telesales3, "Successfully enrolled", null));
-        
+        // Alaa (5 leads)
+        for (int i = 1; i <= 5; i++) {
+            Lead l = createLead("Alaa Lead " + i, "0109988221" + i, dip, "Notes for Alaa lead " + i, LeadStatus.OPEN, telesales, null, null);
+            l.setCreatedBy("alaa");
+            l.setUpdatedBy("alaa");
+            leads.add(l);
+        }
+
+        // Moderator (3 leads)
+        for (int i = 1; i <= 3; i++) {
+            Lead l = createLead("Moderator Lead " + i, "0107766554" + i, dip, "Notes for Moderator lead " + i, LeadStatus.OPEN, telesales, null, null);
+            l.setCreatedBy("moderator");
+            l.setUpdatedBy("moderator");
+            leads.add(l);
+        }
+
         return leadRepository.saveAll(leads);
     }
 

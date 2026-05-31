@@ -29,4 +29,6 @@ public class StudentResponseV2 {
     private LocalDate cancellationDate;
     private String cancellationReason;
     private LocalDateTime enrollmentDate;
+    private BigDecimal totalAmount;
+    private BigDecimal paidAmount;
 }

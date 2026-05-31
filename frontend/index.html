@@ -19,21 +19,21 @@
             
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="active"><a href="#" id="nav-home"><i class="fas fa-home"></i> <span>Home</span></a></li>
-                    <li><a href="#" id="nav-diplomas"><i class="fas fa-graduation-cap"></i> <span>Diplomas</span></a></li>
-                    <li><a href="#" id="nav-rounds"><i class="fas fa-layer-group"></i> <span>Rounds</span></a></li>
-                    <li><a href="#" id="nav-instructors"><i class="fas fa-chalkboard-teacher"></i> <span>Instructors</span></a></li>
-                    <li class="has-submenu" id="nav-students-parent">
-                        <a href="#"><i class="fas fa-user-graduate"></i> <span>Students</span> <i class="fas fa-chevron-down arrow"></i></a>
+                    <li id="li-home" class="active"><a href="#" id="nav-home"><i class="fas fa-home"></i> <span>Home</span></a></li>
+                    <li id="li-diplomas"><a href="#" id="nav-diplomas"><i class="fas fa-graduation-cap"></i> <span>Diplomas</span></a></li>
+                    <li id="li-rounds"><a href="#" id="nav-rounds"><i class="fas fa-layer-group"></i> <span>Rounds</span></a></li>
+                    <li id="li-instructors"><a href="#" id="nav-instructors"><i class="fas fa-chalkboard-teacher"></i> <span>Instructors</span></a></li>
+                    <li id="li-students" class="has-submenu">
+                        <a href="#" id="nav-students-parent"><i class="fas fa-user-graduate"></i> <span>Students</span> <i class="fas fa-chevron-down arrow"></i></a>
                         <ul class="submenu" id="students-submenu">
                             <li><a href="#" id="nav-cancelled-students">Cancelled Students</a></li>
                             <li><a href="#" id="nav-future-enrollments">Future Enrollments</a></li>
                         </ul>
                     </li>
-                    <li><a href="#" id="nav-invoices"><i class="fas fa-file-invoice-dollar"></i> <span>Invoices</span></a></li>
-                    <li><a href="#" id="nav-sales"><i class="fas fa-chart-line"></i> <span>Sales</span></a></li>
-                    <li class="has-submenu" id="nav-finance-parent">
-                        <a href="#"><i class="fas fa-wallet"></i> <span>Finance</span> <i class="fas fa-chevron-down arrow"></i></a>
+                    <li id="li-invoices"><a href="#" id="nav-invoices"><i class="fas fa-file-invoice-dollar"></i> <span>Invoices</span></a></li>
+                    <li id="li-sales"><a href="#" id="nav-sales"><i class="fas fa-chart-line"></i> <span>Sales</span></a></li>
+                    <li id="li-finance" class="has-submenu">
+                        <a href="#" id="nav-finance-parent"><i class="fas fa-wallet"></i> <span>Finance</span> <i class="fas fa-chevron-down arrow"></i></a>
                         <ul class="submenu" id="finance-submenu">
                             <li><a href="#" id="nav-finance-overview">Overview</a></li>
                             <li><a href="#" id="nav-finance-salaries">Salaries</a></li>
@@ -41,8 +41,10 @@
                             <li><a href="#" id="nav-finance-revenue">Revenue</a></li>
                         </ul>
                     </li>
-                    <li><a href="#" id="nav-employees"><i class="fas fa-users"></i> <span>Employees</span></a></li>
-                    <li><a href="#" id="nav-leads"><i class="fas fa-user-plus"></i> <span>Leads</span></a></li>
+                    <li id="li-employees"><a href="#" id="nav-employees"><i class="fas fa-users"></i> <span>Employees</span></a></li>
+                    <li id="li-leads"><a href="#" id="nav-leads"><i class="fas fa-user-plus"></i> <span>Leads</span></a></li>
+                    <li id="li-work-hours" style="display: none;"><a href="#" id="nav-work-hours"><i class="far fa-clock"></i> <span>Work hours</span></a></li>
+                    <li id="li-leaderboard" style="display: none;"><a href="#" id="nav-leaderboard"><i class="fas fa-chart-bar"></i> <span>Leaderboard</span></a></li>
                 </ul>
             </nav>
             
@@ -144,6 +146,67 @@
                     <span class="dots">...</span>
                     <button class="page-btn">8</button>
                     <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+
+            <!-- Diploma Details / Delayed Students View -->
+            <div class="page-content" id="delayed-students-view" style="display: none;">
+                <div class="breadcrumb">
+                    <span>Home</span> <i class="fas fa-chevron-right"></i> <span class="active">Delayed students</span>
+                </div>
+                <div class="content-header">
+                    <div class="header-titles">
+                        <h1 id="delayed-students-title">Delayed students</h1>
+                        <p>Track delayed students.</p>
+                    </div>
+                </div>
+
+                <div class="content-controls">
+                    <div class="filters">
+                        <div class="control-item search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-delayed-students" placeholder="Search...">
+                        </div>
+                        <div class="control-item select">
+                            <i class="fas fa-graduation-cap"></i>
+                            <select id="filter-delayed-diploma">
+                                <option value="">Diploma</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                        <div class="control-item select">
+                            <i class="fas fa-layer-group"></i>
+                            <select id="filter-delayed-round">
+                                <option value="">Round</option>
+                            </select>
+                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                    </div>
+                    <button class="btn-export"><i class="fas fa-file-export"></i> Export</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="details-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr class="header-groups">
+                                <th colspan="2" class="group-bg-yellow" style="text-align: left; padding: 12px 15px; border-radius: 8px 0 0 0; font-size: 13px;">Student info</th>
+                                <th colspan="4" class="group-bg-blue" style="text-align: left; padding: 12px 15px; font-size: 13px;">Account info</th>
+                                <th colspan="2" class="group-bg-light" style="text-align: left; padding: 12px 15px; border-radius: 0 8px 0 0; font-size: 13px;">Round & Diploma info</th>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #eee; font-size: 14px;">
+                                <th style="padding: 15px; text-align: left; color: #333;">Name</th>
+                                <th style="padding: 15px; text-align: left; color: #333;">Phone</th>
+                                <th style="padding: 15px; text-align: left; color: #333;">IT</th>
+                                <th style="padding: 15px; text-align: left; color: #333;">Email</th>
+                                <th style="padding: 15px; text-align: left; color: #333;">Password</th>
+                                <th style="padding: 15px; text-align: left; color: #333;">Notes</th>
+                                <th style="padding: 15px; text-align: left; color: #333;">Round</th>
+                                <th style="padding: 15px; text-align: left; color: #333;">Diploma</th>
+                            </tr>
+                        </thead>
+                        <tbody id="delayed-students-tbody">
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -1116,69 +1179,181 @@
 
             <!-- 15. Leads List View -->
             <div class="page-content" id="leads-list-view" style="display: none;">
-                <div class="content-header">
-                    <div class="header-titles">
-                        <h1>All leads</h1>
-                        <p>Track all leads in one place.</p>
-                    </div>
-                </div>
-                
-                <!-- Leads Stats -->
-                <div class="stats-grid" style="grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 30px;">
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #fff8e1; color: #ebb700;"><i class="fas fa-users"></i></div>
-                        <div class="stat-info">
-                            <h3>Total Leads</h3>
-                            <p id="stat-total-leads">0</p>
+                <!-- Admin Leads Layout -->
+                <div id="leads-admin-layout">
+                    <div class="content-header">
+                        <div class="header-titles">
+                            <h1>All leads</h1>
+                            <p>Track all leads in one place.</p>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #e8f5e9; color: #4caf50;"><i class="fas fa-check-circle"></i></div>
-                        <div class="stat-info">
-                            <h3>Opened</h3>
-                            <p id="stat-opened-leads">0</p>
+                    
+                    <!-- Leads Stats -->
+                    <div class="stats-grid" style="grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 30px;">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: #fff8e1; color: #ebb700;"><i class="fas fa-users"></i></div>
+                            <div class="stat-info">
+                                <h3>Total Leads</h3>
+                                <p id="stat-total-leads">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: #e8f5e9; color: #4caf50;"><i class="fas fa-check-circle"></i></div>
+                            <div class="stat-info">
+                                <h3>Opened</h3>
+                                <p id="stat-opened-leads">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: #ffebee; color: #f44336;"><i class="fas fa-times-circle"></i></div>
+                            <div class="stat-info">
+                                <h3>Closed</h3>
+                                <p id="stat-closed-leads">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: #e3f2fd; color: #2196f3;"><i class="fas fa-user-graduate"></i></div>
+                            <div class="stat-info">
+                                <h3>Enrolled</h3>
+                                <p id="stat-enrolled-leads">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: #f3e5f5; color: #9c27b0;"><i class="fas fa-globe"></i></div>
+                            <div class="stat-info">
+                                <h3>Countries</h3>
+                                <p id="stat-countries-leads">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: #eceff1; color: #607d8b;"><i class="fas fa-phone-slash"></i></div>
+                            <div class="stat-info">
+                                <h3>No Responses</h3>
+                                <p id="stat-no-responses-leads">0</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #ffebee; color: #f44336;"><i class="fas fa-times-circle"></i></div>
-                        <div class="stat-info">
-                            <h3>Closed</h3>
-                            <p id="stat-closed-leads">0</p>
+
+                    <div class="content-controls">
+                        <div class="filters">
+                            <div class="control-item search">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="search-leads" placeholder="Search...">
+                            </div>
+                            <div class="control-item select">
+                                <i class="fas fa-filter"></i>
+                                <select id="filter-leads-status">
+                                    <option value="">Final status</option>
+                                    <option value="OPEN">Open</option>
+                                    <option value="INTERESTED">Interested</option>
+                                    <option value="FOLLOW_UP">Follow Up</option>
+                                    <option value="ENROLLED">Enrolled</option>
+                                    <option value="REJECTED">Rejected</option>
+                                    <option value="CLOSED">Closed</option>
+                                </select>
+                                <i class="fas fa-chevron-down chevron"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #e3f2fd; color: #2196f3;"><i class="fas fa-user-graduate"></i></div>
-                        <div class="stat-info">
-                            <h3>Enrolled</h3>
-                            <p id="stat-enrolled-leads">0</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #f3e5f5; color: #9c27b0;"><i class="fas fa-globe"></i></div>
-                        <div class="stat-info">
-                            <h3>Countries</h3>
-                            <p id="stat-countries-leads">0</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #eceff1; color: #607d8b;"><i class="fas fa-phone-slash"></i></div>
-                        <div class="stat-info">
-                            <h3>No Responses</h3>
-                            <p id="stat-no-responses-leads">0</p>
-                        </div>
+
+                    <div class="table-container">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Phone</th>
+                                    <th>Diploma</th>
+                                    <th>Date</th>
+                                    <th>Source</th>
+                                    <th>Assigned to</th>
+                                    <th>Response 1</th>
+                                    <th>Response 2</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leads-list-tbody">
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div class="content-controls">
-                    <div class="filters">
-                        <div class="control-item search">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="search-leads" placeholder="Search...">
+                <!-- Moderator Leads Layout -->
+                <div id="leads-moderator-layout" style="display: none;">
+                    <div class="content-header">
+                        <div class="header-titles">
+                            <h1>Leads</h1>
+                            <p>Manage and track all leads.</p>
                         </div>
-                        <div class="control-item select">
-                            <i class="fas fa-filter"></i>
-                            <select id="filter-leads-status">
-                                <option value="">Final status</option>
+                    </div>
+
+                    <!-- Add New Lead Form Box -->
+                    <div class="form-container-card" style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid #eee; margin-bottom: 25px;">
+                        <div class="form-section-title" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                            <div style="background: #fff8e1; color: #ebb700; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 1rem; font-weight: 600; margin: 0;">Add new lead</h3>
+                                <p style="font-size: 0.8rem; color: #666; margin: 0;">Quickly add new leads to the system</p>
+                            </div>
+                        </div>
+
+                        <form id="form-moderator-add-lead" class="modern-form">
+                            <div class="form-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; align-items: end;">
+                                <div class="form-group">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.85rem;">Phone <span style="color: #dc3545;">*</span></label>
+                                    <input type="text" id="mod-lead-phone" placeholder="Enter phone number" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;" required>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.85rem;">Inquiry date <span style="color: #dc3545;">*</span></label>
+                                    <input type="date" id="mod-lead-date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;" required>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.85rem;">Diploma <span style="color: #dc3545;">*</span></label>
+                                    <select id="mod-lead-diploma" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;" required>
+                                        <option value="" disabled selected>Select diploma</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.85rem;">Status <span style="color: #dc3545;">*</span></label>
+                                    <select id="mod-lead-status" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;" required>
+                                        <option value="" disabled selected>Select status</option>
+                                        <option value="OPEN">Open</option>
+                                        <option value="INTERESTED">Interested</option>
+                                        <option value="FOLLOW_UP">Follow Up</option>
+                                        <option value="ENROLLED">Enrolled</option>
+                                        <option value="REJECTED">Rejected</option>
+                                        <option value="CLOSED">Closed</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.85rem;">Notes</label>
+                                    <input type="text" id="mod-lead-notes" placeholder="Add notes..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;">
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                                <div style="background: #e3f2fd; color: #1976d2; padding: 10px 15px; border-radius: 8px; font-size: 0.8rem; font-weight: 500;">
+                                    Tip: you can press <strong>Enter</strong> or click <strong>"+Add lead"</strong> to save and add another quickly.
+                                </div>
+                                <button type="submit" style="background: #ebb700; color: #000; padding: 10px 25px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-plus"></i> Add lead
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Search and Filters bar -->
+                    <div class="content-controls" style="background: #fff; padding: 15px 20px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px; display: flex; gap: 15px;">
+                        <div class="control-item search" style="position: relative; flex: 1;">
+                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999;"></i>
+                            <input type="text" id="mod-search-leads" placeholder="Search..." style="width: 100%; padding: 8px 10px 8px 35px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;">
+                        </div>
+                        <div class="control-item select" style="position: relative; width: 200px;">
+                            <select id="mod-filter-diploma" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;">
+                                <option value="">Diploma</option>
+                            </select>
+                        </div>
+                        <div class="control-item select" style="position: relative; width: 200px;">
+                            <select id="mod-filter-status" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;">
+                                <option value="">Status</option>
                                 <option value="OPEN">Open</option>
                                 <option value="INTERESTED">Interested</option>
                                 <option value="FOLLOW_UP">Follow Up</option>
@@ -1186,27 +1361,381 @@
                                 <option value="REJECTED">Rejected</option>
                                 <option value="CLOSED">Closed</option>
                             </select>
-                            <i class="fas fa-chevron-down chevron"></i>
+                        </div>
+                    </div>
+
+                    <!-- Leads Table -->
+                    <div class="table-container" style="background: #fff; border-radius: 16px; border: 1px solid #eee; overflow: hidden;">
+                        <table class="modern-table">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="padding: 12px;">Phone</th>
+                                    <th style="padding: 12px;">Diploma</th>
+                                    <th style="padding: 12px;">Inquiry Date</th>
+                                    <th style="padding: 12px;">Status</th>
+                                    <th style="padding: 12px;">Notes</th>
+                                    <th style="padding: 12px; text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mod-leads-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="pagination" id="mod-leads-pagination" style="margin-top: 20px; display: flex; justify-content: flex-end;"></div>
+                </div>
+
+                <!-- Telesales Leads Layout -->
+                <div id="leads-telesales-layout" style="display: none;">
+                    <div class="content-header">
+                        <div class="header-titles">
+                            <h1>My leads</h1>
+                            <p>Manage and follow up your assigned leads.</p>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filters bar -->
+                    <div class="content-controls" style="background: #fff; padding: 15px 20px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px; display: flex; gap: 15px;">
+                        <div class="control-item search" style="position: relative; flex: 1;">
+                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999;"></i>
+                            <input type="text" id="tele-search-leads" placeholder="Search..." style="width: 100%; padding: 8px 10px 8px 35px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;">
+                        </div>
+                        <div class="control-item select" style="position: relative; width: 180px;">
+                            <select id="tele-filter-diploma" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;">
+                                <option value="">Diploma</option>
+                            </select>
+                        </div>
+                        <div class="control-item select" style="position: relative; width: 150px;">
+                            <select id="tele-filter-status" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;">
+                                <option value="">Status</option>
+                                <option value="OPEN">Open</option>
+                                <option value="INTERESTED">Interested</option>
+                                <option value="FOLLOW_UP">Follow Up</option>
+                                <option value="ENROLLED">Enrolled</option>
+                                <option value="REJECTED">Rejected</option>
+                                <option value="CLOSED">Closed</option>
+                            </select>
+                        </div>
+                        <div class="control-item select" style="position: relative; width: 180px;">
+                            <select id="tele-filter-attempts" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem;">
+                                <option value="">Call Attempt</option>
+                                <option value="0">0/3</option>
+                                <option value="1">1/3</option>
+                                <option value="2">2/3</option>
+                                <option value="3">3/3</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Leads Table -->
+                    <div class="table-container" style="background: #fff; border-radius: 16px; border: 1px solid #eee; overflow: hidden;">
+                        <table class="modern-table">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="padding: 12px;">Phone</th>
+                                    <th style="padding: 12px;">Diploma</th>
+                                    <th style="padding: 12px;">Inquiry Date</th>
+                                    <th style="padding: 12px;">Status</th>
+                                    <th style="padding: 12px;">Notes</th>
+                                    <th style="padding: 12px; text-align: center;">Call Attempt</th>
+                                    <th style="padding: 12px; text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tele-leads-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="pagination" id="tele-leads-pagination" style="margin-top: 20px; display: flex; justify-content: flex-end;"></div>
+                </div>
+            </div>
+
+            <!-- 21. Work Hours View -->
+            <div class="page-content" id="work-hours-view" style="display: none;">
+                <div class="content-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <div class="header-titles">
+                        <h1>Work hours</h1>
+                        <p>Track your daily working hours</p>
+                    </div>
+                    <div style="background: #e8f5e9; color: #2e7d32; padding: 10px 20px; border-radius: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;" id="weekly-hours-badge">
+                        This week <span id="weekly-hours-val" style="font-size: 1.1rem;">0 hrs</span>
+                    </div>
+                </div>
+
+                <!-- Add Attendance Entry Form Box -->
+                <div class="form-container-card" style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid #eee; margin-bottom: 25px;">
+                    <div class="form-section-title" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                        <div style="background: #fff8e1; color: #ebb700; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="far fa-clock"></i>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 1rem; font-weight: 600; margin: 0;">Add Entry</h3>
+                            <p style="font-size: 0.8rem; color: #666; margin: 0;">Add your working hours for today.</p>
+                        </div>
+                    </div>
+
+                    <form id="form-work-hours-entry" class="modern-form">
+                        <input type="hidden" id="attendance-edit-id">
+                        <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 20px; align-items: end;">
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.85rem;">Date <span style="color: #dc3545;">*</span></label>
+                                <input type="date" id="attendance-entry-date" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.85rem;">Hours <span style="color: #dc3545;">*</span></label>
+                                <input type="number" id="attendance-entry-hours" step="0.5" min="0" max="24" placeholder="Enter your working hours" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;" required>
+                            </div>
+                            <button type="submit" id="btn-submit-attendance" style="background: #ebb700; color: #000; padding: 12px 30px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; height: 48px;">
+                                <i class="fas fa-plus"></i> <span id="btn-submit-attendance-text">Add Entry</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Call History Header -->
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <i class="fas fa-square" style="color: #ebb700; font-size: 1.2rem;"></i>
+                    <h3 style="font-size: 1.1rem; font-weight: 600; margin: 0;">Call history</h3>
+                </div>
+
+                <!-- Work Hours Table -->
+                <div class="table-container" style="background: #fff; border-radius: 16px; border: 1px solid #eee; overflow: hidden;">
+                    <table class="modern-table">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 15px;">Date</th>
+                                <th style="padding: 15px;">Hours</th>
+                                <th style="padding: 15px; text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="work-hours-tbody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" id="work-hours-pagination" style="margin-top: 20px; display: flex; justify-content: flex-end;"></div>
+            </div>
+
+            <!-- 22. Leaderboard View -->
+            <div class="page-content" id="leaderboard-view" style="display: none;">
+                <div class="content-header" style="margin-bottom: 30px;">
+                    <div class="header-titles">
+                        <h1>Top Performers</h1>
+                        <p>Top 3 moderators this week</p>
+                    </div>
+                </div>
+
+                <!-- Podium Layout -->
+                <div class="podium-section" style="display: flex; justify-content: center; align-items: flex-end; gap: 40px; margin-bottom: 50px; min-height: 260px;">
+                    <!-- 2nd Place -->
+                    <div class="podium-column place-2" style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="podium-avatar-wrapper" style="position: relative; margin-bottom: 10px;">
+                            <img src="https://ui-avatars.com/api/?name=Moderator+2&background=0088cc&color=fff&size=80" id="podium-2-avatar" alt="2nd Place" style="width: 80px; height: 80px; border-radius: 50%; border: 4px solid #ddd; object-fit: cover;">
+                            <span class="podium-badge" style="position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); background: #888; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border: 2px solid #fff;">2</span>
+                        </div>
+                        <span id="podium-2-name" style="font-weight: 600; color: #333; font-size: 0.95rem;">Fatema Serag</span>
+                        <span id="podium-2-count" style="font-size: 0.85rem; color: #666; font-weight: 500;">148 leads</span>
+                    </div>
+
+                    <!-- 1st Place -->
+                    <div class="podium-column place-1" style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="podium-avatar-wrapper" style="position: relative; margin-bottom: 10px;">
+                            <i class="fas fa-crown" style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%) rotate(0deg); color: #ebb700; font-size: 1.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));"></i>
+                            <img src="https://ui-avatars.com/api/?name=Moderator+1&background=ebb700&color=fff&size=100" id="podium-1-avatar" alt="1st Place" style="width: 100px; height: 100px; border-radius: 50%; border: 5px solid #ebb700; object-fit: cover; box-shadow: 0 4px 15px rgba(235,183,0,0.2);">
+                            <span class="podium-badge" style="position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); background: #ebb700; color: #000; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; border: 2px solid #fff;">1</span>
+                        </div>
+                        <span id="podium-1-name" style="font-weight: 700; color: #333; font-size: 1.1rem;">Eman Mohamed</span>
+                        <span id="podium-1-count" style="font-size: 0.9rem; color: #ebb700; font-weight: 700;">155 leads</span>
+                    </div>
+
+                    <!-- 3rd Place -->
+                    <div class="podium-column place-3" style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="podium-avatar-wrapper" style="position: relative; margin-bottom: 10px;">
+                            <img src="https://ui-avatars.com/api/?name=Moderator+3&background=f4511e&color=fff&size=80" id="podium-3-avatar" alt="3rd Place" style="width: 80px; height: 80px; border-radius: 50%; border: 4px solid #ddd; object-fit: cover;">
+                            <span class="podium-badge" style="position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); background: #f4511e; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; border: 2px solid #fff;">3</span>
+                        </div>
+                        <span id="podium-3-name" style="font-weight: 600; color: #333; font-size: 0.95rem;">Sabreen wael</span>
+                        <span id="podium-3-count" style="font-size: 0.85rem; color: #666; font-weight: 500;">102 leads</span>
+                    </div>
+                </div>
+
+                <!-- Other Rankings Section -->
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <i class="fas fa-square" style="color: #ebb700; font-size: 1.2rem;"></i>
+                    <h3 style="font-size: 1.1rem; font-weight: 600; margin: 0;">Other Rankings</h3>
+                </div>
+
+                <!-- Leaderboard Grid Table -->
+                <div class="table-container" style="background: #fff; border-radius: 16px; border: 1px solid #eee; overflow: hidden;">
+                    <table class="modern-table">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 15px;">Rank</th>
+                                <th style="padding: 15px;">Name</th>
+                                <th style="padding: 15px; text-align: right;">Leads count</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-tbody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" id="leaderboard-pagination" style="margin-top: 20px; display: flex; justify-content: flex-end;"></div>
+            </div>
+
+            <!-- Telesales Lead Details View -->
+            <div class="page-content" id="telesales-lead-details-view" style="display: none;">
+                <div class="content-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <div class="header-titles">
+                        <h1>Leads</h1>
+                        <p style="margin: 0; font-size: 0.9rem; color: #666;">Leads &gt; Lead details</p>
+                    </div>
+                </div>
+
+                <!-- 1. Lead Details Section -->
+                <div style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid #eee; margin-bottom: 25px;">
+                    <h3 style="font-size: 1rem; font-weight: 600; color: #333; margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                        <span style="background: #ebb700; color: #000; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;">1</span>
+                        Lead details
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <!-- Col 1 -->
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;"><i class="fas fa-phone"></i></div>
+                                <div>
+                                    <span style="display: block; font-size: 0.75rem; color: #888;">Phone</span>
+                                    <span id="det-lead-phone" style="font-weight: 600; color: #333;">-</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;"><i class="far fa-calendar-alt"></i></div>
+                                <div>
+                                    <span style="display: block; font-size: 0.75rem; color: #888;">Inquiry Date</span>
+                                    <span id="det-lead-date" style="font-weight: 600; color: #333;">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Col 2 -->
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;"><i class="fas fa-graduation-cap"></i></div>
+                                <div>
+                                    <span style="display: block; font-size: 0.75rem; color: #888;">Diploma</span>
+                                    <span id="det-lead-diploma" style="font-weight: 600; color: #333;">-</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;"><i class="fas fa-headphones-alt"></i></div>
+                                <div>
+                                    <span style="display: block; font-size: 0.75rem; color: #888;">Call Attempt</span>
+                                    <span id="det-lead-attempts" style="font-weight: 600; color: #333;">0/3</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Col 3 -->
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;"><i class="fas fa-toggle-on"></i></div>
+                                <div>
+                                    <span style="display: block; font-size: 0.75rem; color: #888;">Status</span>
+                                    <span id="det-lead-status" style="font-weight: 600; color: #333;">-</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;"><i class="far fa-sticky-note"></i></div>
+                                <div>
+                                    <span style="display: block; font-size: 0.75rem; color: #888;">Notes</span>
+                                    <span id="det-lead-notes" style="font-weight: 600; color: #333;">-</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="table-container">
-                    <table class="modern-table">
-                        <thead>
-                            <tr>
-                                <th>Phone</th>
-                                <th>Diploma</th>
-                                <th>Date</th>
-                                <th>Source</th>
-                                <th>Assigned to</th>
-                                <th>Response 1</th>
-                                <th>Response 2</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leads-list-tbody">
-                        </tbody>
-                    </table>
+                <!-- Bottom split section -->
+                <div style="display: grid; grid-template-columns: 4fr 6fr; gap: 25px; align-items: start;">
+                    
+                    <!-- 2. Add Call Attempt -->
+                    <div style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid #eee;">
+                        <h3 style="font-size: 1rem; font-weight: 600; color: #333; margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                            <span style="background: #ebb700; color: #000; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;">2</span>
+                            Add call attempt
+                        </h3>
+                        <form id="form-add-call-attempt" class="modern-form">
+                            <input type="hidden" id="call-lead-id">
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.85rem;">Call Date <span style="color: #dc3545;">*</span></label>
+                                <input type="date" id="call-date-input" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;" required>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.85rem;">Call Response <span style="color: #dc3545;">*</span></label>
+                                <textarea id="call-response-input" placeholder="Summarize the call outcome..." style="width: 100%; height: 100px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; resize: none;" required></textarea>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 25px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.85rem;">Status <span style="color: #dc3545;">*</span></label>
+                                <select id="call-status-input" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;" required>
+                                    <option value="" disabled selected>Select status</option>
+                                    <option value="OPEN">Open</option>
+                                    <option value="INTERESTED">Interested</option>
+                                    <option value="FOLLOW_UP">Follow Up</option>
+                                    <option value="ENROLLED">Enrolled</option>
+                                    <option value="REJECTED">Rejected</option>
+                                    <option value="CLOSED">Closed</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; gap: 15px; justify-content: flex-end;">
+                                <button type="button" id="btn-cancel-call" style="background: #f5f5f5; color: #333; padding: 12px 25px; border: 1px solid #ddd; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">Cancel</button>
+                                <button type="submit" id="btn-save-call" style="background: #ebb700; color: #000; padding: 12px 30px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">Save</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- 3. Call History -->
+                    <div style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid #eee;">
+                        <h3 style="font-size: 1rem; font-weight: 600; color: #333; margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                            <span style="background: #ebb700; color: #000; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;">3</span>
+                            Call history
+                        </h3>
+
+                        <!-- Attempts limit banners -->
+                        <div id="call-attempts-info-banner" style="background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; padding: 12px 15px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; margin-bottom: 20px;">
+                            You can add up to 3 call attempts for each lead.
+                        </div>
+                        <div id="call-attempts-max-banner" style="display: none; background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; padding: 12px 15px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; margin-bottom: 20px;">
+                            You have reached a maximum number of call attempts (3/3).
+                        </div>
+
+                        <!-- No Calls Placeholder -->
+                        <div id="no-calls-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center;">
+                            <div style="background: #fffdf0; color: #ebb700; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin-bottom: 20px;">
+                                <i class="fas fa-phone-alt"></i>
+                            </div>
+                            <h4 style="font-size: 1.1rem; font-weight: 700; color: #333; margin: 0 0 10px 0;">No calls yet</h4>
+                            <p style="font-size: 0.85rem; color: #888; max-width: 320px; margin: 0;">You haven't added any calls attempts for this lead. start by adding your first call to track the conversation.</p>
+                        </div>
+
+                        <!-- Call History Table -->
+                        <div id="call-history-table-container" style="display: none; border-radius: 12px; border: 1px solid #eee; overflow: hidden;">
+                            <table class="modern-table" style="font-size: 0.85rem;">
+                                <thead>
+                                    <tr style="background: #f8f9fa;">
+                                        <th style="padding: 10px 15px;">Date</th>
+                                        <th style="padding: 10px 15px;">Response</th>
+                                        <th style="padding: 10px 15px;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="call-history-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
                 </div>
             </div>
             

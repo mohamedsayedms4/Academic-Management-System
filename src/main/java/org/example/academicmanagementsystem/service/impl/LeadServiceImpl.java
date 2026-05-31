@@ -60,6 +60,9 @@ public class LeadServiceImpl implements LeadService {
             User currentUser = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("Current user not found: " + username));
 
+            lead.setCreatedBy(username);
+            lead.setUpdatedBy(username);
+
             // Check user role and assign telesales accordingly
             if (currentUser.getRole() == UserRole.ADMIN || currentUser.getRole() == UserRole.MODERATOR) {
                 // ADMIN or MODERATOR can specify teleSalesId
@@ -123,7 +126,10 @@ public class LeadServiceImpl implements LeadService {
 
             // Automatically assign TELESALES user to the lead
             lead.setTeleSales(currentUser);
+            lead.setCreatedBy(username);
+            lead.setUpdatedBy(username);
         }
+
 
         // Set default status if not provided
         if (leadCreateRequest.getStatus() == null) {
@@ -242,5 +248,112 @@ public class LeadServiceImpl implements LeadService {
         return  leadRepository.findLeadsByStatus(leadStatus, pageable).map(leadMapper::toLeadResponse);
     }
 
+    @Override
+    public java.util.List<org.example.academicmanagementsystem.dto.ModeratorLeaderboardResponse> getModeratorLeaderboard() {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        int daysToSubtract = today.getDayOfWeek().getValue() % 7; 
+        java.time.LocalDate startOfWeekDate = today.minusDays(daysToSubtract);
+        java.time.LocalDateTime startOfWeek = startOfWeekDate.atStartOfDay();
 
+        java.util.List<User> moderators = userRepository.findByRole(UserRole.MODERATOR);
+        java.util.List<org.example.academicmanagementsystem.dto.ModeratorLeaderboardResponse> response = new java.util.ArrayList<>();
+
+        for (User moderator : moderators) {
+            long count = leadRepository.countByCreatedByAndCreatedAtGreaterThanEqual(moderator.getUsername(), startOfWeek);
+            response.add(new org.example.academicmanagementsystem.dto.ModeratorLeaderboardResponse(moderator.getFullName(), count));
+        }
+
+        // Sort descending by leadCount
+        response.sort((r1, r2) -> Long.compare(r2.getLeadCount(), r1.getLeadCount()));
+        return response;
+    }
+
+    @Override
+    public java.util.Map<String, Integer> getLeadStatistics() {
+        java.util.List<Lead> allLeads = leadRepository.findAll();
+        
+        int total = allLeads.size();
+        int opened = (int) allLeads.stream()
+                .filter(l -> l.getStatus() == LeadStatus.OPEN || l.getStatus() == LeadStatus.INTERESTED || l.getStatus() == LeadStatus.FOLLOW_UP)
+                .count();
+        int closed = (int) allLeads.stream()
+                .filter(l -> l.getStatus() == LeadStatus.CLOSED || l.getStatus() == LeadStatus.REJECTED)
+                .count();
+        int enrolled = (int) allLeads.stream()
+                .filter(l -> l.getStatus() == LeadStatus.ENROLLED)
+                .count();
+        int countries = (int) allLeads.stream()
+                .map(Lead::getSource)
+                .filter(Objects::nonNull)
+                .filter(s -> !s.trim().isEmpty())
+                .distinct()
+                .count();
+        if (countries == 0 && total > 0) {
+            countries = 1;
+        }
+        int noResponses = (int) allLeads.stream()
+                .filter(l -> l.getFollowUps() == null || l.getFollowUps().isEmpty())
+                .count();
+
+        java.util.Map<String, Integer> statistics = new java.util.HashMap<>();
+        statistics.put("total", total);
+        statistics.put("opened", opened);
+        statistics.put("closed", closed);
+        statistics.put("enrolled", enrolled);
+        statistics.put("countries", countries);
+        statistics.put("noResponses", noResponses);
+        
+        // For backwards compatibility
+        statistics.put("completed", enrolled);
+        statistics.put("inProgress", opened);
+        statistics.put("pending", opened);
+        statistics.put("cancelled", closed);
+
+        return statistics;
+    }
+
+    @Override
+    @jakarta.transaction.Transactional
+    public LeadDetailResponse addFollowUp(Long leadId, org.example.academicmanagementsystem.dto.FollowUpRequest request) {
+        Lead lead = leadRepository.findById(leadId)
+                .orElseThrow(() -> new RuntimeException("Lead not found with id: " + leadId));
+
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = null;
+        if (authentication != null && authentication.isAuthenticated()) {
+            String username = authentication.getName();
+            currentUser = userRepository.findByUsername(username).orElse(null);
+        }
+
+        if (lead.getFollowUps() == null) {
+            lead.setFollowUps(new java.util.ArrayList<>());
+        }
+
+        if (lead.getFollowUps().size() >= 3) {
+            throw new RuntimeException("You have reached the maximum number of call attempts (3/3).");
+        }
+
+        org.example.academicmanagementsystem.model.FollowUp followUp = new org.example.academicmanagementsystem.model.FollowUp();
+        followUp.setLead(lead);
+        followUp.setSequence(lead.getFollowUps().size() + 1);
+        followUp.setMessage(request.getMessage());
+        followUp.setEmployee(currentUser);
+        followUp.setStatus(request.getStatus());
+
+        if (request.getCreatedAt() != null) {
+            followUp.setCreatedAt(request.getCreatedAt());
+        } else {
+            followUp.setCreatedAt(java.time.LocalDateTime.now());
+        }
+        followUp.setUpdatedAt(java.time.LocalDateTime.now());
+
+        if (request.getStatus() != null) {
+            lead.setStatus(request.getStatus());
+        }
+
+        lead.getFollowUps().add(followUp);
+        Lead savedLead = leadRepository.save(lead);
+
+        return leadMapper.toLeadDetailResponse(savedLead);
+    }
 }
