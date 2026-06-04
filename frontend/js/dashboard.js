@@ -1,3 +1,5 @@
+const PAGE_SIZE = 5; // Global pagination size
+
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
@@ -436,7 +438,7 @@ function showView(viewId) {
 async function loadRounds() {
     try {
         // Fetch rounds for grouping
-        const roundsResponse = await fetch('http://localhost:8085/api/v2/rounds?size=100', {
+        const roundsResponse = await fetch(`http://localhost:8085/api/v2/rounds?size=${PAGE_SIZE}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -447,7 +449,7 @@ async function loadRounds() {
         const rounds = roundsData.content || [];
 
         // Fetch round-diplomas for detailed installment data
-        const diplomasResponse = await fetch('http://localhost:8085/api/v2/round-diplomas?size=200', {
+        const diplomasResponse = await fetch(`http://localhost:8085/api/v2/round-diplomas?size=${PAGE_SIZE}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -857,7 +859,7 @@ async function loadDiplomasForForm() {
 }
 
 async function loadRoundsForForm() {
-    const response = await fetch('http://localhost:8085/api/v1/rounds?size=100', {
+    const response = await fetch(`http://localhost:8085/api/v1/rounds?size=${PAGE_SIZE}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (response.ok) {
@@ -890,14 +892,15 @@ async function loadInstructorsForForm() {
     }
 }
 
-async function loadRoundsList() {
+async function loadRoundsList(page = 0) {
     try {
-        const response = await fetch('http://localhost:8085/api/v2/rounds?size=10', {
+        const response = await fetch(`http://localhost:8085/api/v2/rounds?page=${page}&size=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!response.ok) throw new Error('Failed to fetch rounds');
         const data = await response.json();
         renderRoundsListTable(data.content || []);
+        renderPagination('rounds-list-pagination', data, loadRoundsList);
     } catch (error) {
         console.error('Error loading rounds list:', error);
     }
@@ -1159,7 +1162,7 @@ async function loadInstructors(page = 0) {
     const search = document.getElementById('search-instructors').value;
     const diplomaId = document.getElementById('filter-instructor-diploma').value;
 
-    let url = `http://localhost:8085/api/v2/instructors?page=${page}&size=10`;
+    let url = `http://localhost:8085/api/v2/instructors?page=${page}&size=${PAGE_SIZE}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
 
     try {
@@ -1392,7 +1395,7 @@ function editInstructor(id) {
 
 async function loadCancelledStudents(page = 0) {
     const search = document.getElementById('search-cancelled-students').value;
-    let url = `http://localhost:8085/api/v2/students/cancelled?page=${page}&size=10`;
+    let url = `http://localhost:8085/api/v2/students/cancelled?page=${page}&size=${PAGE_SIZE}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
 
     try {
@@ -1435,7 +1438,7 @@ function renderCancelledStudentsTable(students) {
 
 async function loadFutureEnrollments(page = 0) {
     const search = document.getElementById('search-future-students').value;
-    let url = `http://localhost:8085/api/v2/students/future?page=${page}&size=10`;
+    let url = `http://localhost:8085/api/v2/students/future?page=${page}&size=${PAGE_SIZE}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
 
     try {
@@ -1663,7 +1666,7 @@ async function cancelStudentPrompt(id) {
 
 async function loadInvoices(page = 0) {
     const search = document.getElementById('search-invoices').value;
-    let url = `http://localhost:8085/api/v2/invoices?page=${page}&size=10`;
+    let url = `http://localhost:8085/api/v2/invoices?page=${page}&size=${PAGE_SIZE}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
 
     try {
@@ -1710,7 +1713,7 @@ function renderInvoicesTable(invoices) {
 
 async function loadStudentsForInvoiceForm() {
     try {
-        const response = await fetch('http://localhost:8085/api/v1/students?page=0&size=500', {
+        const response = await fetch(`http://localhost:8085/api/v1/students?page=0&size=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -1869,28 +1872,48 @@ function renderPagination(containerId, data, loadFn) {
 
     container.innerHTML = '';
 
-    if (data.totalPages <= 1) return;
+    if (!data || data.totalPages <= 1) return;
+
+    const current = data.number;
+    const total = data.totalPages;
 
     const prevBtn = document.createElement('button');
     prevBtn.className = 'page-btn';
     prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
     prevBtn.disabled = data.first;
-    prevBtn.onclick = () => loadFn(data.number - 1);
+    prevBtn.onclick = () => loadFn(current - 1);
     container.appendChild(prevBtn);
 
-    for (let i = 0; i < data.totalPages; i++) {
+    // Build page numbers with ellipsis
+    const pages = new Set();
+    pages.add(0);
+    pages.add(total - 1);
+    for (let i = Math.max(0, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.add(i);
+    }
+    const sortedPages = [...pages].sort((a, b) => a - b);
+
+    let lastAdded = -1;
+    sortedPages.forEach(i => {
+        if (lastAdded !== -1 && i - lastAdded > 1) {
+            const dots = document.createElement('span');
+            dots.className = 'dots';
+            dots.textContent = '...';
+            container.appendChild(dots);
+        }
         const pageBtn = document.createElement('button');
-        pageBtn.className = `page-btn ${i === data.number ? 'active' : ''}`;
+        pageBtn.className = `page-btn ${i === current ? 'active' : ''}`;
         pageBtn.textContent = i + 1;
         pageBtn.onclick = () => loadFn(i);
         container.appendChild(pageBtn);
-    }
+        lastAdded = i;
+    });
 
     const nextBtn = document.createElement('button');
     nextBtn.className = 'page-btn';
     nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
     nextBtn.disabled = data.last;
-    nextBtn.onclick = () => loadFn(data.number + 1);
+    nextBtn.onclick = () => loadFn(current + 1);
     container.appendChild(nextBtn);
 }
 // ===============================
@@ -1919,7 +1942,7 @@ async function loadDiplomasV2(page = 0) {
     const search = document.getElementById('search-diplomas-v2').value;
     const instructorId = document.getElementById('filter-diploma-instructor').value;
 
-    let url = `http://localhost:8085/api/v2/round-diplomas?page=${page}&size=10`;
+    let url = `http://localhost:8085/api/v2/round-diplomas?page=${page}&size=${PAGE_SIZE}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (instructorId) url += `&instructorId=${instructorId}`;
 
@@ -2808,7 +2831,7 @@ async function createEmptySession(roundDiplomaId, date) {
         console.log('[Attendance] createEmptySession called:', { roundDiplomaId, date });
 
         // We get students and send a bulk update with default values
-        const stdResponse = await fetch(`http://localhost:8085/api/v2/students/round-diploma/${roundDiplomaId}?size=200`, {
+        const stdResponse = await fetch(`http://localhost:8085/api/v2/students/round-diploma/${roundDiplomaId}?size=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const stdData = await stdResponse.json();
@@ -3305,7 +3328,7 @@ async function loadTelesalesLeads(page = 0) {
     const status = document.getElementById('tele-filter-status').value;
     const attempts = document.getElementById('tele-filter-attempts').value;
 
-    let url = `http://localhost:8085/api/v1/leads?page=${page}&size=50`;
+    let url = `http://localhost:8085/api/v1/leads?page=${page}&size=${PAGE_SIZE}`;
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -3335,7 +3358,7 @@ async function loadTelesalesLeads(page = 0) {
             }
 
             renderTelesalesLeadsTable(leads);
-            renderTelesalesLeadsPagination(data, page);
+            renderPagination('tele-leads-pagination', data, loadTelesalesLeads);
         }
     } catch (e) {
         console.error("Error loading telesales leads:", e);
@@ -3388,38 +3411,7 @@ function renderTelesalesLeadsTable(leads) {
     });
 }
 
-function renderTelesalesLeadsPagination(data, currentPage) {
-    const container = document.getElementById('tele-leads-pagination');
-    if (!container) return;
-    container.innerHTML = '';
 
-    if (!data.totalPages || data.totalPages <= 1) return;
-
-    // Previous Button
-    const prevBtn = document.createElement('button');
-    prevBtn.className = 'page-btn';
-    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
-    prevBtn.disabled = currentPage === 0;
-    prevBtn.onclick = () => loadTelesalesLeads(currentPage - 1);
-    container.appendChild(prevBtn);
-
-    // Page Numbers
-    for (let i = 0; i < data.totalPages; i++) {
-        const pageBtn = document.createElement('button');
-        pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
-        pageBtn.textContent = i + 1;
-        pageBtn.onclick = () => loadTelesalesLeads(i);
-        container.appendChild(pageBtn);
-    }
-
-    // Next Button
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'page-btn';
-    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
-    nextBtn.disabled = currentPage === data.totalPages - 1;
-    nextBtn.onclick = () => loadTelesalesLeads(currentPage + 1);
-    container.appendChild(nextBtn);
-}
 
 function setupTelesalesListeners() {
     const search = document.getElementById('tele-search-leads');
@@ -4110,7 +4102,7 @@ async function loadModeratorLeads(page = 0) {
     const diplomaId = document.getElementById('mod-filter-diploma').value;
     const status = document.getElementById('mod-filter-status').value;
 
-    let url = `http://localhost:8085/api/v1/leads?page=${page}&size=10`;
+    let url = `http://localhost:8085/api/v1/leads?page=${page}&size=${PAGE_SIZE}`;
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -4131,7 +4123,7 @@ async function loadModeratorLeads(page = 0) {
             }
 
             renderModeratorLeadsTable(leads);
-            renderModeratorLeadsPagination(data, page);
+            renderPagination('mod-leads-pagination', data, loadModeratorLeads);
         }
     } catch (e) {
         console.error("Error loading moderator leads:", e);
@@ -4249,44 +4241,18 @@ async function deleteModeratorLead(id) {
     }
 }
 
-function renderModeratorLeadsPagination(data, currentPage) {
-    const container = document.getElementById('mod-leads-pagination');
-    container.innerHTML = '';
-    if (!data || data.totalPages <= 1) return;
 
-    const prevBtn = document.createElement('button');
-    prevBtn.className = 'page-btn';
-    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
-    prevBtn.disabled = currentPage === 0;
-    prevBtn.onclick = () => loadModeratorLeads(currentPage - 1);
-    container.appendChild(prevBtn);
-
-    for (let i = 0; i < data.totalPages; i++) {
-        const btn = document.createElement('button');
-        btn.className = `page-btn ${currentPage === i ? 'active' : ''}`;
-        btn.textContent = i + 1;
-        btn.onclick = () => loadModeratorLeads(i);
-        container.appendChild(btn);
-    }
-
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'page-btn';
-    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
-    nextBtn.disabled = currentPage === data.totalPages - 1;
-    nextBtn.onclick = () => loadModeratorLeads(currentPage + 1);
-    container.appendChild(nextBtn);
-}
 
 // Work Hours
 async function loadWorkHours(page = 0) {
     try {
-        const response = await fetch(`http://localhost:8085/api/v1/attendance/my-attendance?page=${page}&size=10`, {
+        const response = await fetch(`http://localhost:8085/api/v1/attendance/my-attendance?page=${page}&size=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const data = await response.json();
             renderWorkHoursTable(data.content || []);
-            renderWorkHoursPagination(data, page);
+            renderPagination('work-hours-pagination', data, loadWorkHours);
         }
     } catch (e) {
         console.error("Error loading work hours:", e);
@@ -4379,7 +4345,7 @@ async function submitAttendanceEntry() {
 
 async function editAttendance(id) {
     try {
-        const response = await fetch(`http://localhost:8085/api/v1/attendance/my-attendance?size=100`, {
+        const response = await fetch(`http://localhost:8085/api/v1/attendance/my-attendance?size=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4419,33 +4385,7 @@ async function deleteAttendance(id) {
     }
 }
 
-function renderWorkHoursPagination(data, currentPage) {
-    const container = document.getElementById('work-hours-pagination');
-    container.innerHTML = '';
-    if (!data || data.totalPages <= 1) return;
 
-    const prevBtn = document.createElement('button');
-    prevBtn.className = 'page-btn';
-    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
-    prevBtn.disabled = currentPage === 0;
-    prevBtn.onclick = () => loadWorkHours(currentPage - 1);
-    container.appendChild(prevBtn);
-
-    for (let i = 0; i < data.totalPages; i++) {
-        const btn = document.createElement('button');
-        btn.className = `page-btn ${currentPage === i ? 'active' : ''}`;
-        btn.textContent = i + 1;
-        btn.onclick = () => loadWorkHours(i);
-        container.appendChild(btn);
-    }
-
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'page-btn';
-    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
-    nextBtn.disabled = currentPage === data.totalPages - 1;
-    nextBtn.onclick = () => loadWorkHours(currentPage + 1);
-    container.appendChild(nextBtn);
-}
 
 // Leaderboard
 async function loadLeaderboard() {
@@ -4595,7 +4535,7 @@ async function openDelayedStudents(roundDiplomaId, diplomaName, roundName) {
     // if (titleEl) titleEl.textContent = `Students: ${diplomaName} - ${roundName}`;
 
     try {
-        const response = await fetch(`http://localhost:8085/api/v2/students/round-diploma/${roundDiplomaId}?size=100`, {
+        const response = await fetch(`http://localhost:8085/api/v2/students/round-diploma/${roundDiplomaId}?size=${PAGE_SIZE}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
