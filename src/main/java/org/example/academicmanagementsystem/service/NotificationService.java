@@ -7,7 +7,7 @@ import org.example.academicmanagementsystem.model.UserRole;
 import java.util.List;
 
 public interface NotificationService {
-    List<NotificationResponse> getMyNotifications();
+    org.springframework.data.domain.Page<NotificationResponse> getMyNotifications(org.springframework.data.domain.Pageable pageable);
     long getUnreadCount();
     void markAsRead(Long id);
     void markAllAsRead();

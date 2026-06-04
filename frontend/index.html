@@ -87,8 +87,13 @@
                             <ul class="notification-list" id="notification-list">
                                 <!-- Loaded dynamically -->
                             </ul>
-                            <div class="notification-dropdown-footer">
+                            <div class="notification-dropdown-footer" style="display: flex; flex-direction: column; width: 100%;">
                                 <span id="notification-no-data" style="display: none; padding: 15px; text-align: center; color: #777; font-size: 13px;">No new notifications</span>
+                                <div id="notification-pagination" class="notification-pagination">
+                                    <button id="notification-prev-btn" class="pagination-btn"><i class="fas fa-chevron-left"></i> Prev</button>
+                                    <span id="notification-page-info" class="notification-page-info">Page 1 of 1</span>
+                                    <button id="notification-next-btn" class="pagination-btn">Next <i class="fas fa-chevron-right"></i></button>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -8,28 +8,28 @@ document.addEventListener('DOMContentLoaded', () => {
     togglePassword.addEventListener('click', () => {
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordInput.setAttribute('type', type);
-        
+
         // Optional: Update eye icon visual if needed
     });
 
     // Handle Form Submission
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const username = document.getElementById('username').value;
         const password = passwordInput.value;
         const rememberMe = document.getElementById('rememberMe').checked;
 
         // Reset error message
         errorMessage.innerText = '';
-        
+
         const btn = loginForm.querySelector('.btn-login');
         const originalText = btn.innerText;
         btn.innerText = 'Logging in...';
         btn.disabled = true;
 
         try {
-            const response = await fetch('http://localhost:8080/api/auth/login', {
+            const response = await fetch('http://localhost:8085/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            
+
             // Success! Store JWT and User Data
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify({
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 role: data.role,
                 fullName: data.fullName // Assuming you add this to AuthResponse
             }));
-            
+
             if (rememberMe) {
                 localStorage.setItem('rememberedUser', username);
             }

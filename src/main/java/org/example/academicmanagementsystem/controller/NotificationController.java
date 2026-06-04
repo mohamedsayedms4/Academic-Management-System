@@ -17,8 +17,11 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping("/my")
-    public ResponseEntity<List<NotificationResponse>> getMyNotifications() {
-        return ResponseEntity.ok(notificationService.getMyNotifications());
+    public ResponseEntity<org.springframework.data.domain.Page<NotificationResponse>> getMyNotifications(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
+        return ResponseEntity.ok(notificationService.getMyNotifications(pageable));
     }
 
     @GetMapping("/unread-count")

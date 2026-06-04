@@ -13,5 +13,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     List<Notification> findByUserOrTargetRoleOrderByCreatedAtDesc(User user, UserRole targetRole);
 
+    org.springframework.data.domain.Page<Notification> findByUserOrTargetRole(User user, UserRole targetRole, org.springframework.data.domain.Pageable pageable);
+
     long countByUserOrTargetRoleAndIsReadFalse(User user, UserRole targetRole);
 }

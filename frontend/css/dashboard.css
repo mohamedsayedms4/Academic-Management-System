@@ -1954,4 +1954,46 @@ span.flatpickr-weekday {
     z-index: 10;
 }
 
+.notification-pagination {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
+    border-top: 1px solid #f0f0f0;
+    background-color: #fafafa;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.notification-pagination .pagination-btn {
+    background: none;
+    border: none;
+    color: #ebb700;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 11px;
+    outline: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.notification-pagination .pagination-btn:hover:not(:disabled) {
+    background-color: #f0f0f0;
+    color: #c99c00;
+}
+
+.notification-pagination .pagination-btn:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+.notification-page-info {
+    font-size: 11px;
+    color: #666;
+    font-weight: 500;
+}
+
 

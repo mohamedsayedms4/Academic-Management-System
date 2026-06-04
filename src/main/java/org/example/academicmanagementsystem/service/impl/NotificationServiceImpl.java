@@ -41,13 +41,11 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<NotificationResponse> getMyNotifications() {
+    public org.springframework.data.domain.Page<NotificationResponse> getMyNotifications(org.springframework.data.domain.Pageable pageable) {
         User currentUser = getCurrentUser();
         // Return notifications targeted to this user or to their specific role
-        return notificationRepository.findByUserOrTargetRoleOrderByCreatedAtDesc(currentUser, currentUser.getRole())
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return notificationRepository.findByUserOrTargetRole(currentUser, currentUser.getRole(), pageable)
+                .map(this::mapToResponse);
     }
 
     @Override

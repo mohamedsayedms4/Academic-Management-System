@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Navigation logic
     const dashboardView = document.getElementById('dashboard-view');
     const addDiplomaView = document.getElementById('add-diploma-view');
-    
+
     document.getElementById('nav-home').addEventListener('click', (e) => {
         e.preventDefault();
         showView('dashboard-view');
@@ -372,7 +372,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Apply custom styling to all existing and future select elements
     applyCustomSelects();
-    
+
     // Apply flatpickr to all date inputs
     applyCustomDatePickers();
 });
@@ -382,7 +382,7 @@ function showView(viewId) {
         view.style.display = 'none';
     });
     document.getElementById(viewId).style.display = 'block';
-    
+
     // Update active state in sidebar
     document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
     document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
@@ -425,7 +425,7 @@ function showView(viewId) {
             const submenu = parent.querySelector('.submenu');
             if (submenu) submenu.classList.add('show');
         }
-        
+
         // Specific submenu link
         const navId = 'nav-' + viewId.replace('-view', '');
         const navLink = document.getElementById(navId);
@@ -436,7 +436,7 @@ function showView(viewId) {
 async function loadRounds() {
     try {
         // Fetch rounds for grouping
-        const roundsResponse = await fetch('http://localhost:8080/api/v2/rounds?size=100', {
+        const roundsResponse = await fetch('http://localhost:8085/api/v2/rounds?size=100', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -447,7 +447,7 @@ async function loadRounds() {
         const rounds = roundsData.content || [];
 
         // Fetch round-diplomas for detailed installment data
-        const diplomasResponse = await fetch('http://localhost:8080/api/v2/round-diplomas?size=200', {
+        const diplomasResponse = await fetch('http://localhost:8085/api/v2/round-diplomas?size=200', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -520,7 +520,7 @@ async function loadRounds() {
 
 async function loadDiplomas() {
     try {
-        const response = await fetch('http://localhost:8080/api/v2/diplomas', {
+        const response = await fetch('http://localhost:8085/api/v2/diplomas', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -528,11 +528,11 @@ async function loadDiplomas() {
 
         if (response.ok) {
             const diplomas = await response.json();
-            
+
             // Populate Home filter
             const filterHome = document.getElementById('filter-diploma');
             filterHome.innerHTML = '<option value="">Diploma</option>';
-            
+
             // Populate Rounds list filter
             const filterList = document.getElementById('filter-round-list-diploma');
             if (filterList) filterList.innerHTML = '<option value="">Diploma</option>';
@@ -541,7 +541,7 @@ async function loadDiplomas() {
                 const opt = document.createElement('option');
                 opt.value = d.id;
                 opt.textContent = d.name;
-                
+
                 filterHome.appendChild(opt.cloneNode(true));
                 if (filterList) filterList.appendChild(opt.cloneNode(true));
             });
@@ -630,15 +630,15 @@ function renderDashboardTable(rounds) {
 
 function renderInstallmentCell(dateStr) {
     if (!dateStr) return '<div class="status-cell">-</div>';
-    
+
     const date = new Date(dateStr);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     let statusClass = 'upcoming';
     let statusIcon = 'far fa-clock';
     let statusLabel = 'Upcoming';
-    
+
     if (date < today) {
         // Mocking some delayed and some paid for visual variety
         const random = Math.random();
@@ -653,7 +653,7 @@ function renderInstallmentCell(dateStr) {
             statusLabel = 'All payed';
         }
     }
-    
+
     return `
         <div class="status-cell">
             <span class="status-date">${formatDate(dateStr)}</span>
@@ -700,14 +700,14 @@ function initAddDiplomaForm() {
         `;
         installmentsTbody.appendChild(row);
         applyCustomDatePickers();
-        
+
         // Add listeners to new row
         row.querySelector('.inst-percent').addEventListener('input', updateInstallmentAmounts);
         row.querySelector('.btn-delete-inst').onclick = () => {
             row.remove();
             updateInstallmentAmounts();
         };
-        
+
         updateInstallmentAmounts();
     };
 
@@ -724,7 +724,7 @@ function initAddDiplomaForm() {
 
     form.onsubmit = async (e) => {
         e.preventDefault();
-        
+
         const payload = {
             diplomaId: document.getElementById('input-diploma-id').value,
             roundId: document.getElementById('input-round-id').value,
@@ -758,11 +758,11 @@ function initAddDiplomaForm() {
         try {
             const roundId = document.getElementById('input-round-id').value;
             // Fetch current round data first to keep other diplomas
-            const roundResp = await fetch(`http://localhost:8080/api/v1/rounds/${roundId}`, {
+            const roundResp = await fetch(`http://localhost:8085/api/v1/rounds/${roundId}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             const existingRound = await roundResp.json();
-            
+
             // Prepare updated round request
             const updatePayload = {
                 name: existingRound.name,
@@ -786,11 +786,11 @@ function initAddDiplomaForm() {
                     installment4Date: d.installment4Date
                 }))
             };
-            
+
             // Add new diploma
             updatePayload.diplomas.push(payload.diplomas[0]);
 
-            const response = await fetch(`http://localhost:8080/api/v1/rounds/${roundId}`, {
+            const response = await fetch(`http://localhost:8085/api/v1/rounds/${roundId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -817,7 +817,7 @@ function initAddDiplomaForm() {
 function updateInstallmentAmounts() {
     const total = parseFloat(document.getElementById('input-total-price').value) || 0;
     const rows = document.querySelectorAll('.installment-row');
-    
+
     rows.forEach(row => {
         const percent = parseFloat(row.querySelector('.inst-percent').value) || 0;
         const amountInput = row.querySelector('.inst-amount');
@@ -838,7 +838,7 @@ function getInstDate(index) {
 }
 
 async function loadDiplomasForForm() {
-    const response = await fetch('http://localhost:8080/api/v1/diplomas', {
+    const response = await fetch('http://localhost:8085/api/v1/diplomas', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (response.ok) {
@@ -857,7 +857,7 @@ async function loadDiplomasForForm() {
 }
 
 async function loadRoundsForForm() {
-    const response = await fetch('http://localhost:8080/api/v1/rounds?size=100', {
+    const response = await fetch('http://localhost:8085/api/v1/rounds?size=100', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (response.ok) {
@@ -874,7 +874,7 @@ async function loadRoundsForForm() {
 }
 
 async function loadInstructorsForForm() {
-    const response = await fetch('http://localhost:8080/api/v1/users/role/EMPLOYEE', {
+    const response = await fetch('http://localhost:8085/api/v1/users/role/EMPLOYEE', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (response.ok) {
@@ -892,7 +892,7 @@ async function loadInstructorsForForm() {
 
 async function loadRoundsList() {
     try {
-        const response = await fetch('http://localhost:8080/api/v2/rounds?size=10', {
+        const response = await fetch('http://localhost:8085/api/v2/rounds?size=10', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!response.ok) throw new Error('Failed to fetch rounds');
@@ -909,7 +909,7 @@ function renderRoundsListTable(rounds) {
 
     rounds.forEach(round => {
         const row = document.createElement('tr');
-        
+
         const diplomasList = (round.diplomas || [])
             .map(d => d.name)
             .join('<br>');
@@ -940,7 +940,7 @@ function initAddRoundForm() {
 
     form.onsubmit = async (e) => {
         e.preventDefault();
-        
+
         const selectedDiplomaIds = Array.from(document.querySelectorAll('.diploma-checkbox:checked'))
             .map(cb => cb.value);
 
@@ -957,7 +957,7 @@ function initAddRoundForm() {
         };
 
         try {
-            const response = await fetch('http://localhost:8080/api/v2/rounds', {
+            const response = await fetch('http://localhost:8085/api/v2/rounds', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -983,7 +983,7 @@ function initAddRoundForm() {
     // Toggle Dropdown
     const trigger = document.getElementById('diploma-select-trigger');
     const dropdown = document.getElementById('diploma-select-dropdown');
-    
+
     trigger.onclick = (e) => {
         e.stopPropagation();
         dropdown.classList.toggle('show');
@@ -1018,14 +1018,14 @@ function initAddRoundForm() {
 
 async function loadDiplomasForRoundForm() {
     try {
-        const response = await fetch('http://localhost:8080/api/v2/diplomas', {
+        const response = await fetch('http://localhost:8085/api/v2/diplomas', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const diplomas = await response.json();
             const list = document.getElementById('diploma-options-list');
             list.innerHTML = '';
-            
+
             diplomas.forEach(d => {
                 const item = document.createElement('div');
                 item.className = 'option-item';
@@ -1033,13 +1033,13 @@ async function loadDiplomasForRoundForm() {
                     <input type="checkbox" class="diploma-checkbox" value="${d.id}" id="dip-${d.id}">
                     <span>${d.name}</span>
                 `;
-                
+
                 item.onclick = (e) => {
                     const cb = item.querySelector('input');
                     if (e.target !== cb) cb.checked = !cb.checked;
                     updateSelectedDiplomasText();
                 };
-                
+
                 list.appendChild(item);
             });
         }
@@ -1052,9 +1052,9 @@ function updateSelectedDiplomasText() {
     const checked = document.querySelectorAll('.diploma-checkbox:checked');
     const textSpan = document.getElementById('selected-diplomas-text');
     const tagsContainer = document.getElementById('selected-diplomas-tags');
-    
+
     tagsContainer.innerHTML = '';
-    
+
     if (checked.length === 0) {
         textSpan.textContent = 'Select diplomas in this round';
     } else {
@@ -1063,7 +1063,7 @@ function updateSelectedDiplomasText() {
         } else {
             textSpan.textContent = `${checked.length} diplomas selected`;
         }
-        
+
         // Render Tags
         checked.forEach(cb => {
             const name = cb.parentElement.querySelector('span').textContent;
@@ -1088,13 +1088,13 @@ function removeDiplomaTag(id) {
 
 async function deleteRound(id) {
     if (!confirm('Are you sure you want to delete this round?')) return;
-    
+
     try {
-        const response = await fetch(`http://localhost:8080/api/v2/rounds/${id}`, {
+        const response = await fetch(`http://localhost:8085/api/v2/rounds/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-        
+
         if (response.ok) {
             loadRoundsList();
         } else {
@@ -1111,7 +1111,7 @@ function editRound(id) {
 
 async function loadDiplomasList() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/diplomas', {
+        const response = await fetch('http://localhost:8085/api/v1/diplomas', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!response.ok) throw new Error('Failed to fetch diplomas');
@@ -1158,10 +1158,10 @@ function deleteDiploma(id) {
 async function loadInstructors(page = 0) {
     const search = document.getElementById('search-instructors').value;
     const diplomaId = document.getElementById('filter-instructor-diploma').value;
-    
-    let url = `http://localhost:8080/api/v2/instructors?page=${page}&size=10`;
+
+    let url = `http://localhost:8085/api/v2/instructors?page=${page}&size=10`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
-    
+
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -1179,11 +1179,11 @@ async function loadInstructors(page = 0) {
 function renderInstructorsTable(instructors) {
     const tbody = document.getElementById('instructors-tbody');
     tbody.innerHTML = '';
-    
+
     instructors.forEach(inst => {
         const row = document.createElement('tr');
         const diplomasList = inst.assignedDiplomas.map(d => d.name).join('<br>');
-        
+
         row.innerHTML = `
             <td>${inst.name}</td>
             <td>${inst.phoneNumber}</td>
@@ -1206,13 +1206,13 @@ function initAddInstructorForm() {
     form.reset();
     document.getElementById('inst-selected-diplomas-tags').innerHTML = '';
     document.getElementById('inst-selected-diplomas-text').textContent = 'Select diplomas';
-    
+
     const btnCancel = document.getElementById('btn-cancel-instructor');
     btnCancel.onclick = () => showView('instructors-list-view');
 
     form.onsubmit = async (e) => {
         e.preventDefault();
-        
+
         const selectedDiplomaIds = Array.from(document.querySelectorAll('.inst-diploma-checkbox:checked'))
             .map(cb => cb.value);
 
@@ -1230,7 +1230,7 @@ function initAddInstructorForm() {
         };
 
         try {
-            const response = await fetch('http://localhost:8080/api/v2/instructors', {
+            const response = await fetch('http://localhost:8085/api/v2/instructors', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1255,7 +1255,7 @@ function initAddInstructorForm() {
     // Custom Multi-select Logic
     const trigger = document.getElementById('instructor-diploma-trigger');
     const dropdown = document.getElementById('instructor-diploma-dropdown');
-    
+
     trigger.onclick = (e) => {
         e.stopPropagation();
         dropdown.classList.toggle('show');
@@ -1280,14 +1280,14 @@ function initAddInstructorForm() {
 
 async function loadDiplomasForInstructorForm() {
     try {
-        const response = await fetch('http://localhost:8080/api/v2/diplomas', {
+        const response = await fetch('http://localhost:8085/api/v2/diplomas', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const diplomas = await response.json();
             const list = document.getElementById('instructor-diploma-options');
             list.innerHTML = '';
-            
+
             diplomas.forEach(d => {
                 const item = document.createElement('div');
                 item.className = 'option-item';
@@ -1295,13 +1295,13 @@ async function loadDiplomasForInstructorForm() {
                     <input type="checkbox" class="inst-diploma-checkbox" value="${d.id}" id="inst-dip-${d.id}">
                     <span>${d.name}</span>
                 `;
-                
+
                 item.onclick = (e) => {
                     const cb = item.querySelector('input');
                     if (e.target !== cb) cb.checked = !cb.checked;
                     updateInstSelectedDiplomasText();
                 };
-                
+
                 list.appendChild(item);
             });
         }
@@ -1314,16 +1314,16 @@ function updateInstSelectedDiplomasText() {
     const checked = document.querySelectorAll('.inst-diploma-checkbox:checked');
     const textSpan = document.getElementById('inst-selected-diplomas-text');
     const tagsContainer = document.getElementById('inst-selected-diplomas-tags');
-    
+
     tagsContainer.innerHTML = '';
-    
+
     if (checked.length === 0) {
         textSpan.textContent = 'Select diplomas';
     } else {
-        textSpan.textContent = checked.length === 1 ? 
-            checked[0].parentElement.querySelector('span').textContent : 
+        textSpan.textContent = checked.length === 1 ?
+            checked[0].parentElement.querySelector('span').textContent :
             `${checked.length} diplomas selected`;
-        
+
         checked.forEach(cb => {
             const name = cb.parentElement.querySelector('span').textContent;
             const tag = document.createElement('div');
@@ -1347,7 +1347,7 @@ function removeInstructorDiplomaTag(id) {
 
 async function loadDiplomasForFilters() {
     try {
-        const response = await fetch('http://localhost:8080/api/v2/diplomas', {
+        const response = await fetch('http://localhost:8085/api/v2/diplomas', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -1369,7 +1369,7 @@ async function loadDiplomasForFilters() {
 async function deleteInstructor(id) {
     if (confirm('Are you sure you want to delete this instructor?')) {
         try {
-            const response = await fetch(`http://localhost:8080/api/v2/instructors/${id}`, {
+            const response = await fetch(`http://localhost:8085/api/v2/instructors/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -1392,9 +1392,9 @@ function editInstructor(id) {
 
 async function loadCancelledStudents(page = 0) {
     const search = document.getElementById('search-cancelled-students').value;
-    let url = `http://localhost:8080/api/v2/students/cancelled?page=${page}&size=10`;
+    let url = `http://localhost:8085/api/v2/students/cancelled?page=${page}&size=10`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
-    
+
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -1412,7 +1412,7 @@ async function loadCancelledStudents(page = 0) {
 function renderCancelledStudentsTable(students) {
     const tbody = document.getElementById('cancelled-students-tbody');
     tbody.innerHTML = '';
-    
+
     students.forEach(s => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -1435,9 +1435,9 @@ function renderCancelledStudentsTable(students) {
 
 async function loadFutureEnrollments(page = 0) {
     const search = document.getElementById('search-future-students').value;
-    let url = `http://localhost:8080/api/v2/students/future?page=${page}&size=10`;
+    let url = `http://localhost:8085/api/v2/students/future?page=${page}&size=10`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
-    
+
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -1455,7 +1455,7 @@ async function loadFutureEnrollments(page = 0) {
 function renderFutureEnrollmentsTable(students) {
     const tbody = document.getElementById('future-enrollments-tbody');
     tbody.innerHTML = '';
-    
+
     students.forEach(s => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -1478,7 +1478,7 @@ function renderFutureEnrollmentsTable(students) {
 async function initAddStudentForm(preRoundId = null, preDiplomaId = null) {
     const form = document.getElementById('form-add-student');
     form.reset();
-    
+
     // Reset visibility and required status
     document.getElementById('enrollment-selectors').style.display = 'grid';
     document.getElementById('enrollment-summary-readonly').style.display = 'none';
@@ -1504,19 +1504,19 @@ async function initAddStudentForm(preRoundId = null, preDiplomaId = null) {
 
         const summaryBox = document.getElementById('enrollment-summary-readonly');
         summaryBox.style.display = 'block';
-        
+
         const roundSelect = document.getElementById('input-student-round');
         roundSelect.value = preRoundId;
-        
+
         // Ensure onchange is awaited if it's a promise
         if (roundSelect.onchange) {
             await roundSelect.onchange();
         }
-        
+
         if (preDiplomaId) {
             const diplomaSelect = document.getElementById('input-student-diploma');
             diplomaSelect.value = preDiplomaId;
-            
+
             // Set readonly text with safety checks
             const roundText = roundSelect.selectedIndex >= 0 ? roundSelect.options[roundSelect.selectedIndex].text : 'Unknown Round';
             const diplomaText = diplomaSelect.selectedIndex >= 0 ? diplomaSelect.options[diplomaSelect.selectedIndex].text : 'Unknown Diploma';
@@ -1526,7 +1526,7 @@ async function initAddStudentForm(preRoundId = null, preDiplomaId = null) {
 
     form.onsubmit = async (e) => {
         e.preventDefault();
-        
+
         const payload = {
             name: document.getElementById('input-student-name').value,
             email: document.getElementById('input-student-email').value,
@@ -1540,7 +1540,7 @@ async function initAddStudentForm(preRoundId = null, preDiplomaId = null) {
         };
 
         try {
-            const response = await fetch('http://localhost:8080/api/v2/students/enroll', {
+            const response = await fetch('http://localhost:8085/api/v2/students/enroll', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1571,8 +1571,8 @@ async function initAddStudentForm(preRoundId = null, preDiplomaId = null) {
 async function loadOptionsForStudentForm() {
     try {
         const [roundsRes, salesRes] = await Promise.all([
-            fetch('http://localhost:8080/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
-            fetch('http://localhost:8080/api/v1/users', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }) 
+            fetch('http://localhost:8085/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch('http://localhost:8085/api/v1/users', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
         ]);
 
         const rounds = await roundsRes.json();
@@ -1594,7 +1594,7 @@ async function loadOptionsForStudentForm() {
             diplomaSelect.disabled = true;
 
             try {
-                const res = await fetch(`http://localhost:8080/api/v2/rounds/${roundId}`, {
+                const res = await fetch(`http://localhost:8085/api/v2/rounds/${roundId}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 if (res.ok) {
@@ -1623,7 +1623,7 @@ async function loadOptionsForStudentForm() {
 async function restoreStudent(id) {
     if (confirm('Restore this student enrollment?')) {
         try {
-            const response = await fetch(`http://localhost:8080/api/v2/students/${id}/restore`, {
+            const response = await fetch(`http://localhost:8085/api/v2/students/${id}/restore`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -1641,7 +1641,7 @@ async function cancelStudentPrompt(id) {
     if (reason === null) return;
 
     try {
-        const response = await fetch(`http://localhost:8080/api/v2/students/${id}/cancel`, {
+        const response = await fetch(`http://localhost:8085/api/v2/students/${id}/cancel`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -1663,9 +1663,9 @@ async function cancelStudentPrompt(id) {
 
 async function loadInvoices(page = 0) {
     const search = document.getElementById('search-invoices').value;
-    let url = `http://localhost:8080/api/v2/invoices?page=${page}&size=10`;
+    let url = `http://localhost:8085/api/v2/invoices?page=${page}&size=10`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
-    
+
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -1683,7 +1683,7 @@ async function loadInvoices(page = 0) {
 function renderInvoicesTable(invoices) {
     const tbody = document.getElementById('invoices-tbody');
     tbody.innerHTML = '';
-    
+
     if (invoices.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No invoices found.</td></tr>';
         return;
@@ -1710,7 +1710,7 @@ function renderInvoicesTable(invoices) {
 
 async function loadStudentsForInvoiceForm() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/students?page=0&size=500', {
+        const response = await fetch('http://localhost:8085/api/v1/students?page=0&size=500', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -1718,7 +1718,7 @@ async function loadStudentsForInvoiceForm() {
             const students = data.content || [];
             const select = document.getElementById('select-invoice-student');
             select.innerHTML = '<option value="">-- Choose a student to autofill Name & Phone --</option>';
-            
+
             students.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s.id;
@@ -1726,7 +1726,7 @@ async function loadStudentsForInvoiceForm() {
                 opt.textContent = `${s.name} (${s.phone || 'No Phone'})`;
                 select.appendChild(opt);
             });
-            
+
             select.onchange = () => {
                 const selectedOpt = select.options[select.selectedIndex];
                 if (selectedOpt && select.value !== '') {
@@ -1750,24 +1750,24 @@ function openAddInvoiceView() {
 function initAddInvoiceForm() {
     const form = document.getElementById('form-add-invoice');
     form.reset();
-    
+
     // Reset edit ID and title/breadcrumb to Add Mode
     document.getElementById('invoice-edit-id').value = '';
     document.getElementById('invoice-form-title').textContent = 'Add New Invoice';
     document.getElementById('invoice-form-breadcrumb').textContent = 'Add New invoice';
-    
+
     // Clear student dropdown
     const studentSelect = document.getElementById('select-invoice-student');
     if (studentSelect) {
         studentSelect.innerHTML = '<option value="">-- Choose a student to autofill Name & Phone --</option>';
     }
     loadStudentsForInvoiceForm();
-    
+
     document.getElementById('btn-cancel-invoice').onclick = () => showView('invoices-list-view');
 
     form.onsubmit = async (e) => {
         e.preventDefault();
-        
+
         const id = document.getElementById('invoice-edit-id').value;
         const payload = {
             invoiceDate: document.getElementById('input-invoice-date').value,
@@ -1778,9 +1778,9 @@ function initAddInvoiceForm() {
         };
 
         try {
-            const url = id ? `http://localhost:8080/api/v2/invoices/${id}` : 'http://localhost:8080/api/v2/invoices';
+            const url = id ? `http://localhost:8085/api/v2/invoices/${id}` : 'http://localhost:8085/api/v2/invoices';
             const method = id ? 'PUT' : 'POST';
-            
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
@@ -1808,7 +1808,7 @@ function initAddInvoiceForm() {
 async function deleteInvoice(id) {
     if (confirm('Are you sure you want to delete this invoice?')) {
         try {
-            const response = await fetch(`http://localhost:8080/api/v2/invoices/${id}`, {
+            const response = await fetch(`http://localhost:8085/api/v2/invoices/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -1827,31 +1827,31 @@ async function deleteInvoice(id) {
 
 async function editInvoice(id) {
     try {
-        const response = await fetch(`http://localhost:8080/api/v2/invoices/${id}`, {
+        const response = await fetch(`http://localhost:8085/api/v2/invoices/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const inv = await response.json();
-            
+
             showView('add-invoice-view');
-            
+
             document.getElementById('invoice-edit-id').value = inv.id;
             document.getElementById('invoice-form-title').textContent = 'Edit Invoice';
             document.getElementById('invoice-form-breadcrumb').textContent = 'Edit invoice';
-            
+
             // Clear and load student options
             const studentSelect = document.getElementById('select-invoice-student');
             if (studentSelect) {
                 studentSelect.innerHTML = '<option value="">-- Choose a student to autofill Name & Phone --</option>';
             }
             await loadStudentsForInvoiceForm();
-            
+
             document.getElementById('input-invoice-date').value = inv.invoiceDate;
             document.getElementById('input-invoice-amount').value = inv.amount;
             document.getElementById('input-invoice-name').value = inv.customerName;
             document.getElementById('input-invoice-phone').value = inv.customerPhone;
             document.getElementById('input-invoice-notes').value = inv.notes || '';
-            
+
             // Reapply flatpickr to ensure it's correctly updated if flatpickr is active
             applyCustomDatePickers();
         } else {
@@ -1866,18 +1866,18 @@ async function editInvoice(id) {
 function renderPagination(containerId, data, loadFn) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    
+
     container.innerHTML = '';
-    
+
     if (data.totalPages <= 1) return;
-    
+
     const prevBtn = document.createElement('button');
     prevBtn.className = 'page-btn';
     prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
     prevBtn.disabled = data.first;
     prevBtn.onclick = () => loadFn(data.number - 1);
     container.appendChild(prevBtn);
-    
+
     for (let i = 0; i < data.totalPages; i++) {
         const pageBtn = document.createElement('button');
         pageBtn.className = `page-btn ${i === data.number ? 'active' : ''}`;
@@ -1885,7 +1885,7 @@ function renderPagination(containerId, data, loadFn) {
         pageBtn.onclick = () => loadFn(i);
         container.appendChild(pageBtn);
     }
-    
+
     const nextBtn = document.createElement('button');
     nextBtn.className = 'page-btn';
     nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
@@ -1899,7 +1899,7 @@ function renderPagination(containerId, data, loadFn) {
 
 async function populateDiplomaInstructorFilter() {
     try {
-        const response = await fetch('http://localhost:8080/api/v2/instructors/all', {
+        const response = await fetch('http://localhost:8085/api/v2/instructors/all', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -1918,11 +1918,11 @@ async function populateDiplomaInstructorFilter() {
 async function loadDiplomasV2(page = 0) {
     const search = document.getElementById('search-diplomas-v2').value;
     const instructorId = document.getElementById('filter-diploma-instructor').value;
-    
-    let url = `http://localhost:8080/api/v2/round-diplomas?page=${page}&size=10`;
+
+    let url = `http://localhost:8085/api/v2/round-diplomas?page=${page}&size=10`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (instructorId) url += `&instructorId=${instructorId}`;
-    
+
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -1940,7 +1940,7 @@ async function loadDiplomasV2(page = 0) {
 function renderDiplomasV2Table(diplomas) {
     const tbody = document.getElementById('diplomas-list-tbody');
     tbody.innerHTML = '';
-    
+
     if (diplomas.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">No diplomas found.</td></tr>';
         return;
@@ -1970,7 +1970,7 @@ function renderDiplomasV2Table(diplomas) {
 async function initAddDiplomaV2Form() {
     // Load lookup data
     await loadV2LookupData();
-    
+
     const form = document.getElementById('form-add-diploma-v2');
     form.reset();
     document.getElementById('v2-installments-tbody').innerHTML = '';
@@ -2013,7 +2013,7 @@ async function initAddDiplomaV2Form() {
 
     form.onsubmit = async (e) => {
         e.preventDefault();
-        
+
         const totalPercent = calculateTotalV2Percent();
         if (totalPercent !== 100) {
             alert('Total percentage must be exactly 100%');
@@ -2043,7 +2043,7 @@ async function initAddDiplomaV2Form() {
         };
 
         try {
-            const response = await fetch('http://localhost:8080/api/v2/round-diplomas', {
+            const response = await fetch('http://localhost:8085/api/v2/round-diplomas', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2068,9 +2068,9 @@ async function initAddDiplomaV2Form() {
 async function loadV2LookupData() {
     try {
         const [roundsRes, diplomasRes, instructorsRes] = await Promise.all([
-            fetch('http://localhost:8080/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
-            fetch('http://localhost:8080/api/v2/diplomas/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
-            fetch('http://localhost:8080/api/v2/instructors/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+            fetch('http://localhost:8085/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch('http://localhost:8085/api/v2/diplomas/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch('http://localhost:8085/api/v2/instructors/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
         ]);
 
         const rounds = await roundsRes.json();
@@ -2096,7 +2096,7 @@ function populateSelect(id, items, labelKey, valueKey, defaultLabel = 'Select') 
         option.textContent = item[labelKey];
         select.appendChild(option);
     });
-    
+
     // Notify custom select wrappers if they exist
     select.dispatchEvent(new Event('optionsChanged'));
 }
@@ -2173,7 +2173,7 @@ function getV2InstDate(index) {
 async function deleteDiplomaV2(id, name = "this diploma") {
     showDeleteModal(`Delete "${name}"?`, async () => {
         try {
-            const response = await fetch(`http://localhost:8080/api/v2/round-diplomas/${id}`, {
+            const response = await fetch(`http://localhost:8085/api/v2/round-diplomas/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -2192,21 +2192,21 @@ async function deleteDiplomaV2(id, name = "this diploma") {
 
 async function editDiplomaV2(id) {
     try {
-        const response = await fetch(`http://localhost:8080/api/v2/round-diplomas/${id}`, {
+        const response = await fetch(`http://localhost:8085/api/v2/round-diplomas/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const d = await response.json();
-            
+
             showView('edit-diploma-view');
-            
+
             // Populate Breadcrumb and Title
             document.getElementById('edit-diploma-breadcrumb').textContent = `Edit ${d.diplomaName}`;
             document.getElementById('edit-diploma-title').textContent = `Edit ${d.diplomaName}`;
-            
+
             // Load lookups then populate
             await loadV2LookupDataForEdit();
-            
+
             document.getElementById('edit-v2-id').value = d.id;
             document.getElementById('edit-v2-input-diploma-name').value = d.diplomaName;
             document.getElementById('edit-v2-input-round-id').value = d.roundId;
@@ -2215,16 +2215,16 @@ async function editDiplomaV2(id) {
             document.getElementById('edit-v2-input-start-date').value = d.startDate;
             document.getElementById('edit-v2-input-end-date').value = d.endDate;
             document.getElementById('edit-v2-input-total-students').value = d.totalStudents;
-            
+
             // Clear and add installments
             const tbody = document.getElementById('edit-v2-installments-tbody');
             tbody.innerHTML = '';
-            
+
             if (d.installment1Percent) addV2InstallmentRowEdit(1, d.installment1Percent, d.installment1Amount, d.installment1Date);
             if (d.installment2Percent) addV2InstallmentRowEdit(2, d.installment2Percent, d.installment2Amount, d.installment2Date);
             if (d.installment3Percent) addV2InstallmentRowEdit(3, d.installment3Percent, d.installment3Amount, d.installment3Date);
             if (d.installment4Percent) addV2InstallmentRowEdit(4, d.installment4Percent, d.installment4Amount, d.installment4Date);
-            
+
             updateV2PaymentSummaryEdit();
             initEditDiplomaFormLogic();
         }
@@ -2236,8 +2236,8 @@ async function editDiplomaV2(id) {
 async function loadV2LookupDataForEdit() {
     try {
         const [roundsRes, instructorsRes] = await Promise.all([
-            fetch('http://localhost:8080/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
-            fetch('http://localhost:8080/api/v2/instructors/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+            fetch('http://localhost:8085/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch('http://localhost:8085/api/v2/instructors/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
         ]);
 
         const rounds = await roundsRes.json();
@@ -2261,7 +2261,7 @@ function addV2InstallmentRowEdit(num, percent = 0, amount = 0, date = "") {
         <td style="padding: 12px;"><input type="date" class="edit-v2-inst-date" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="${date}"></td>
         <td style="padding: 12px;"><button type="button" class="edit-v2-btn-del-inst" style="background: none; border: none; color: #dc3545; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
     `;
-    
+
     row.querySelector('.edit-v2-inst-percent').oninput = () => {
         updateV2InstallmentAmountsEdit();
         updateV2PaymentSummaryEdit();
@@ -2270,17 +2270,17 @@ function addV2InstallmentRowEdit(num, percent = 0, amount = 0, date = "") {
         row.remove();
         updateV2PaymentSummaryEdit();
     };
-    
+
     tbody.appendChild(row);
     applyCustomDatePickers();
 }
 
 function initEditDiplomaFormLogic() {
     const form = document.getElementById('form-edit-diploma-v2');
-    
+
     document.getElementById('edit-v2-btn-cancel').onclick = () => showView('diplomas-list-view');
     document.getElementById('edit-v2-input-total-price').oninput = () => updateV2InstallmentAmountsEdit();
-    
+
     document.getElementById('edit-v2-btn-add-inst').onclick = () => {
         const count = document.getElementById('edit-v2-installments-tbody').children.length;
         if (count < 4) addV2InstallmentRowEdit(count + 1);
@@ -2290,7 +2290,7 @@ function initEditDiplomaFormLogic() {
         e.preventDefault();
         const id = document.getElementById('edit-v2-id').value;
         const totalPercent = calculateTotalV2PercentEdit();
-        
+
         if (totalPercent !== 100) {
             alert('Total percentage must equal 100%');
             return;
@@ -2319,7 +2319,7 @@ function initEditDiplomaFormLogic() {
         };
 
         try {
-            const response = await fetch(`http://localhost:8080/api/v2/round-diplomas/${id}`, {
+            const response = await fetch(`http://localhost:8085/api/v2/round-diplomas/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2419,7 +2419,7 @@ function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
+
     toast.innerHTML = `
         <div class="toast-icon">
             <i class="fas ${type === 'success' ? 'fa-check' : 'fa-times'}"></i>
@@ -2427,15 +2427,15 @@ function showToast(message, type = 'success') {
         <div class="toast-message">${message}</div>
         <div class="toast-close"><i class="fas fa-times"></i></div>
     `;
-    
+
     container.appendChild(toast);
-    
+
     // Auto remove
     const timer = setTimeout(() => {
         toast.style.animation = 'fadeOut 0.3s ease forwards';
         setTimeout(() => toast.remove(), 300);
     }, 4000);
-    
+
     toast.querySelector('.toast-close').onclick = () => {
         clearTimeout(timer);
         toast.remove();
@@ -2446,12 +2446,12 @@ function showDeleteModal(title, onConfirm) {
     const modal = document.getElementById('delete-modal');
     document.getElementById('delete-modal-title').textContent = title;
     modal.style.display = 'flex';
-    
+
     document.getElementById('btn-confirm-delete').onclick = () => {
         onConfirm();
         modal.style.display = 'none';
     };
-    
+
     document.getElementById('btn-cancel-delete').onclick = () => {
         modal.style.display = 'none';
     };
@@ -2461,30 +2461,30 @@ let currentDetailsRoundDiplomaId = null;
 
 async function viewDiplomaDetailsV2(id) {
     try {
-        const response = await fetch(`http://localhost:8080/api/v2/round-diplomas/${id}`, {
+        const response = await fetch(`http://localhost:8085/api/v2/round-diplomas/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const d = await response.json();
             currentDetailsRoundDiplomaId = id;
-            
+
             showView('diploma-details-view');
-            
+
             // Update UI
             document.getElementById('details-diploma-name-breadcrumb').textContent = d.diplomaName;
             document.getElementById('details-diploma-title').textContent = `${d.diplomaName} – ${d.roundName}`;
-            
+
             // Initialize Tabs
             initDetailsTabs(id);
-            
+
             // Load students
             loadDiplomaStudentsV2(id);
-            
+
             // Search logic
             document.getElementById('search-details-students').oninput = (e) => {
                 applyDetailsFilters();
             };
-            
+
             document.getElementById('filter-details-it-status').onchange = () => applyDetailsFilters();
             document.getElementById('filter-details-student-status').onchange = () => applyDetailsFilters();
 
@@ -2508,7 +2508,7 @@ function initDetailsTabs(roundDiplomaId) {
         tab.onclick = () => {
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            
+
             const target = tab.getAttribute('data-tab');
             document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
             document.getElementById(target).style.display = 'block';
@@ -2522,9 +2522,9 @@ function initDetailsTabs(roundDiplomaId) {
 
 async function loadDiplomaStudentsV2(id, search = '') {
     try {
-        const url = new URL(`http://localhost:8080/api/v2/students/round-diploma/${id}`);
+        const url = new URL(`http://localhost:8085/api/v2/students/round-diploma/${id}`);
         if (search) url.searchParams.append('search', search);
-        
+
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -2554,14 +2554,14 @@ function applyDetailsFilters() {
     if (studentStatus !== '') {
         filtered = filtered.filter(s => s.status === studentStatus);
     }
-    
+
     renderDiplomaStudentsV2(filtered);
 }
 
 function renderDiplomaStudentsV2(students) {
     const tbody = document.getElementById('details-students-tbody');
     tbody.innerHTML = '';
-    
+
     students.forEach(s => {
         const statusClass = s.status === 'ACTIVE' ? 'status-active' : s.status === 'CANCELLED' ? 'status-cancelled' : 'status-postponed';
         const formattedStatus = s.status ? s.status.replace(/_/g, ' ').replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.substr(1).toLowerCase()) : '-';
@@ -2605,7 +2605,7 @@ async function handleInlineAccountChange(id, password, itStatus, status) {
         if (itStatus !== null) body.itStatus = itStatus;
         if (status !== null && status !== undefined) body.status = status;
 
-        const response = await fetch(`http://localhost:8080/api/v2/students/${id}/account-info`, {
+        const response = await fetch(`http://localhost:8085/api/v2/students/${id}/account-info`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -2619,7 +2619,7 @@ async function handleInlineAccountChange(id, password, itStatus, status) {
             if (password !== null) student.password = password;
             if (itStatus !== null) student.itStatus = itStatus;
             if (status !== null && status !== undefined) student.status = status;
-            
+
             // If status changed, refresh table to show correct badges
             if (status !== null && status !== undefined) {
                 renderDiplomaStudentsV2(window.currentDiplomaStudentsV2);
@@ -2638,7 +2638,7 @@ async function handleInlineAccountChange(id, password, itStatus, status) {
 
 function handleInlineStatusChange(selectElement, id, name, oldStatus) {
     const newStatus = selectElement.value;
-    
+
     // Reset immediately to old status in the UI, wait for the actual operation to succeed before showing new status
     selectElement.value = oldStatus;
 
@@ -2657,7 +2657,7 @@ function handleInlineStatusChange(selectElement, id, name, oldStatus) {
 async function restoreStudent(id) {
     if (!confirm('Are you sure you want to mark this student as Active?')) return;
     try {
-        const response = await fetch(`http://localhost:8080/api/v2/students/${id}/restore`, {
+        const response = await fetch(`http://localhost:8085/api/v2/students/${id}/restore`, {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -2676,11 +2676,11 @@ function cancelStudent(id, name) {
     const modal = document.getElementById('cancel-student-modal');
     modal.style.display = 'flex';
     document.getElementById('cancel-reason-input').value = '';
-    
+
     document.getElementById('btn-confirm-cancel-student').onclick = async () => {
         const reason = document.getElementById('cancel-reason-input').value;
         try {
-            const response = await fetch(`http://localhost:8080/api/v2/students/${id}/cancel`, {
+            const response = await fetch(`http://localhost:8085/api/v2/students/${id}/cancel`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2697,7 +2697,7 @@ function cancelStudent(id, name) {
             console.error('Error cancelling student:', error);
         }
     };
-    
+
     document.getElementById('btn-abort-cancel-student').onclick = () => {
         modal.style.display = 'none';
     };
@@ -2706,16 +2706,16 @@ function cancelStudent(id, name) {
 async function postponeStudent(id, name) {
     const modal = document.getElementById('postpone-student-modal');
     modal.style.display = 'flex';
-    
+
     document.getElementById('btn-confirm-postpone-student').onclick = async () => {
         const targetRoundId = document.getElementById('postpone-target-round-select').value;
         if (!targetRoundId) {
             alert('Please select a target round');
             return;
         }
-        
+
         try {
-            const response = await fetch(`http://localhost:8080/api/v2/students/${id}/postpone`, {
+            const response = await fetch(`http://localhost:8085/api/v2/students/${id}/postpone`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2732,7 +2732,7 @@ async function postponeStudent(id, name) {
             console.error('Error postponing student:', error);
         }
     };
-    
+
     document.getElementById('btn-abort-postpone-student').onclick = () => {
         modal.style.display = 'none';
     };
@@ -2740,7 +2740,7 @@ async function postponeStudent(id, name) {
 
 async function loadPostponeRounds() {
     try {
-        const response = await fetch('http://localhost:8080/api/v2/rounds/all', {
+        const response = await fetch('http://localhost:8085/api/v2/rounds/all', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -2765,7 +2765,7 @@ function initAttendanceTab(roundDiplomaId) {
     console.log('[Attendance] initAttendanceTab called with roundDiplomaId:', roundDiplomaId, typeof roundDiplomaId);
     document.getElementById('sessions-list-container').style.display = 'block';
     document.getElementById('session-details-container').style.display = 'none';
-    
+
     // Add New Session
     document.getElementById('btn-open-add-session').onclick = () => {
         document.getElementById('add-session-modal').style.display = 'flex';
@@ -2776,17 +2776,17 @@ function initAttendanceTab(roundDiplomaId) {
     document.getElementById('btn-cancel-add-session').onclick = () => {
         document.getElementById('add-session-modal').style.display = 'none';
     };
-    
+
     document.getElementById('form-add-session').onsubmit = async (e) => {
         e.preventDefault();
         const date = document.getElementById('add-session-date').value;
         if (!date) return;
-        
+
         // Save empty attendance for this date to create the session
         await createEmptySession(roundDiplomaId, date);
         document.getElementById('add-session-modal').style.display = 'none';
         document.getElementById('form-add-session').reset();
-        
+
         // Reload sessions
         loadSessionsSummary(roundDiplomaId);
     };
@@ -2798,7 +2798,7 @@ function initAttendanceTab(roundDiplomaId) {
             saveSessionDetails(roundDiplomaId, currentSessionDate);
         }
     };
-    
+
     loadSessionsSummary(roundDiplomaId);
 }
 
@@ -2806,31 +2806,31 @@ async function createEmptySession(roundDiplomaId, date) {
     try {
         roundDiplomaId = parseInt(roundDiplomaId);
         console.log('[Attendance] createEmptySession called:', { roundDiplomaId, date });
-        
+
         // We get students and send a bulk update with default values
-        const stdResponse = await fetch(`http://localhost:8080/api/v2/students/round-diploma/${roundDiplomaId}?size=200`, {
+        const stdResponse = await fetch(`http://localhost:8085/api/v2/students/round-diploma/${roundDiplomaId}?size=200`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const stdData = await stdResponse.json();
         const students = stdData.content;
         console.log('[Attendance] Found students:', students ? students.length : 0);
-        
+
         if (!students || students.length === 0) {
             showToast('No students found for this diploma', 'error');
             return;
         }
-        
+
         const records = students.map(s => ({
             studentId: s.id,
             status: 'PRESENT',
             taskSubmitted: false,
             notes: ''
         }));
-        
+
         const payload = { roundDiplomaId: roundDiplomaId, date: date, records: records };
         console.log('[Attendance] Sending bulk POST payload:', JSON.stringify(payload));
-        
-        const response = await fetch('http://localhost:8080/api/v2/attendance/bulk', {
+
+        const response = await fetch('http://localhost:8085/api/v2/attendance/bulk', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -2838,7 +2838,7 @@ async function createEmptySession(roundDiplomaId, date) {
             },
             body: JSON.stringify(payload)
         });
-        
+
         console.log('[Attendance] createEmptySession response status:', response.status);
         if (response.ok) {
             showToast('Session created successfully', 'success');
@@ -2855,7 +2855,7 @@ async function createEmptySession(roundDiplomaId, date) {
 
 async function loadSessionsSummary(roundDiplomaId) {
     try {
-        const response = await fetch(`http://localhost:8080/api/v2/attendance/diploma/${roundDiplomaId}/sessions`, {
+        const response = await fetch(`http://localhost:8085/api/v2/attendance/diploma/${roundDiplomaId}/sessions`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -2870,11 +2870,11 @@ async function loadSessionsSummary(roundDiplomaId) {
 function renderSessionsTable(summaries) {
     const tbody = document.getElementById('sessions-tbody');
     tbody.innerHTML = '';
-    
+
     summaries.forEach(s => {
         const attPercent = s.totalStudentsCount > 0 ? Math.round((s.attendedCount / s.totalStudentsCount) * 100) : 0;
         const taskPercent = s.totalStudentsCount > 0 ? Math.round((s.tasksSubmittedCount / s.totalStudentsCount) * 100) : 0;
-        
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${formatDate(s.sessionDate)}</td>
@@ -2895,7 +2895,7 @@ function openSessionDetails(date) {
     currentSessionDate = date;
     document.getElementById('sessions-list-container').style.display = 'none';
     document.getElementById('session-details-container').style.display = 'block';
-    
+
     // Update breadcrumb
     const diplomaName = document.getElementById('details-diploma-name-breadcrumb').textContent;
     document.querySelector('.breadcrumb').innerHTML = `
@@ -2903,19 +2903,19 @@ function openSessionDetails(date) {
         <a href="#" onclick="showDiplomaDetails(${currentRoundDiplomaId}); return false;">${diplomaName}</a> <i class="fas fa-chevron-right"></i> 
         <span class="active">${formatDate(date)}</span>
     `;
-    
+
     loadSessionDetails(currentRoundDiplomaId, date);
 }
 
 async function loadSessionDetails(roundDiplomaId, date) {
     try {
-        const stdResponse = await fetch(`http://localhost:8080/api/v2/students/round-diploma/${roundDiplomaId}`, {
+        const stdResponse = await fetch(`http://localhost:8085/api/v2/students/round-diploma/${roundDiplomaId}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const stdData = await stdResponse.json();
         const students = stdData.content;
 
-        const attResponse = await fetch(`http://localhost:8080/api/v2/attendance/diploma/${roundDiplomaId}?date=${date}`, {
+        const attResponse = await fetch(`http://localhost:8085/api/v2/attendance/diploma/${roundDiplomaId}?date=${date}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const attendanceRecords = await attResponse.json();
@@ -2929,7 +2929,7 @@ async function loadSessionDetails(roundDiplomaId, date) {
 function renderSessionDetailsTable(students, records) {
     const tbody = document.getElementById('session-details-tbody');
     tbody.innerHTML = '';
-    
+
     const recordMap = new Map(records.map(r => [r.studentId, r]));
 
     students.forEach(s => {
@@ -2953,7 +2953,7 @@ function renderSessionDetailsTable(students, records) {
                 <input type="text" class="note-input" value="${notes || ''}">
             </td>
         `;
-        
+
         row.querySelectorAll('.clickable-cell').forEach(cell => {
             cell.onclick = (e) => {
                 // If they clicked the input directly, it will also toggle it which is fine
@@ -2972,13 +2972,13 @@ async function saveSessionDetails(roundDiplomaId, date) {
     roundDiplomaId = parseInt(roundDiplomaId);
     const records = [];
     const rows = document.querySelectorAll('#session-details-tbody tr');
-    
+
     rows.forEach(row => {
         const studentId = row.dataset.studentId;
         const isPresent = row.querySelector('.custom-checkbox[data-type="attendance"]').classList.contains('checked');
         const taskSubmitted = row.querySelector('.custom-checkbox[data-type="task"]').classList.contains('checked');
         const notes = row.querySelector('.note-input').value;
-        
+
         records.push({
             studentId: parseInt(studentId),
             status: isPresent ? 'PRESENT' : 'ABSENT',
@@ -2991,7 +2991,7 @@ async function saveSessionDetails(roundDiplomaId, date) {
     console.log('[Attendance] saveSessionDetails payload:', JSON.stringify(payload));
 
     try {
-        const response = await fetch('http://localhost:8080/api/v2/attendance/bulk', {
+        const response = await fetch('http://localhost:8085/api/v2/attendance/bulk', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -3018,7 +3018,7 @@ async function saveSessionDetails(roundDiplomaId, date) {
 
 async function loadTasksData(roundDiplomaId) {
     try {
-        const response = await fetch(`http://localhost:8080/api/v2/tasks/diploma/${roundDiplomaId}`, {
+        const response = await fetch(`http://localhost:8085/api/v2/tasks/diploma/${roundDiplomaId}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -3033,7 +3033,7 @@ async function loadTasksData(roundDiplomaId) {
 function renderTasksTable(tasks) {
     const tbody = document.getElementById('tasks-tbody');
     tbody.innerHTML = '';
-    
+
     tasks.forEach(t => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -3062,23 +3062,23 @@ async function createTaskData(roundDiplomaId) {
 async function loadEmployees() {
     const search = document.getElementById('search-employees').value;
     const role = document.getElementById('filter-employees-role').value;
-    
-    let url = 'http://localhost:8080/api/v1/users';
-    
+
+    let url = 'http://localhost:8085/api/v1/users';
+
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             let employees = await response.json();
-            
+
             if (search) {
                 employees = employees.filter(e => e.fullName.toLowerCase().includes(search.toLowerCase()) || e.phone.includes(search));
             }
             if (role) {
                 employees = employees.filter(e => e.role === role);
             }
-            
+
             renderEmployeesTable(employees);
         }
     } catch (error) {
@@ -3089,7 +3089,7 @@ async function loadEmployees() {
 function renderEmployeesTable(employees) {
     const tbody = document.getElementById('employees-list-tbody');
     tbody.innerHTML = '';
-    
+
     employees.forEach(e => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -3115,12 +3115,12 @@ function initAddEmployeeForm() {
     document.getElementById('employee-edit-id').value = '';
     document.getElementById('employee-form-title').textContent = 'Add New employee';
     document.getElementById('employee-form-breadcrumb').textContent = 'Add new employee';
-    
+
     // Hide password for edit if needed, but for now just leave it
-    
+
     form.onsubmit = async (e) => {
         e.preventDefault();
-        
+
         const id = document.getElementById('employee-edit-id').value;
         const payload = {
             username: document.getElementById('input-employee-username').value,
@@ -3132,20 +3132,20 @@ function initAddEmployeeForm() {
             password: document.getElementById('input-employee-password').value,
             email: document.getElementById('input-employee-username').value + "@academy.com" // Default email if not provided
         };
-        
+
         try {
             // Using /api/auth/register for new users
             // For update, we might need a separate endpoint. For now let's handle create.
-            let url = 'http://localhost:8080/api/auth/register';
+            let url = 'http://localhost:8085/api/auth/register';
             let method = 'POST';
-            
+
             if (id) {
                 // Mocking update for now as we don't have a specific update endpoint shown yet
                 // In a real app, we'd use PUT /api/v1/users/{id}
                 alert('Update functionality using the existing module structure.');
                 return;
             }
-            
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
@@ -3154,7 +3154,7 @@ function initAddEmployeeForm() {
                 },
                 body: JSON.stringify(payload)
             });
-            
+
             if (response.ok) {
                 showToast('Employee added successfully', 'success');
                 showView('employees-list-view');
@@ -3167,26 +3167,26 @@ function initAddEmployeeForm() {
             console.error('Error saving employee:', error);
         }
     };
-    
+
     document.getElementById('btn-cancel-employee').onclick = () => showView('employees-list-view');
 }
 
 async function editEmployee(id) {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/users', {
+        const response = await fetch('http://localhost:8085/api/v1/users', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const users = await response.json();
         const user = users.find(u => u.id === id);
-        
+
         if (user) {
             showView('add-employee-view');
             initAddEmployeeForm();
-            
+
             document.getElementById('employee-edit-id').value = user.id;
             document.getElementById('employee-form-title').textContent = 'Edit Employee';
             document.getElementById('employee-form-breadcrumb').textContent = 'Edit employee';
-            
+
             document.getElementById('input-employee-name').value = user.fullName;
             document.getElementById('input-employee-phone').value = user.phone || '';
             document.getElementById('input-employee-salary').value = user.baseSalary || '';
@@ -3202,13 +3202,13 @@ async function editEmployee(id) {
 
 async function deleteUser(id) {
     if (!confirm('Are you sure you want to delete this user?')) return;
-    
+
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/users/${id}`, {
+        const response = await fetch(`http://localhost:8085/api/v1/users/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-        
+
         if (response.ok) {
             showToast('User deleted successfully', 'success');
             loadEmployees();
@@ -3227,12 +3227,12 @@ async function deleteUser(id) {
 async function loadLeads() {
     const search = document.getElementById('search-leads').value;
     const status = document.getElementById('filter-leads-status').value;
-    
-    let url = 'http://localhost:8080/api/v1/leads';
+
+    let url = 'http://localhost:8085/api/v1/leads';
     if (status) {
-        url = `http://localhost:8080/api/v1/leads/status/${status}`;
+        url = `http://localhost:8085/api/v1/leads/status/${status}`;
     }
-    
+
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -3240,11 +3240,11 @@ async function loadLeads() {
         if (response.ok) {
             const data = await response.json();
             let leads = data.content || [];
-            
+
             if (search) {
                 leads = leads.filter(l => l.fullName.toLowerCase().includes(search.toLowerCase()) || l.phoneNumber.includes(search));
             }
-            
+
             renderLeadsTable(leads);
             loadLeadStats();
         }
@@ -3255,7 +3255,7 @@ async function loadLeads() {
 
 async function loadLeadStats() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/leads/statistics', {
+        const response = await fetch('http://localhost:8085/api/v1/leads/statistics', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -3278,7 +3278,7 @@ async function loadLeadStats() {
 
 async function loadDiplomasForTelesalesForm() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/diplomas', {
+        const response = await fetch('http://localhost:8085/api/v1/diplomas', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -3305,7 +3305,7 @@ async function loadTelesalesLeads(page = 0) {
     const status = document.getElementById('tele-filter-status').value;
     const attempts = document.getElementById('tele-filter-attempts').value;
 
-    let url = `http://localhost:8080/api/v1/leads?page=${page}&size=50`;
+    let url = `http://localhost:8085/api/v1/leads?page=${page}&size=50`;
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -3355,7 +3355,7 @@ function renderTelesalesLeadsTable(leads) {
     leads.forEach(l => {
         const row = document.createElement('tr');
         const count = l.followUps ? l.followUps.length : 0;
-        
+
         // Status Badges
         let statusBadge = '';
         if (l.status === 'OPEN') statusBadge = '<span class="status-pill open" style="background: #e8f5e9; color: #4caf50; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Open</span>';
@@ -3392,7 +3392,7 @@ function renderTelesalesLeadsPagination(data, currentPage) {
     const container = document.getElementById('tele-leads-pagination');
     if (!container) return;
     container.innerHTML = '';
-    
+
     if (!data.totalPages || data.totalPages <= 1) return;
 
     // Previous Button
@@ -3451,12 +3451,12 @@ function setupTelesalesListeners() {
 
 async function viewTelesalesLead(id) {
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/leads/${id}`, {
+        const response = await fetch(`http://localhost:8085/api/v1/leads/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const lead = await response.json();
-            
+
             // Show details view
             showView('telesales-lead-details-view');
 
@@ -3480,7 +3480,7 @@ async function viewTelesalesLead(id) {
             else if (lead.status === 'CLOSED') statusBadge = '<span class="status-pill closed" style="background: #ffebee; color: #f44336; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Closed</span>';
             else if (lead.status === 'ENROLLED') statusBadge = '<span class="status-pill enrolled" style="background: #e3f2fd; color: #2196f3; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Enrolled</span>';
             else statusBadge = `<span class="status-pill other" style="background: #f5f5f5; color: #666; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">${lead.status}</span>`;
-            
+
             document.getElementById('det-lead-status').innerHTML = statusBadge;
 
             // Follow-ups attempts count
@@ -3535,7 +3535,7 @@ async function viewTelesalesLead(id) {
 
                     followUps.forEach(f => {
                         const row = document.createElement('tr');
-                        
+
                         let fDateStr = '-';
                         if (f.createdAt) {
                             const date = new Date(f.createdAt);
@@ -3584,7 +3584,7 @@ async function submitTelesalesCallAttempt() {
     };
 
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/leads/${leadId}/follow-ups`, {
+        const response = await fetch(`http://localhost:8085/api/v1/leads/${leadId}/follow-ups`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -3609,15 +3609,15 @@ async function submitTelesalesCallAttempt() {
 function renderLeadsTable(leads) {
     const tbody = document.getElementById('leads-list-tbody');
     tbody.innerHTML = '';
-    
+
     leads.forEach(l => {
         const row = document.createElement('tr');
-        
+
         // Find Response 1 and Response 2 from followUps
         const followUps = l.followUps || [];
         const resp1 = followUps.find(f => f.sequence === 1);
         const resp2 = followUps.find(f => f.sequence === 2);
-        
+
         const resp1Html = resp1 ? `
             <div class="response-cell">
                 <span class="response-text">${resp1.message}</span>
@@ -3648,7 +3648,7 @@ function renderLeadsTable(leads) {
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
-    
+
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `
@@ -3656,7 +3656,7 @@ function showToast(message, type = 'info') {
         <span>${message}</span>
     `;
     container.appendChild(toast);
-    
+
     setTimeout(() => {
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 500);
@@ -3673,7 +3673,7 @@ let revenueChart = null;
 async function loadFinanceOverview() {
     const month = document.getElementById('finance-overview-month').value;
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/finance/overview?month=${month}`, {
+        const response = await fetch(`http://localhost:8085/api/v1/finance/overview?month=${month}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -3687,9 +3687,9 @@ async function loadFinanceOverview() {
             document.getElementById('finance-collected-revenue').textContent = collectedRevenue.toLocaleString();
             document.getElementById('finance-pending-revenue').textContent = pendingRevenue.toLocaleString();
             document.getElementById('finance-net-profit').textContent = netProfit.toLocaleString();
-            
+
             document.getElementById('breakdown-total-val').textContent = totalRevenue.toLocaleString();
-            
+
             renderFinanceCharts(data);
             renderTopRevenueTable(data.topRevenueDiplomas || [
                 { diploma: 'Graphic Design Diploma', revenue: 125000, percentage: 45 },
@@ -3705,11 +3705,11 @@ async function loadFinanceOverview() {
 function renderFinanceCharts(data) {
     const breakdownCtx = document.getElementById('financial-breakdown-chart').getContext('2d');
     if (breakdownChart) breakdownChart.destroy();
-    
+
     const breakdownData = data.financialBreakdown || {};
     const labels = Object.keys(breakdownData);
     const values = Object.values(breakdownData);
-    
+
     breakdownChart = new Chart(breakdownCtx, {
         type: 'doughnut',
         data: {
@@ -3722,20 +3722,20 @@ function renderFinanceCharts(data) {
                 hoverOffset: 10
             }]
         },
-        options: { 
-            cutout: '75%', 
+        options: {
+            cutout: '75%',
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { 
+            plugins: {
                 legend: { display: false },
-                tooltip: { 
+                tooltip: {
                     backgroundColor: '#000',
                     titleColor: '#fff',
                     bodyColor: '#fff',
                     padding: 10,
                     displayColors: false
                 }
-            } 
+            }
         }
     });
 
@@ -3766,35 +3766,35 @@ function renderFinanceCharts(data) {
 
     const revenueCtx = document.getElementById('revenue-expenses-chart').getContext('2d');
     if (revenueChart) revenueChart.destroy();
-    
+
     const chartPoints = data.revenueVsExpenses || [];
     revenueChart = new Chart(revenueCtx, {
         type: 'line',
         data: {
             labels: chartPoints.length > 0 ? chartPoints.map(p => p.label) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
             datasets: [
-                { 
-                    label: 'Revenue', 
-                    data: chartPoints.length > 0 ? chartPoints.map(p => p.revenue) : [130000, 145000, 110000, 215000, 205000, 230000, 245000], 
-                    borderColor: '#ebb700', 
+                {
+                    label: 'Revenue',
+                    data: chartPoints.length > 0 ? chartPoints.map(p => p.revenue) : [130000, 145000, 110000, 215000, 205000, 230000, 245000],
+                    borderColor: '#ebb700',
                     backgroundColor: '#ebb700',
                     tension: 0.4,
                     pointRadius: 4,
                     pointBackgroundColor: '#ebb700'
                 },
-                { 
-                    label: 'Expenses', 
-                    data: chartPoints.length > 0 ? chartPoints.map(p => p.expenses) : [95000, 75000, 68000, 48000, 38000, 95000, 35000], 
-                    borderColor: '#666', 
+                {
+                    label: 'Expenses',
+                    data: chartPoints.length > 0 ? chartPoints.map(p => p.expenses) : [95000, 75000, 68000, 48000, 38000, 95000, 35000],
+                    borderColor: '#666',
                     backgroundColor: '#666',
-                    tension: 0.4, 
+                    tension: 0.4,
                     borderDash: [5, 5],
                     pointRadius: 4,
                     pointBackgroundColor: '#666'
                 }
             ]
         },
-        options: { 
+        options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
@@ -3802,7 +3802,7 @@ function renderFinanceCharts(data) {
                 y: {
                     beginAtZero: true,
                     grid: { color: '#f5f5f5', drawBorder: false },
-                    ticks: { 
+                    ticks: {
                         color: '#999',
                         font: { size: 10, weight: '600' },
                         callback: value => value >= 1000 ? (value / 1000) + 'K' : value
@@ -3811,7 +3811,7 @@ function renderFinanceCharts(data) {
                 },
                 x: {
                     grid: { display: false },
-                    ticks: { 
+                    ticks: {
                         color: '#999',
                         font: { size: 10, weight: '600' }
                     },
@@ -3840,13 +3840,13 @@ function renderTopRevenueTable(diplomas) {
 async function loadSalaries() {
     const month = document.getElementById('finance-salaries-month').value;
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/finance/salaries?month=${month}`, {
+        const response = await fetch(`http://localhost:8085/api/v1/finance/salaries?month=${month}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const salaries = await response.json();
             renderSalariesTable(salaries);
-            
+
             const total = salaries.reduce((acc, s) => acc + s.total, 0);
             const paid = salaries.reduce((acc, s) => acc + s.payed, 0);
             document.getElementById('salaries-total-payroll').textContent = total.toLocaleString();
@@ -3889,7 +3889,7 @@ function renderSalariesTable(salaries) {
 async function runPayroll() {
     const month = document.getElementById('finance-salaries-month').value;
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/finance/salaries/run-payroll?month=${month}`, {
+        const response = await fetch(`http://localhost:8085/api/v1/finance/salaries/run-payroll?month=${month}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -3912,13 +3912,13 @@ async function runPayroll() {
 async function loadExpenses() {
     const month = document.getElementById('finance-expenses-month').value;
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/finance/expenses?month=${month}`, {
+        const response = await fetch(`http://localhost:8085/api/v1/finance/expenses?month=${month}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const expenses = await response.json();
             renderExpensesTable(expenses);
-            
+
             const total = expenses.reduce((acc, e) => acc + e.amount, 0);
             const paid = expenses.reduce((acc, e) => acc + e.payed, 0);
             document.getElementById('expenses-total-amount').textContent = total.toLocaleString();
@@ -3961,7 +3961,7 @@ async function addExpense() {
     };
 
     try {
-        const response = await fetch('http://localhost:8080/api/v1/finance/expenses', {
+        const response = await fetch('http://localhost:8085/api/v1/finance/expenses', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -3990,7 +3990,7 @@ async function addExpenseFromPage() {
     };
 
     try {
-        const response = await fetch('http://localhost:8080/api/v1/finance/expenses', {
+        const response = await fetch('http://localhost:8085/api/v1/finance/expenses', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -4011,7 +4011,7 @@ async function addExpenseFromPage() {
 async function loadRevenue() {
     const month = document.getElementById('finance-revenue-month').value;
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/finance/overview?month=${month}`, {
+        const response = await fetch(`http://localhost:8085/api/v1/finance/overview?month=${month}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4023,7 +4023,7 @@ async function loadRevenue() {
             document.getElementById('revenue-total-amount').textContent = total.toLocaleString();
             document.getElementById('revenue-collected-amount').textContent = collected.toLocaleString();
             document.getElementById('revenue-pending-amount').textContent = pending.toLocaleString();
-            
+
             renderRevenueTable([
                 { total: 55000, diploma: 'Interior Design & Decoration - Offline', payed: 30000, remaining: 25000 },
                 { total: 55000, diploma: 'Interior Design & Decoration - Offline', payed: 55000, remaining: 0 },
@@ -4070,28 +4070,28 @@ function setupModeratorListeners() {
             await submitAttendanceEntry();
         };
     }
-    
+
     // Set default date to today in forms
     const leadDate = document.getElementById('mod-lead-date');
     if (leadDate) leadDate.valueAsDate = new Date();
-    
+
     const hoursDate = document.getElementById('attendance-entry-date');
     if (hoursDate) hoursDate.valueAsDate = new Date();
 }
 
 async function loadDiplomasForModeratorForm() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/diplomas', {
+        const response = await fetch('http://localhost:8085/api/v1/diplomas', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const diplomas = await response.json();
             const formSelect = document.getElementById('mod-lead-diploma');
             const filterSelect = document.getElementById('mod-filter-diploma');
-            
+
             formSelect.innerHTML = '<option value="" disabled selected>Select diploma</option>';
             filterSelect.innerHTML = '<option value="">Diploma</option>';
-            
+
             diplomas.forEach(d => {
                 const opt = document.createElement('option');
                 opt.value = d.id;
@@ -4110,7 +4110,7 @@ async function loadModeratorLeads(page = 0) {
     const diplomaId = document.getElementById('mod-filter-diploma').value;
     const status = document.getElementById('mod-filter-status').value;
 
-    let url = `http://localhost:8080/api/v1/leads?page=${page}&size=10`;
+    let url = `http://localhost:8085/api/v1/leads?page=${page}&size=10`;
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -4150,7 +4150,7 @@ function renderModeratorLeadsTable(leads) {
     leads.forEach(l => {
         const row = document.createElement('tr');
         const statusClass = (l.status || 'OPEN').toLowerCase();
-        
+
         row.innerHTML = `
             <td style="padding: 12px; font-weight: 600;">${l.phoneNumber}</td>
             <td style="padding: 12px;">${l.diploma ? l.diploma.name : '-'}</td>
@@ -4187,7 +4187,7 @@ async function submitModeratorAddLead() {
     };
 
     try {
-        const response = await fetch('http://localhost:8080/api/v1/leads/admin', {
+        const response = await fetch('http://localhost:8085/api/v1/leads/admin', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -4213,7 +4213,7 @@ async function submitModeratorAddLead() {
 
 async function editModeratorLead(id) {
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/leads/${id}`, {
+        const response = await fetch(`http://localhost:8085/api/v1/leads/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4232,7 +4232,7 @@ async function editModeratorLead(id) {
 async function deleteModeratorLead(id) {
     if (!confirm('Are you sure you want to delete this lead? Only Admins can execute deletes.')) return;
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/leads/${id}`, {
+        const response = await fetch(`http://localhost:8085/api/v1/leads/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -4280,7 +4280,7 @@ function renderModeratorLeadsPagination(data, currentPage) {
 // Work Hours
 async function loadWorkHours(page = 0) {
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/attendance/my-attendance?page=${page}&size=10`, {
+        const response = await fetch(`http://localhost:8085/api/v1/attendance/my-attendance?page=${page}&size=10`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4320,7 +4320,7 @@ function renderWorkHoursTable(entries) {
 
 async function loadWeeklyHours() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/attendance/weekly-hours', {
+        const response = await fetch('http://localhost:8085/api/v1/attendance/weekly-hours', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4342,11 +4342,11 @@ async function submitAttendanceEntry() {
         totalHours: parseFloat(hours)
     };
 
-    let url = 'http://localhost:8080/api/v1/attendance';
+    let url = 'http://localhost:8085/api/v1/attendance';
     let method = 'POST';
 
     if (id) {
-        url = `http://localhost:8080/api/v1/attendance/${id}`;
+        url = `http://localhost:8085/api/v1/attendance/${id}`;
         method = 'PUT';
     }
 
@@ -4379,7 +4379,7 @@ async function submitAttendanceEntry() {
 
 async function editAttendance(id) {
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/attendance/my-attendance?size=100`, {
+        const response = await fetch(`http://localhost:8085/api/v1/attendance/my-attendance?size=100`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4402,7 +4402,7 @@ async function deleteAttendance(id) {
     if (!confirm('Are you sure you want to delete this work hours log?')) return;
 
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/attendance/${id}`, {
+        const response = await fetch(`http://localhost:8085/api/v1/attendance/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -4450,12 +4450,12 @@ function renderWorkHoursPagination(data, currentPage) {
 // Leaderboard
 async function loadLeaderboard() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/leads/leaderboard', {
+        const response = await fetch('http://localhost:8085/api/v1/leads/leaderboard', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const list = await response.json();
-            
+
             const first = list[0] || { fullName: 'No moderator', leadCount: 0 };
             const second = list[1] || { fullName: 'No moderator', leadCount: 0 };
             const third = list[2] || { fullName: 'No moderator', leadCount: 0 };
@@ -4507,11 +4507,11 @@ function applyCustomSelects() {
         if (!select) return;
 
         select.style.display = 'none';
-        
+
         const textSpan = document.createElement('span');
         textSpan.className = 'custom-select-text';
         textSpan.textContent = select.options[select.selectedIndex]?.text || '';
-        
+
         // Insert textSpan before the chevron
         const chevron = wrapper.querySelector('.chevron');
         if (chevron) {
@@ -4531,7 +4531,7 @@ function applyCustomSelects() {
                 item.className = 'custom-select-item';
                 item.textContent = opt.text;
                 if (opt.selected) item.classList.add('selected');
-                
+
                 item.addEventListener('click', (e) => {
                     e.stopPropagation();
                     select.value = opt.value;
@@ -4555,7 +4555,7 @@ function applyCustomSelects() {
         wrapper.addEventListener('click', (e) => {
             e.stopPropagation();
             const wasActive = wrapper.classList.contains('active');
-            
+
             // Close all other custom selects
             document.querySelectorAll('.control-item.select.active').forEach(w => {
                 w.classList.remove('active');
@@ -4589,13 +4589,13 @@ function applyCustomSelects() {
 
 async function openDelayedStudents(roundDiplomaId, diplomaName, roundName) {
     showView('delayed-students-view');
-    
+
     // Optional: update the title to reflect the specific diploma
     // const titleEl = document.getElementById('delayed-students-title');
     // if (titleEl) titleEl.textContent = `Students: ${diplomaName} - ${roundName}`;
-    
+
     try {
-        const response = await fetch(`http://localhost:8080/api/v2/students/round-diploma/${roundDiplomaId}?size=100`, {
+        const response = await fetch(`http://localhost:8085/api/v2/students/round-diploma/${roundDiplomaId}?size=100`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -4663,30 +4663,30 @@ let cachedSalesUsers = [];
 async function loadSalesUsers() {
     const search = document.getElementById('search-sales').value.toLowerCase();
     const role = document.getElementById('filter-sales-role').value;
-    
+
     try {
-        const response = await fetch('http://localhost:8080/api/v1/users', {
+        const response = await fetch('http://localhost:8085/api/v1/users', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             const allUsers = await response.json();
-            
+
             // Filter to include TELESALES and MODERATOR roles
             let salesUsers = allUsers.filter(u => u.role === 'TELESALES' || u.role === 'MODERATOR');
-            
+
             // Apply search filter
             if (search) {
-                salesUsers = salesUsers.filter(u => 
-                    u.fullName.toLowerCase().includes(search) || 
+                salesUsers = salesUsers.filter(u =>
+                    u.fullName.toLowerCase().includes(search) ||
                     (u.phone && u.phone.includes(search))
                 );
             }
-            
+
             // Apply role filter
             if (role) {
                 salesUsers = salesUsers.filter(u => u.role === role);
             }
-            
+
             cachedSalesUsers = salesUsers;
             renderSalesTable(salesUsers);
         } else {
@@ -4701,12 +4701,12 @@ async function loadSalesUsers() {
 function renderSalesTable(users) {
     const tbody = document.getElementById('sales-list-tbody');
     tbody.innerHTML = '';
-    
+
     if (users.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #888;">No sales users found.</td></tr>';
         return;
     }
-    
+
     users.forEach(u => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -4733,7 +4733,7 @@ function initAddSalesForm() {
     document.getElementById('sales-edit-id').value = '';
     document.getElementById('sales-form-title').textContent = 'Add New Sales';
     document.getElementById('sales-form-breadcrumb').textContent = 'Add new sales';
-    
+
     const passwordInput = document.getElementById('input-sales-password');
     passwordInput.required = true;
     document.getElementById('sales-password-help').textContent = '';
@@ -4742,12 +4742,12 @@ function initAddSalesForm() {
 async function editSalesUser(id) {
     const user = cachedSalesUsers.find(u => u.id === id);
     if (!user) return;
-    
+
     showView('add-sales-view');
     document.getElementById('sales-edit-id').value = user.id;
     document.getElementById('sales-form-title').textContent = `Edit "${user.fullName}"`;
     document.getElementById('sales-form-breadcrumb').textContent = 'Edit sales';
-    
+
     document.getElementById('input-sales-name').value = user.fullName;
     document.getElementById('input-sales-phone').value = user.phone || '';
     document.getElementById('input-sales-salary').value = user.baseSalary || '';
@@ -4755,7 +4755,7 @@ async function editSalesUser(id) {
     document.getElementById('input-sales-pay-method').value = user.paymentMethod || '';
     document.getElementById('input-sales-role').value = user.role;
     document.getElementById('input-sales-username').value = user.username;
-    
+
     const passwordInput = document.getElementById('input-sales-password');
     passwordInput.value = '';
     passwordInput.required = false;
@@ -4765,7 +4765,7 @@ async function editSalesUser(id) {
 async function saveSalesUser() {
     const id = document.getElementById('sales-edit-id').value;
     const username = document.getElementById('input-sales-username').value;
-    
+
     const payload = {
         username: username,
         fullName: document.getElementById('input-sales-name').value,
@@ -4777,16 +4777,16 @@ async function saveSalesUser() {
         password: document.getElementById('input-sales-password').value,
         email: username + "@direction.academy" // Autogenerated unique email
     };
-    
+
     try {
-        let url = 'http://localhost:8080/api/auth/register';
+        let url = 'http://localhost:8085/api/auth/register';
         let method = 'POST';
-        
+
         if (id) {
-            url = `http://localhost:8080/api/v1/users/${id}`;
+            url = `http://localhost:8085/api/v1/users/${id}`;
             method = 'PUT';
         }
-        
+
         const response = await fetch(url, {
             method: method,
             headers: {
@@ -4795,7 +4795,7 @@ async function saveSalesUser() {
             },
             body: JSON.stringify(payload)
         });
-        
+
         if (response.ok) {
             showToast(id ? 'Sales user updated successfully' : 'Sales user registered successfully', 'success');
             showView('sales-list-view');
@@ -4812,13 +4812,13 @@ async function saveSalesUser() {
 
 async function deleteSalesUser(id) {
     if (!confirm('Are you sure you want to delete this sales user?')) return;
-    
+
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/users/${id}`, {
+        const response = await fetch(`http://localhost:8085/api/v1/users/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-        
+
         if (response.ok) {
             showToast('Sales user deleted successfully', 'success');
             loadSalesUsers();
@@ -4836,20 +4836,20 @@ async function deleteSalesUser(id) {
 async function loadSalesEarnings() {
     const search = document.getElementById('search-earnings').value.toLowerCase();
     const status = document.getElementById('filter-earnings-status').value;
-    
+
     try {
-        let url = 'http://localhost:8080/api/v1/earnings';
+        let url = 'http://localhost:8085/api/v1/earnings';
         const params = [];
         if (search) params.push(`search=${encodeURIComponent(search)}`);
         if (status) params.push(`status=${encodeURIComponent(status)}`);
         if (params.length > 0) {
             url += '?' + params.join('&');
         }
-        
+
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-        
+
         if (response.ok) {
             const earnings = await response.json();
             renderSalesEarningsTable(earnings);
@@ -4865,26 +4865,26 @@ async function loadSalesEarnings() {
 function renderSalesEarningsTable(earnings) {
     const tbody = document.getElementById('sales-earnings-tbody');
     tbody.innerHTML = '';
-    
+
     if (earnings.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #888;">No earnings records found.</td></tr>';
         return;
     }
-    
+
     earnings.forEach(e => {
         const row = document.createElement('tr');
-        
+
         const isPaid = e.status === 'PAID';
         const statusBadge = isPaid
             ? '<span style="background: #e8f5e9; color: #4caf50; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Paid</span>'
             : '<span style="background: #fff8e1; color: #ebb700; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block;">Pending</span>';
-            
+
         const paymentDateStr = e.paymentDate ? e.paymentDate : '-';
-        
+
         const actionButton = isPaid
             ? `<button class="btn-action edit" onclick="toggleEarningStatus(${e.id}, 'PENDING')" title="Revert to Pending" style="background-color: #f5f5f5; color: #666; border: 1px solid #ddd; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 500;"><i class="fas fa-undo"></i> Revert</button>`
             : `<button class="btn-action save" onclick="toggleEarningStatus(${e.id}, 'PAID')" title="Mark as Paid" style="background-color: #ebb700; color: #000; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700;"><i class="fas fa-check"></i> Mark Paid</button>`;
-            
+
         row.innerHTML = `
             <td>${e.telesalesName}</td>
             <td>${e.telesalesPhone || '-'}</td>
@@ -4900,7 +4900,7 @@ function renderSalesEarningsTable(earnings) {
 
 async function toggleEarningStatus(id, newStatus) {
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/earnings/${id}/status`, {
+        const response = await fetch(`http://localhost:8085/api/v1/earnings/${id}/status`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -4908,7 +4908,7 @@ async function toggleEarningStatus(id, newStatus) {
             },
             body: JSON.stringify({ status: newStatus })
         });
-        
+
         if (response.ok) {
             showToast(newStatus === 'PAID' ? 'Commission marked as paid' : 'Earning reverted to pending', 'success');
             loadSalesEarnings();
@@ -4928,12 +4928,12 @@ async function recalculateEarnings() {
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculating...';
         }
-        
-        const response = await fetch('http://localhost:8080/api/v1/earnings/calculate', {
+
+        const response = await fetch('http://localhost:8085/api/v1/earnings/calculate', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-        
+
         if (response.ok) {
             showToast('Earnings recalculated successfully', 'success');
             loadSalesEarnings();

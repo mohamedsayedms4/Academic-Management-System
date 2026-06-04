@@ -3,6 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!token) return;
 
     const baseApiUrl = 'http://localhost:8085/api/v1/notifications';
+    const pageSize = 5;
+    let currentPage = 0;
+    let totalPages = 0;
 
     const bellContainer = document.getElementById('notification-bell-container');
     const bellDropdown = document.getElementById('notification-dropdown');
@@ -10,6 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const notificationList = document.getElementById('notification-list');
     const noDataText = document.getElementById('notification-no-data');
     const markAllReadBtn = document.getElementById('notification-mark-all-read');
+
+    const paginationContainer = document.getElementById('notification-pagination');
+    const prevBtn = document.getElementById('notification-prev-btn');
+    const nextBtn = document.getElementById('notification-next-btn');
+    const pageInfo = document.getElementById('notification-page-info');
 
     if (!bellContainer || !bellDropdown || !badge || !notificationList) {
         console.warn('Notification UI elements not found');
@@ -39,20 +47,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Fetch my notifications
-    async function fetchNotifications() {
+    async function fetchNotifications(page = 0) {
         try {
-            const response = await fetch(`${baseApiUrl}/my`, {
+            const response = await fetch(`${baseApiUrl}/my?page=${page}&size=${pageSize}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
             if (response.ok) {
-                const notifications = await response.json();
-                renderNotifications(notifications);
+                const pageData = await response.json();
+                currentPage = pageData.number;
+                totalPages = pageData.totalPages;
+                renderNotifications(pageData.content);
+                updatePaginationControls();
             }
         } catch (error) {
             console.error('Error fetching notifications:', error);
         }
+    }
+
+    // Update pagination controls
+    function updatePaginationControls() {
+        if (!paginationContainer || !prevBtn || !nextBtn || !pageInfo) return;
+
+        if (totalPages <= 1) {
+            paginationContainer.style.display = 'none';
+            return;
+        }
+
+        paginationContainer.style.display = 'flex';
+        pageInfo.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+
+        prevBtn.disabled = currentPage === 0;
+        nextBtn.disabled = currentPage >= totalPages - 1;
     }
 
     // Mark single notification as read
@@ -83,9 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (response.ok) {
                 await fetchUnreadCount();
-                // Refresh list if dropdown is open
+                // Refresh list if dropdown is open, keeping the current page
                 if (bellDropdown.classList.contains('show')) {
-                    await fetchNotifications();
+                    await fetchNotifications(currentPage);
                 }
             }
         } catch (error) {
@@ -98,15 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
         notificationList.innerHTML = '';
         if (!notifications || notifications.length === 0) {
             noDataText.style.display = 'block';
+            if (paginationContainer) paginationContainer.style.display = 'none';
             return;
         }
 
         noDataText.style.display = 'none';
 
-        // Only show top 10
-        const topNotifications = notifications.slice(0, 10);
-
-        topNotifications.forEach(notif => {
+        notifications.forEach(notif => {
             const li = document.createElement('li');
             li.className = `notification-item ${notif.isRead ? '' : 'unread'}`;
             li.dataset.id = notif.id;
@@ -171,9 +196,28 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         bellDropdown.classList.toggle('show');
         if (bellDropdown.classList.contains('show')) {
-            fetchNotifications();
+            fetchNotifications(0); // Always start at first page
         }
     });
+
+    // Pagination button event listeners
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentPage > 0) {
+                fetchNotifications(currentPage - 1);
+            }
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentPage < totalPages - 1) {
+                fetchNotifications(currentPage + 1);
+            }
+        });
+    }
 
     // Close dropdown when clicking outside
     document.addEventListener('click', () => {
