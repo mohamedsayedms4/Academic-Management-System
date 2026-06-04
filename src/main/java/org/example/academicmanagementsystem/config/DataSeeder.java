@@ -42,10 +42,19 @@ public class DataSeeder {
     private final ExpenseRepository expenseRepository;
     private final PayrollRecordRepository payrollRecordRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Bean
     public CommandLineRunner seedDatabase() {
         return args -> {
+            // Fix notifications table column type if it was created as an ENUM or VARCHAR with wrong constraints
+            try {
+                jdbcTemplate.execute("ALTER TABLE notifications MODIFY COLUMN type VARCHAR(255) NOT NULL");
+                log.info("Successfully altered notifications table type column to VARCHAR(255)");
+            } catch (Exception e) {
+                log.warn("Could not alter notifications type column (might be already modified or database doesn't require it): " + e.getMessage());
+            }
+
             // Seed V2 Data (Independent check inside method)
             seedV2Data();
 
