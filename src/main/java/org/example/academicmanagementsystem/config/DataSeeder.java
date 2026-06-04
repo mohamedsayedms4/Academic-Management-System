@@ -47,6 +47,20 @@ public class DataSeeder {
     @Bean
     public CommandLineRunner seedDatabase() {
         return args -> {
+            // Check for legacy notifications table structure and drop if necessary to let Hibernate recreate it
+            try {
+                Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'recipient_id'", 
+                    Integer.class
+                );
+                if (count != null && count > 0) {
+                    log.info("Detected legacy notifications table with recipient_id column. Dropping table to allow clean recreation.");
+                    jdbcTemplate.execute("DROP TABLE IF EXISTS notifications");
+                }
+            } catch (Exception e) {
+                log.warn("Could not check/drop legacy notifications table: " + e.getMessage());
+            }
+
             // Fix notifications table column type if it was created as an ENUM or VARCHAR with wrong constraints
             try {
                 jdbcTemplate.execute("ALTER TABLE notifications MODIFY COLUMN type VARCHAR(255) NOT NULL");
