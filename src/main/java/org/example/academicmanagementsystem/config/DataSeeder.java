@@ -54,11 +54,27 @@ public class DataSeeder {
                     Integer.class
                 );
                 if (count != null && count > 0) {
-                    log.info("Detected legacy notifications table with recipient_id column. Dropping table to allow clean recreation.");
+                    log.info("Detected legacy notifications table with recipient_id column. Re-creating notifications table with correct schema.");
                     jdbcTemplate.execute("DROP TABLE IF EXISTS notifications");
+                    jdbcTemplate.execute(
+                        "CREATE TABLE notifications (" +
+                        "  id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                        "  user_id BIGINT," +
+                        "  target_role VARCHAR(255)," +
+                        "  type VARCHAR(255) NOT NULL," +
+                        "  message VARCHAR(1000) NOT NULL," +
+                        "  is_read BOOLEAN NOT NULL DEFAULT FALSE," +
+                        "  reference_id BIGINT," +
+                        "  created_at DATETIME," +
+                        "  updated_at DATETIME," +
+                        "  created_by VARCHAR(255)," +
+                        "  updated_by VARCHAR(255)," +
+                        "  CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id)" +
+                        ")"
+                    );
                 }
             } catch (Exception e) {
-                log.warn("Could not check/drop legacy notifications table: " + e.getMessage());
+                log.warn("Could not check/recreate legacy notifications table: " + e.getMessage());
             }
 
             // Fix notifications table column type if it was created as an ENUM or VARCHAR with wrong constraints
