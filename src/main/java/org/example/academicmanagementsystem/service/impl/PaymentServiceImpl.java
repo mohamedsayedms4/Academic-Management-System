@@ -34,6 +34,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final PaymentMapper paymentMapper;
+    private final org.example.academicmanagementsystem.service.NotificationService notificationService;
 
     @Override
     @Transactional
@@ -91,6 +92,9 @@ public class PaymentServiceImpl implements PaymentService {
         // Save payment and student
         Payment savedPayment = paymentRepository.save(payment);
         studentRepository.save(student);
+
+        notificationService.createForRole(org.example.academicmanagementsystem.model.UserRole.ADMIN, org.example.academicmanagementsystem.model.NotificationType.PAYMENT_RECEIVED, "Payment of " + savedPayment.getAmount() + " received from student " + student.getName(), savedPayment.getId());
+        notificationService.createForRole(org.example.academicmanagementsystem.model.UserRole.ACCOUNTANT, org.example.academicmanagementsystem.model.NotificationType.PAYMENT_RECEIVED, "Payment of " + savedPayment.getAmount() + " received from student " + student.getName(), savedPayment.getId());
 
         return paymentMapper.toPaymentResponse(savedPayment);
     }

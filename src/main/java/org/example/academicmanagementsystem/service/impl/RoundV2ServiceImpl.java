@@ -26,6 +26,7 @@ public class RoundV2ServiceImpl implements RoundV2Service {
     private final RoundV2Repository roundRepository;
     private final DiplomaV2Repository diplomaRepository;
     private final org.example.academicmanagementsystem.repository.RoundDiplomaV2Repository roundDiplomaRepository;
+    private final org.example.academicmanagementsystem.service.NotificationService notificationService;
 
     @Override
     @Transactional
@@ -41,6 +42,10 @@ public class RoundV2ServiceImpl implements RoundV2Service {
         }
 
         RoundV2 savedRound = roundRepository.save(round);
+
+        notificationService.createForRole(org.example.academicmanagementsystem.model.UserRole.ADMIN, org.example.academicmanagementsystem.model.NotificationType.ROUND_STARTED, "New round created: " + savedRound.getName(), savedRound.getId());
+        notificationService.createForRole(org.example.academicmanagementsystem.model.UserRole.MODERATOR, org.example.academicmanagementsystem.model.NotificationType.ROUND_STARTED, "New round created: " + savedRound.getName(), savedRound.getId());
+
         return mapToResponse(savedRound);
     }
 

@@ -23,6 +23,7 @@ public class StudentV2ServiceImpl implements StudentV2Service {
     private final DiplomaV2Repository diplomaRepository;
     private final UserRepository userRepository;
     private final RoundDiplomaV2Repository roundDiplomaRepository;
+    private final org.example.academicmanagementsystem.service.NotificationService notificationService;
 
     @Override
     @Transactional
@@ -46,7 +47,12 @@ public class StudentV2ServiceImpl implements StudentV2Service {
             student.setSalesPerson(userRepository.findById(request.getSalesPersonId()).orElse(null));
         }
 
-        return mapToResponse(studentRepository.save(student));
+        StudentV2 savedStudent = studentRepository.save(student);
+
+        notificationService.createForRole(UserRole.ADMIN, NotificationType.STUDENT_ADDED, "New student enrolled: " + savedStudent.getName(), savedStudent.getId());
+        notificationService.createForRole(UserRole.MODERATOR, NotificationType.STUDENT_ADDED, "New student enrolled: " + savedStudent.getName(), savedStudent.getId());
+
+        return mapToResponse(savedStudent);
     }
 
     @Override
@@ -57,7 +63,13 @@ public class StudentV2ServiceImpl implements StudentV2Service {
         student.setStatus(StudentStatus.CANCELLED);
         student.setCancellationDate(LocalDate.now());
         student.setCancellationReason(reason);
-        return mapToResponse(studentRepository.save(student));
+        
+        StudentV2 savedStudent = studentRepository.save(student);
+
+        notificationService.createForRole(UserRole.ADMIN, NotificationType.STUDENT_ADDED, "Student enrollment cancelled: " + savedStudent.getName() + " (Reason: " + reason + ")", savedStudent.getId());
+        notificationService.createForRole(UserRole.MODERATOR, NotificationType.STUDENT_ADDED, "Student enrollment cancelled: " + savedStudent.getName() + " (Reason: " + reason + ")", savedStudent.getId());
+
+        return mapToResponse(savedStudent);
     }
 
     @Override

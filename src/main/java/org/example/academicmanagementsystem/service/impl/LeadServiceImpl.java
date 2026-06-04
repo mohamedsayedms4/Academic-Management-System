@@ -31,6 +31,7 @@ public class LeadServiceImpl implements LeadService {
     private final LeadMapper leadMapper;
     private final UserRepository userRepository;
     private final org.example.academicmanagementsystem.repository.DiplomaRepository diplomaRepository;
+    private final org.example.academicmanagementsystem.service.NotificationService notificationService;
 
     @Override
     public Optional<LeadResponse> findById(Long id) {
@@ -90,8 +91,16 @@ public class LeadServiceImpl implements LeadService {
             lead.setStatus(LeadStatus.OPEN);
         }
 
+        boolean isNew = lead.getId() == null;
+
         // Save and return detailed response
         Lead savedLead = leadRepository.save(lead);
+
+        if (isNew) {
+            notificationService.createForRole(org.example.academicmanagementsystem.model.UserRole.ADMIN, org.example.academicmanagementsystem.model.NotificationType.LEAD_CREATED, "New lead created: " + savedLead.getFullName(), savedLead.getId());
+            notificationService.createForRole(org.example.academicmanagementsystem.model.UserRole.MODERATOR, org.example.academicmanagementsystem.model.NotificationType.LEAD_CREATED, "New lead created: " + savedLead.getFullName(), savedLead.getId());
+        }
+
         return leadMapper.toLeadDetailResponse(savedLead);
     }
 
@@ -140,6 +149,10 @@ public class LeadServiceImpl implements LeadService {
 
         // Save and return detailed response
         Lead savedLead = leadRepository.save(lead);
+
+        notificationService.createForRole(org.example.academicmanagementsystem.model.UserRole.ADMIN, org.example.academicmanagementsystem.model.NotificationType.LEAD_CREATED, "New lead created by Telesales: " + savedLead.getFullName(), savedLead.getId());
+        notificationService.createForRole(org.example.academicmanagementsystem.model.UserRole.MODERATOR, org.example.academicmanagementsystem.model.NotificationType.LEAD_CREATED, "New lead created by Telesales: " + savedLead.getFullName(), savedLead.getId());
+
         return leadMapper.toLeadDetailResponse(savedLead);
     }
 
@@ -177,6 +190,8 @@ public class LeadServiceImpl implements LeadService {
 
         return leadRepository.findById(id)
                 .map(existingLead -> {
+                    LeadStatus oldStatus = existingLead.getStatus();
+
                     // Update fields
                     if (leadRequest.getFullName() != null) {
                         existingLead.setFullName(leadRequest.getFullName());
@@ -207,6 +222,16 @@ public class LeadServiceImpl implements LeadService {
                     }
 
                     Lead updatedLead = leadRepository.save(existingLead);
+
+                    if (leadRequest.getStatus() != null && oldStatus != updatedLead.getStatus()) {
+                        String message = "Lead status updated for " + updatedLead.getFullName() + " to " + updatedLead.getStatus();
+                        notificationService.createForRole(org.example.academicmanagementsystem.model.UserRole.ADMIN, org.example.academicmanagementsystem.model.NotificationType.LEAD_STATUS_CHANGED, message, updatedLead.getId());
+                        notificationService.createForRole(org.example.academicmanagementsystem.model.UserRole.MODERATOR, org.example.academicmanagementsystem.model.NotificationType.LEAD_STATUS_CHANGED, message, updatedLead.getId());
+                        if (updatedLead.getTeleSales() != null) {
+                            notificationService.createForUser(updatedLead.getTeleSales().getId(), org.example.academicmanagementsystem.model.NotificationType.LEAD_STATUS_CHANGED, message, updatedLead.getId());
+                        }
+                    }
+
                     return leadMapper.toLeadResponse(updatedLead);
                 });
     }

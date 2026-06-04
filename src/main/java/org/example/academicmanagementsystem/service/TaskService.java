@@ -14,6 +14,7 @@ import java.util.List;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final NotificationService notificationService;
 
     public List<Task> findAll() {
         return taskRepository.findAll();
@@ -27,7 +28,17 @@ public class TaskService {
 
     @Transactional
     public Task save(Task task) {
-        return taskRepository.save(task);
+        boolean isNew = task.getId() == null;
+        Task savedTask = taskRepository.save(task);
+        if (isNew && savedTask.getAssignedTo() != null) {
+            notificationService.createForUser(
+                savedTask.getAssignedTo().getId(),
+                org.example.academicmanagementsystem.model.NotificationType.TASK_ASSIGNED,
+                "A new task has been assigned to you: " + savedTask.getTitle(),
+                savedTask.getId()
+            );
+        }
+        return savedTask;
     }
 
     @Transactional
