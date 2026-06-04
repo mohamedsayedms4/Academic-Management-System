@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const baseApiUrl = 'https://dirictiondback.digitalrace.net/api/v1/notifications';
+    const baseApiUrl = 'http://localhost:8085/api/v1/notifications';
 
     const bellContainer = document.getElementById('notification-bell-container');
     const bellDropdown = document.getElementById('notification-dropdown');
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         noDataText.style.display = 'none';
-        
+
         // Only show top 10
         const topNotifications = notifications.slice(0, 10);
 
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await markAsRead(notif.id);
                     li.classList.remove('unread');
                 }
-                
+
                 // Navigate or filter views based on type/referenceId
                 handleNotificationClick(notif.type, notif.referenceId);
                 bellDropdown.classList.remove('show');
