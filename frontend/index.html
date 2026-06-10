@@ -1488,11 +1488,14 @@
             <div class="page-content" id="leads-list-view" style="display: none;">
                 <!-- Admin Leads Layout -->
                 <div id="leads-admin-layout">
-                    <div class="content-header">
+                    <div class="content-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div class="header-titles">
                             <h1>All leads</h1>
                             <p>Track all leads in one place.</p>
                         </div>
+                        <button id="btn-open-add-lead-admin" class="btn-save" style="background-color: #ebb700; display: flex; align-items: center; gap: 8px; padding: 12px 20px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem; white-space: nowrap;">
+                            <i class="fas fa-plus"></i> Add Lead
+                        </button>
                     </div>
                     
                     <!-- Leads Stats -->
@@ -1545,12 +1548,12 @@
                         <div class="filters">
                             <div class="control-item search">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="search-leads" placeholder="Search...">
+                                <input type="text" id="search-leads" placeholder="Search by name or phone...">
                             </div>
                             <div class="control-item select">
                                 <i class="fas fa-filter"></i>
                                 <select id="filter-leads-status">
-                                    <option value="">Final status</option>
+                                    <option value="">All Statuses</option>
                                     <option value="OPEN">Open</option>
                                     <option value="INTERESTED">Interested</option>
                                     <option value="FOLLOW_UP">Follow Up</option>
@@ -1567,35 +1570,40 @@
                         <table class="modern-table">
                             <thead>
                                 <tr>
+                                    <th>Name</th>
                                     <th>Phone</th>
                                     <th>Diploma</th>
                                     <th>Date</th>
-                                    <th>Source</th>
+                                    <th>Status</th>
                                     <th>Assigned to</th>
-                                    <th>Response 1</th>
-                                    <th>Response 2</th>
+                                    <th>Follow-ups</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="leads-list-tbody">
                             </tbody>
                         </table>
                     </div>
+                    <div class="pagination" id="admin-leads-pagination"></div>
                 </div>
 
                 <!-- Moderator Leads Layout -->
                 <div id="leads-moderator-layout" style="display: none;">
-                    <div class="content-header">
+                    <div class="content-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
                         <div class="header-titles">
                             <h1>Leads</h1>
                             <p>Manage and track all leads.</p>
                         </div>
+                        <button id="btn-open-add-lead-moderator" style="background: #ebb700; color: #000; padding: 12px 20px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-plus"></i> Add Lead
+                        </button>
                     </div>
 
-                    <!-- Add New Lead Form Box -->
+                    <!-- Quick Add New Lead Form Box -->
                     <div class="form-container-card" style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid #eee; margin-bottom: 25px;">
                         <div class="form-section-title" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
                             <div style="background: #fff8e1; color: #ebb700; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-user-plus"></i>
+                                <i class="fas fa-bolt"></i>
                             </div>
                             <div>
                                 <h3 style="font-size: 1rem; font-weight: 600; margin: 0;">Add new lead</h3>
@@ -1695,11 +1703,14 @@
 
                 <!-- Telesales Leads Layout -->
                 <div id="leads-telesales-layout" style="display: none;">
-                    <div class="content-header">
+                    <div class="content-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
                         <div class="header-titles">
                             <h1>My leads</h1>
                             <p>Manage and follow up your assigned leads.</p>
                         </div>
+                        <button id="btn-open-add-lead-telesales" style="background: #ebb700; color: #000; padding: 12px 20px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-plus"></i> Add Lead
+                        </button>
                     </div>
 
                     <!-- Search and Filters bar -->
@@ -2755,6 +2766,193 @@
                     <button type="button" class="btn-cancel" id="btn-cancel-add-session">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Add Lead Modal -->
+    <div id="add-lead-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 560px; width: 95%;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div>
+                        <h2 style="margin: 0; font-size: 1.1rem;">Add New Lead</h2>
+                        <p style="margin: 0; font-size: 0.8rem; color: #888;">Fill in the lead information below</p>
+                    </div>
+                </div>
+                <button class="close-modal" id="close-add-lead-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="form-add-lead" style="padding: 0 25px 25px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
+                    <div class="form-group">
+                        <label>Full Name <span style="color: #dc3545;">*</span></label>
+                        <input type="text" id="add-lead-fullname" placeholder="Enter full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone <span style="color: #dc3545;">*</span></label>
+                        <input type="text" id="add-lead-phone" placeholder="Enter phone number" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Source</label>
+                        <select id="add-lead-source">
+                            <option value="">Select source</option>
+                            <option value="Facebook">Facebook</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="TikTok">TikTok</option>
+                            <option value="Google">Google</option>
+                            <option value="Referral">Referral</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Diploma</label>
+                        <select id="add-lead-diploma">
+                            <option value="">Select diploma</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="add-lead-status">
+                            <option value="OPEN">Open</option>
+                            <option value="INTERESTED">Interested</option>
+                            <option value="FOLLOW_UP">Follow Up</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="add-lead-telesales-group">
+                        <label>Assign to Telesales</label>
+                        <select id="add-lead-telesales">
+                            <option value="">Select telesales (optional)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 16px;">
+                    <label>Notes</label>
+                    <textarea id="add-lead-notes" placeholder="Add any notes about this lead..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 80px;"></textarea>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" id="btn-cancel-add-lead" style="background: #f5f5f5; color: #333; padding: 11px 24px; border: 1px solid #ddd; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+                    <button type="submit" style="background: #ebb700; color: #000; padding: 11px 28px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-save"></i> Save Lead
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lead Detail / Follow-up Modal -->
+    <div id="lead-detail-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header" style="position: sticky; top: 0; background: #fff; z-index: 10; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="background: #f0f0f0; color: #333; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <h2 id="modal-lead-name" style="margin: 0; font-size: 1.1rem;">Lead Name</h2>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                            <span id="modal-lead-phone" style="font-size: 0.85rem; color: #666;"><i class="fas fa-phone" style="font-size: 0.75rem; margin-right: 4px;"></i>-</span>
+                            <span id="modal-lead-status-badge" style="font-size: 0.8rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; background: #e8f5e9; color: #4caf50;">Open</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="close-modal" id="close-lead-detail-modal"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div style="padding: 20px 25px;">
+                <!-- Lead Info Row -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; background: #f9fafb; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                    <div>
+                        <span style="display: block; font-size: 0.72rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Diploma</span>
+                        <span id="modal-lead-diploma" style="font-weight: 600; color: #333; font-size: 0.9rem;">-</span>
+                    </div>
+                    <div>
+                        <span style="display: block; font-size: 0.72rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Source</span>
+                        <span id="modal-lead-source" style="font-weight: 600; color: #333; font-size: 0.9rem;">-</span>
+                    </div>
+                    <div>
+                        <span style="display: block; font-size: 0.72rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Assigned To</span>
+                        <span id="modal-lead-telesales" style="font-weight: 600; color: #333; font-size: 0.9rem;">-</span>
+                    </div>
+                </div>
+
+                <!-- Follow-up Timeline -->
+                <div style="margin-bottom: 24px;">
+                    <h3 style="font-size: 0.95rem; font-weight: 700; color: #333; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-history" style="color: #ebb700;"></i> Follow-up History
+                    </h3>
+                    <div id="followup-timeline" style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Timeline items rendered dynamically -->
+                    </div>
+                    <div id="no-followups-placeholder" style="text-align: center; padding: 30px; color: #bbb; display: none;">
+                        <i class="fas fa-comments" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                        <p style="margin: 0; font-size: 0.9rem;">No follow-ups recorded yet. Add the first one below.</p>
+                    </div>
+                </div>
+
+                <!-- Add New Follow-up -->
+                <div style="background: #f9fafb; border-radius: 12px; padding: 20px; border: 1px solid #eee;">
+                    <h3 style="font-size: 0.95rem; font-weight: 700; color: #333; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-plus-circle" style="color: #ebb700;"></i> Add New Follow-up
+                    </h3>
+                    <form id="form-add-followup">
+                        <input type="hidden" id="followup-lead-id">
+                        <div class="form-group" style="margin-bottom: 14px;">
+                            <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; display: block;">Response / Notes <span style="color: #dc3545;">*</span></label>
+                            <textarea id="followup-message" placeholder="Summarize what was discussed in this follow-up..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 0.9rem; resize: vertical; min-height: 80px;" required></textarea>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                            <div class="form-group">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; display: block;">Update Status <span style="color: #dc3545;">*</span></label>
+                                <select id="followup-status" style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;" required>
+                                    <option value="OPEN">Open</option>
+                                    <option value="INTERESTED">Interested</option>
+                                    <option value="FOLLOW_UP">Follow Up</option>
+                                    <option value="ENROLLED">Enrolled ✅</option>
+                                    <option value="REJECTED">Rejected ❌</option>
+                                    <option value="CLOSED">Closed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; display: block;">Follow-up Date</label>
+                                <input type="date" id="followup-date" style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem;">
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <button type="submit" style="background: #1a1a1a; color: #fff; padding: 11px 22px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center;">
+                                <i class="fas fa-paper-plane"></i> Save Follow-up
+                            </button>
+                            <button type="button" id="btn-close-deal" style="background: #ebb700; color: #000; padding: 11px 20px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                                <i class="fas fa-flag-checkered"></i> Close Deal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Close Deal Confirm Modal -->
+    <div id="close-deal-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 420px; text-align: center;">
+            <div style="padding: 30px;">
+                <div style="width: 70px; height: 70px; border-radius: 50%; background: #fff8e1; color: #ebb700; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 20px;">
+                    <i class="fas fa-flag-checkered"></i>
+                </div>
+                <h2 style="font-size: 1.2rem; margin-bottom: 10px;">Close this Deal?</h2>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 25px;">Select the final outcome for this lead. This action will mark the lead as closed.</p>
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <button id="btn-close-enrolled" style="background: #4caf50; color: #fff; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-check"></i> Enrolled
+                    </button>
+                    <button id="btn-close-rejected" style="background: #f44336; color: #fff; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-times"></i> Rejected
+                    </button>
+                </div>
+                <button id="btn-cancel-close-deal" style="margin-top: 15px; background: none; border: none; color: #888; font-size: 0.9rem; cursor: pointer; text-decoration: underline;">Cancel</button>
+            </div>
         </div>
     </div>
 

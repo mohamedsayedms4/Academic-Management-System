@@ -298,6 +298,7 @@ public class DataSeeder {
         Round round = new Round();
         round.setName(name);
         round.setStartDate(startDate);
+        round.setEndDate(startDate.plusMonths(6));
         round.setStatus(RoundStatus.ACTIVE);
         return roundRepository.save(round);
     }
@@ -322,7 +323,7 @@ public class DataSeeder {
         rd.setInstructor(instructor);
         rd.setTotalPrice(totalPrice);
         rd.setStartDate(round.getStartDate());
-        rd.setEndDate(round.getEndDate());
+        rd.setEndDate(round.getEndDate() != null ? round.getEndDate() : round.getStartDate().plusMonths(6));
         rd.setTotalStudents(capacity);
         rd.setCurrentEnrollment(0);
         
