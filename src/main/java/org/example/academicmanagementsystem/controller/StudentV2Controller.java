@@ -74,4 +74,14 @@ public class StudentV2Controller {
         StudentStatus status = body.containsKey("status") ? StudentStatus.valueOf((String) body.get("status")) : null;
         return ResponseEntity.ok(studentService.updateAccountInfo(id, password, itStatus, status));
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<StudentResponseV2> updateStudent(@PathVariable Long id, @RequestBody StudentRequestV2 request) {
+        return ResponseEntity.ok(studentService.updateStudent(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
+        studentService.deleteStudent(id);
+        return ResponseEntity.noContent().build();
+    }
 }

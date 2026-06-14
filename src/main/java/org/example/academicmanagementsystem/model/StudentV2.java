@@ -58,4 +58,16 @@ public class StudentV2 extends BaseEntity {
     private String cancellationReason;
 
     private LocalDateTime enrollmentDate = LocalDateTime.now();
+
+    private BigDecimal installment1Paid = BigDecimal.ZERO;
+    private String installment1Notes;
+
+    private BigDecimal installment2Paid = BigDecimal.ZERO;
+    private String installment2Notes;
+
+    private BigDecimal installment3Paid = BigDecimal.ZERO;
+    private String installment3Notes;
+
+    private BigDecimal installment4Paid = BigDecimal.ZERO;
+    private String installment4Notes;
 }

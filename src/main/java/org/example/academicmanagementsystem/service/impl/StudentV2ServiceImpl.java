@@ -142,13 +142,79 @@ public class StudentV2ServiceImpl implements StudentV2Service {
         return mapToResponse(studentRepository.save(student));
     }
 
+    @Override
+    @Transactional
+    public StudentResponseV2 updateStudent(Long id, StudentRequestV2 request) {
+        StudentV2 student = studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        student.setName(request.getName());
+        student.setPhone(request.getPhone());
+        student.setEmail(request.getEmail());
+        student.setNotes(request.getNotes());
+        student.setDepositAmount(request.getDepositAmount());
+        student.setDiscount(request.getDiscount());
+
+        if (request.getRoundId() != null) {
+            student.setRound(roundRepository.findById(request.getRoundId()).orElse(null));
+        }
+        if (request.getDiplomaId() != null) {
+            student.setDiploma(diplomaRepository.findById(request.getDiplomaId()).orElse(null));
+        }
+        if (request.getSalesPersonId() != null) {
+            student.setSalesPerson(userRepository.findById(request.getSalesPersonId()).orElse(null));
+        }
+
+        return mapToResponse(studentRepository.save(student));
+    }
+
+    @Override
+    @Transactional
+    public void deleteStudent(Long id) {
+        if (!studentRepository.existsById(id)) {
+            throw new RuntimeException("Student not found");
+        }
+        studentRepository.deleteById(id);
+    }
+
     private StudentResponseV2 mapToResponse(StudentV2 student) {
         BigDecimal totalAmount = BigDecimal.ZERO;
+        LocalDate startDate = null;
+        LocalDate endDate = null;
+        BigDecimal inst1Amt = BigDecimal.ZERO;
+        LocalDate inst1Date = null;
+        BigDecimal inst2Amt = BigDecimal.ZERO;
+        LocalDate inst2Date = null;
+        BigDecimal inst3Amt = BigDecimal.ZERO;
+        LocalDate inst3Date = null;
+        BigDecimal inst4Amt = BigDecimal.ZERO;
+        LocalDate inst4Date = null;
+
         if (student.getRound() != null && student.getDiploma() != null) {
-            totalAmount = roundDiplomaRepository.findByRoundAndDiploma(student.getRound(), student.getDiploma())
-                .map(org.example.academicmanagementsystem.model.RoundDiplomaV2::getTotalPrice)
-                .orElse(BigDecimal.ZERO);
+            java.util.Optional<RoundDiplomaV2> rdOpt = roundDiplomaRepository.findByRoundAndDiploma(student.getRound(), student.getDiploma());
+            if (rdOpt.isPresent()) {
+                RoundDiplomaV2 rd = rdOpt.get();
+                totalAmount = rd.getTotalPrice() != null ? rd.getTotalPrice() : BigDecimal.ZERO;
+                startDate = rd.getStartDate();
+                endDate = rd.getEndDate();
+                inst1Amt = rd.getInstallment1Amount() != null ? rd.getInstallment1Amount() : BigDecimal.ZERO;
+                inst1Date = rd.getInstallment1Date();
+                inst2Amt = rd.getInstallment2Amount() != null ? rd.getInstallment2Amount() : BigDecimal.ZERO;
+                inst2Date = rd.getInstallment2Date();
+                inst3Amt = rd.getInstallment3Amount() != null ? rd.getInstallment3Amount() : BigDecimal.ZERO;
+                inst3Date = rd.getInstallment3Date();
+                inst4Amt = rd.getInstallment4Amount() != null ? rd.getInstallment4Amount() : BigDecimal.ZERO;
+                inst4Date = rd.getInstallment4Date();
+            }
         }
+
+        BigDecimal deposit = student.getDepositAmount() != null ? student.getDepositAmount() : BigDecimal.ZERO;
+        BigDecimal inst1Paid = student.getInstallment1Paid() != null ? student.getInstallment1Paid() : BigDecimal.ZERO;
+        BigDecimal inst2Paid = student.getInstallment2Paid() != null ? student.getInstallment2Paid() : BigDecimal.ZERO;
+        BigDecimal inst3Paid = student.getInstallment3Paid() != null ? student.getInstallment3Paid() : BigDecimal.ZERO;
+        BigDecimal inst4Paid = student.getInstallment4Paid() != null ? student.getInstallment4Paid() : BigDecimal.ZERO;
+        BigDecimal totalPaid = deposit.add(inst1Paid).add(inst2Paid).add(inst3Paid).add(inst4Paid);
+        BigDecimal remainingAmount = totalAmount.subtract(totalPaid);
 
         return StudentResponseV2.builder()
                 .id(student.getId())
@@ -168,7 +234,25 @@ public class StudentV2ServiceImpl implements StudentV2Service {
                 .cancellationReason(student.getCancellationReason())
                 .enrollmentDate(student.getEnrollmentDate())
                 .totalAmount(totalAmount)
-                .paidAmount(student.getDepositAmount() != null ? student.getDepositAmount() : BigDecimal.ZERO)
+                .paidAmount(totalPaid)
+                .remainingAmount(remainingAmount)
+                .endDate(endDate)
+                .installment1Paid(student.getInstallment1Paid())
+                .installment1Notes(student.getInstallment1Notes())
+                .installment2Paid(student.getInstallment2Paid())
+                .installment2Notes(student.getInstallment2Notes())
+                .installment3Paid(student.getInstallment3Paid())
+                .installment3Notes(student.getInstallment3Notes())
+                .installment4Paid(student.getInstallment4Paid())
+                .installment4Notes(student.getInstallment4Notes())
+                .installment1Date(inst1Date)
+                .installment1Amount(inst1Amt)
+                .installment2Date(inst2Date)
+                .installment2Amount(inst2Amt)
+                .installment3Date(inst3Date)
+                .installment3Amount(inst3Amt)
+                .installment4Date(inst4Date)
+                .installment4Amount(inst4Amt)
                 .build();
     }
 }

@@ -33,4 +33,24 @@ public class StudentResponseV2 {
     private LocalDateTime enrollmentDate;
     private BigDecimal totalAmount;
     private BigDecimal paidAmount;
+    private BigDecimal remainingAmount;
+    private LocalDate endDate;
+
+    private BigDecimal installment1Paid;
+    private String installment1Notes;
+    private BigDecimal installment2Paid;
+    private String installment2Notes;
+    private BigDecimal installment3Paid;
+    private String installment3Notes;
+    private BigDecimal installment4Paid;
+    private String installment4Notes;
+
+    private LocalDate installment1Date;
+    private BigDecimal installment1Amount;
+    private LocalDate installment2Date;
+    private BigDecimal installment2Amount;
+    private LocalDate installment3Date;
+    private BigDecimal installment3Amount;
+    private LocalDate installment4Date;
+    private BigDecimal installment4Amount;
 }

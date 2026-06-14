@@ -47,6 +47,7 @@ body {
     overflow-y: auto;
 }
 
+
 .sidebar-header {
     padding: 24px;
     display: flex;
@@ -78,6 +79,7 @@ body {
     color: var(--sidebar-text);
     text-decoration: none;
     border-radius: 8px;
+    gap: 10px;
     transition: all 0.2s ease;
     font-size: 15px;
     font-weight: 500;
@@ -99,8 +101,14 @@ body {
     background-color: #1A1A1A;
     color: #FFFFFF;
     font-weight: 600;
+}.sidebar-nav li > a svg path{
+    stroke:#666
 }
+.sidebar-nav li.active>a svg path{
+    stroke: #FFFFFF!important;
 
+
+}
 /* Finance specific active/parent style */
 li.has-submenu#nav-finance-parent.active>a {
     background-color: #1A1A1A;
@@ -108,7 +116,7 @@ li.has-submenu#nav-finance-parent.active>a {
 }
 
 .sidebar-nav li:not(.active)>a:hover {
-    background-color: #F0EAFF;
+    background-color: #F9FAFB;
     color: var(--sidebar-active);
 }
 
@@ -134,6 +142,7 @@ li.has-submenu#nav-finance-parent.active>a {
     font-size: 14px;
     border-radius: 0;
     color: #777;
+    transition: all 0.2s ease;
 }
 
 .submenu a:hover {
@@ -142,6 +151,89 @@ li.has-submenu#nav-finance-parent.active>a {
 
 .submenu a.active {
     color: var(--primary-color);
+    font-weight: 700;
+}
+
+/* Active Dropdown Card Styling (Sales/Finance/Students) */
+.sidebar-nav li.has-submenu {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+
+/* When submenu is open, style the whole parent li as a dark card */
+.sidebar-nav li.has-submenu:has(ul.submenu.show) {
+    background-color: #1a1a1a !important; /* Dark background */
+    padding: 4px 4px 12px 4px;
+    margin-bottom: 8px;
+}
+
+/* Ensure links inside open submenu parent display correctly */
+.sidebar-nav li.has-submenu:has(ul.submenu.show) > a {
+    color: #ffffff !important;
+    background-color: transparent !important;
+    font-weight: 600;
+}
+
+.sidebar-nav li.has-submenu:has(ul.submenu.show) > a i {
+    color: #ffffff !important;
+}
+
+.sidebar-nav li.has-submenu:has(ul.submenu.show) > a svg path,
+.sidebar-nav li.has-submenu:has(ul.submenu.show) > a svg circle,
+.sidebar-nav li.has-submenu:has(ul.submenu.show) > a svg rect {
+    stroke: #ffffff !important;
+}
+
+/* Rotate chevron arrow down when open */
+.sidebar-nav li.has-submenu:has(ul.submenu.show) a .arrow {
+    transform: rotate(90deg);
+    color: #ffffff !important;
+}
+
+/* Closed chevron styles */
+.sidebar-nav a .arrow {
+    transition: transform 0.2s ease;
+    margin-left: auto;
+    font-size: 12px;
+}
+
+/* Submenu container under active dark item */
+.sidebar-nav li.has-submenu:has(ul.submenu.show) ul.submenu {
+    background-color: transparent !important;
+    padding: 0;
+    margin: 8px 0 0 0;
+    border-radius: 0;
+}
+
+/* Submenu links inside active dark item */
+.sidebar-nav li.has-submenu:has(ul.submenu.show) ul.submenu a {
+    color: #b3b3b3 !important;
+    padding: 8px 12px 8px 32px !important;
+    font-size: 14px;
+    background-color: transparent !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 6px;
+    font-weight: 400;
+}
+
+/* Square bullet prefix */
+.sidebar-nav li.has-submenu:has(ul.submenu.show) ul.submenu a::before {
+    content: "▪";
+    color: #ffffff;
+    font-size: 10px;
+    opacity: 0.7;
+    margin-right: 5px;
+}
+
+.sidebar-nav li.has-submenu:has(ul.submenu.show) ul.submenu a:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.sidebar-nav li.has-submenu:has(ul.submenu.show) ul.submenu a.active {
+    color: #ffffff !important;
     font-weight: 700;
 }
 
@@ -241,10 +333,21 @@ li.has-submenu#nav-finance-parent.active>a {
 .search-box {
     background-color: #F3F4F6;
     padding: 8px 15px;
-    border-radius: 8px;
+    border-radius: 50px;
     display: flex;
     align-items: center;
     width: 400px;
+}
+
+.online-badge {
+    background-color: #16A34A;
+    color: #ffffff;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: inline-block;
 }
 
 .search-box i {
@@ -324,6 +427,8 @@ li.has-submenu#nav-finance-parent.active>a {
 /* Page Content */
 .page-content {
     padding: 30px;
+    background-color: var(--bg-color); /* Match Figma page background */
+    min-height: calc(100vh - 70px);
 }
 
 .content-header {
@@ -354,9 +459,6 @@ li.has-submenu#nav-finance-parent.active>a {
 }
 
 .control-item {
-    background-color: #F9FAFB;
-    border: 1px solid #f0f0f0;
-    border-radius: 10px;
     display: flex;
     align-items: center;
     padding: 10px 18px;
@@ -365,18 +467,31 @@ li.has-submenu#nav-finance-parent.active>a {
     transition: all 0.2s;
 }
 
+.control-item.search {
+    background-color: #F3F4F6;
+    border: none;
+    border-radius: 12px;
+    width: 300px;
+}
+
+.control-item.select {
+    background-color: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    border-radius: 12px;
+}
+
+.control-item.select.active {
+    border-color: var(--primary-color);
+    background-color: #FFFFFF;
+}
+
 .control-item:focus-within {
     border-color: var(--primary-color);
-    background-color: #fff;
 }
 
 .control-item i:not(.chevron) {
     color: var(--text-muted);
     margin-right: 10px;
-}
-
-.control-item.search {
-    width: 300px;
 }
 
 .control-item input,
@@ -459,10 +574,12 @@ li.has-submenu#nav-finance-parent.active>a {
 
 .btn-export {
     background-color: #fff;
-    border: 1px solid var(--border-color);
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 600;
+    border: 1px solid #D1D5DB;
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 14px;
+    color: #1F2937;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
@@ -471,7 +588,7 @@ li.has-submenu#nav-finance-parent.active>a {
 }
 
 .btn-export:hover {
-    background-color: var(--bg-color);
+    background-color: #F9FAFB;
 }
 
 /* Table */
@@ -480,6 +597,33 @@ li.has-submenu#nav-finance-parent.active>a {
     border-radius: 12px;
     box-shadow: var(--shadow);
     overflow-x: auto;
+    cursor: grab;
+    scroll-behavior: smooth;
+}
+
+.table-container.grabbing {
+    cursor: grabbing;
+    scroll-behavior: auto;
+    user-select: none;
+}
+
+/* Custom Scrollbar for tables */
+.table-container::-webkit-scrollbar {
+    height: 8px; 
+    width: 8px;
+}
+.table-container::-webkit-scrollbar-track {
+    background: #F8F9FA;
+    border-radius: 10px;
+    margin: 0 15px; 
+}
+.table-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #EBB700, #ffcf33);
+    border-radius: 10px;
+    border: 2px solid #F8F9FA; 
+}
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(90deg, #d1a300, #EBB700);
 }
 
 .details-table th,
@@ -496,52 +640,42 @@ li.has-submenu#nav-finance-parent.active>a {
 .dashboard-table th,
 .modern-table th {
     background-color: #F9FAFB;
-    padding: 15px 20px;
+    padding: 12px 15px;
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
+    color: #374151;
+    text-transform: none;
     border-bottom: 1px solid var(--border-color);
     text-align: left;
 }
 
 .dashboard-table td,
 .modern-table td {
-    padding: 15px 20px;
+    padding: 12px 15px;
     border-bottom: 1px solid var(--border-color);
     font-size: 14px;
 }
 
-.dashboard-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-}
 
-.dashboard-table th {
-    background-color: #F9FAFB;
-    padding: 15px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.dashboard-table td {
-    padding: 15px 20px;
-    border-bottom: 1px solid var(--border-color);
-    font-size: 14px;
-}
 
 /* Row Grouping (Rounds) */
 .round-group-row {
-    background-color: rgba(235, 183, 0, 0.15);
+    background-color: #FDF0CD;
 }
 
 .round-group-row td {
     font-weight: 700;
-    color: #000;
+    color: #111827;
+}
+
+.diploma-detail-row td:nth-child(2) {
+    font-weight: 600;
+    color: #111827;
+}
+
+.diploma-detail-row td:nth-child(3) {
+    text-align: center;
+    color: #4B5563;
 }
 
 .round-info {
@@ -551,12 +685,12 @@ li.has-submenu#nav-finance-parent.active>a {
 }
 
 .round-badge {
-    background-color: var(--primary-color);
-    color: #000;
-    padding: 2px 8px;
-    border-radius: 4px;
+    background-color: #EBB700;
+    color: #451A03;
+    padding: 4px 12px;
+    border-radius: 50px;
     font-size: 11px;
-    font-weight: bold;
+    font-weight: 600;
 }
 
 .start-date {
@@ -573,34 +707,43 @@ li.has-submenu#nav-finance-parent.active>a {
 }
 
 .status-date {
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1F2937;
 }
 
 .status-label {
     font-size: 12px;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    width: 100%;
 }
 
 .status-label.paid {
-    color: var(--success-color);
+    color: #16A34A;
 }
 
 .status-label.delayed {
-    color: var(--error-color);
+    color: #DC2626;
 }
 
 .status-label.upcoming {
-    color: var(--text-muted);
+    color: #6B7280;
 }
 
 .delayed-count {
-    background-color: var(--error-color);
+    background-color: #DC2626;
     color: #fff;
     font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-left: auto;
 }
 
 /* Pagination */
@@ -1033,19 +1176,108 @@ li.has-submenu#nav-finance-parent.active>a {
     border-bottom-color: #ebb700;
 }
 
+.header-groups th {
+    padding: 6px 10px !important;
+    font-size: 10px !important;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+}
+
 .group-bg-yellow {
-    background-color: #fff9e6 !important;
+    background-color: transparent !important;
     color: #ebb700 !important;
+    border-bottom: 2px solid #ebb700 !important;
 }
 
 .group-bg-blue {
-    background-color: #f0f8ff !important;
+    background-color: transparent !important;
     color: #0d6efd !important;
+    border-bottom: 2px solid #0d6efd !important;
 }
 
 .group-bg-light {
-    background-color: #f8f9fa !important;
-    color: #383d41 !important;
+    background-color: transparent !important;
+    color: #6c757d !important;
+    border-bottom: 2px solid #6c757d !important;
+}
+
+.group-bg-light-blue {
+    background-color: transparent !important;
+    color: #2563eb !important;
+    border-bottom: 2px solid #2563eb !important;
+}
+
+.group-bg-green {
+    background-color: transparent !important;
+    color: #16a34a !important;
+    border-bottom: 2px solid #16a34a !important;
+}
+
+.group-bg-pink {
+    background-color: transparent !important;
+    color: #dc2626 !important;
+    border-bottom: 2px solid #dc2626 !important;
+}
+
+/* Wide Table Scroll & Sticky Columns */
+.details-table-container {
+    overflow-x: auto;
+    max-width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.details-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.details-table th,
+.details-table td {
+    white-space: nowrap;
+}
+
+/* Sticky Name Column */
+.details-table thead tr:nth-child(2) th:nth-child(1),
+.details-table tbody td:nth-child(1) {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background-color: #fff;
+    min-width: 220px;
+    max-width: 220px;
+    width: 220px;
+    border-right: 1px solid var(--border-color);
+}
+
+/* Sticky Phone Column */
+.details-table thead tr:nth-child(2) th:nth-child(2),
+.details-table tbody td:nth-child(2) {
+    position: sticky;
+    left: 220px;
+    z-index: 10;
+    background-color: #fff;
+    min-width: 130px;
+    max-width: 130px;
+    width: 130px;
+    border-right: 1px solid var(--border-color);
+}
+
+/* Sticky Group Header for Student Info */
+.details-table thead tr.header-groups th:nth-child(1) {
+    position: sticky;
+    left: 0;
+    z-index: 11;
+    background-color: #fff9e6 !important;
+    border-right: 1px solid var(--border-color);
+}
+
+/* Row Hover for Sticky Cells */
+.details-table tbody tr:hover td:nth-child(1),
+.details-table tbody tr:hover td:nth-child(2) {
+    background-color: #f9fafb !important;
 }
 
 .details-table thead tr.header-groups th {
@@ -1283,76 +1515,11 @@ li.has-submenu#nav-finance-parent.active>a {
     transform: translateY(-2px);
 }
 
-/* Round Grouping Styles (Dashboard/Home) */
-.round-group-row {
-    background-color: #F8FAFC;
+.details-table .btn-action {
+    border-radius: 50%;
 }
 
-.round-group-row td {
-    border-bottom: 2px solid var(--border-color);
-    padding: 12px 20px;
-}
 
-.round-info {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.round-info i {
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-.round-info span {
-    font-weight: 700;
-    color: var(--text-main);
-    font-size: 15px;
-}
-
-.round-info .start-date {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 400;
-}
-
-.round-badge {
-    background-color: #E0F2FE;
-    color: #0369A1;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.status-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    padding: 6px 12px;
-    border-radius: 6px;
-    width: fit-content;
-    margin: 0 auto;
-}
-
-.status-cell.upcoming {
-    background-color: #F3F4F6;
-    color: #4B5563;
-}
-
-.status-cell.paid {
-    background-color: #DCFCE7;
-    color: #15803D;
-}
-
-.status-cell.delayed {
-    background-color: #FEE2E2;
-    color: #B91C1C;
-}
 
 /* Custom Multi-Select for Diplomas */
 .custom-multi-select {
@@ -2652,4 +2819,25 @@ span.flatpickr-weekday {
     padding: 14px 16px;
     flex: 1;
     margin-bottom: 8px;
+}
+
+/* Unified Container for Figma matching */
+.unified-container {
+    background-color: #FFFFFF;
+    border-radius: 12px;
+    border: 1px solid #E8E8E8;
+    padding: 24px;
+    margin-top: 15px;
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05); /* Match figma shadow */
+}
+
+.unified-container .details-tabs {
+    margin-bottom: 25px;
+    margin-top: 0;
+}
+
+.unified-container .table-container {
+    box-shadow: none !important;
+    border: 1px solid #E8E8E8 !important;
+    margin-bottom: 0;
 }

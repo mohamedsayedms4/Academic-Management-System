@@ -39,6 +39,8 @@ public class DataSeeder {
     private final DiplomaV2Repository diplomaV2Repository;
     private final RoundV2Repository roundV2Repository;
     private final InstructorV2Repository instructorV2Repository;
+    private final StudentV2Repository studentV2Repository;
+    private final RoundDiplomaV2Repository roundDiplomaV2Repository;
     private final ExpenseRepository expenseRepository;
     private final PayrollRecordRepository payrollRecordRepository;
     private final PasswordEncoder passwordEncoder;
@@ -83,6 +85,14 @@ public class DataSeeder {
                 log.info("Successfully altered notifications table type column to VARCHAR(255)");
             } catch (Exception e) {
                 log.warn("Could not alter notifications type column (might be already modified or database doesn't require it): " + e.getMessage());
+            }
+
+            // Fix students_v2 table column type for status if it's too small
+            try {
+                jdbcTemplate.execute("ALTER TABLE students_v2 MODIFY COLUMN status VARCHAR(50)");
+                log.info("Successfully altered students_v2 status column to VARCHAR(50)");
+            } catch (Exception e) {
+                log.warn("Could not alter students_v2 status column: " + e.getMessage());
             }
 
             // Seed V2 Data (Independent check inside method)
@@ -565,54 +575,140 @@ public class DataSeeder {
     }
 
     private void seedV2Data() {
-        if (diplomaV2Repository.count() > 0) return;
+        if (diplomaV2Repository.count() == 0) {
+            List<DiplomaV2> diplomas = new ArrayList<>();
+            diplomas.add(new DiplomaV2("BIM Architecture diploma"));
+            diplomas.add(new DiplomaV2("Interior Design & Decoration - Offline"));
+            diplomas.add(new DiplomaV2("Interior Design & Decoration - Online"));
+            diplomas.add(new DiplomaV2("Full Stack Development"));
+            diplomas = diplomaV2Repository.saveAll(diplomas);
 
-        List<DiplomaV2> diplomas = new ArrayList<>();
-        diplomas.add(new DiplomaV2("BIM Architecture diploma"));
-        diplomas.add(new DiplomaV2("Interior Design & Decoration - Offline"));
-        diplomas.add(new DiplomaV2("Interior Design & Decoration - Online"));
-        diplomas.add(new DiplomaV2("Full Stack Development"));
-        diplomas = diplomaV2Repository.saveAll(diplomas);
+            RoundV2 round9 = new RoundV2();
+            round9.setName("Round 9");
+            round9.setStartDate(LocalDate.of(2026, 4, 12));
+            round9.setEndDate(LocalDate.of(2026, 8, 12));
+            round9.setDiplomas(new HashSet<>(diplomas.subList(0, 3)));
+            roundV2Repository.save(round9);
 
-        RoundV2 round9 = new RoundV2();
-        round9.setName("Round 9");
-        round9.setStartDate(LocalDate.of(2026, 4, 12));
-        round9.setEndDate(LocalDate.of(2026, 8, 12));
-        round9.setDiplomas(new HashSet<>(diplomas.subList(0, 3)));
-        roundV2Repository.save(round9);
+            RoundV2 round10 = new RoundV2();
+            round10.setName("Round 10");
+            round10.setStartDate(LocalDate.of(2026, 5, 20));
+            round10.setEndDate(LocalDate.of(2026, 9, 20));
+            round10.setDiplomas(new HashSet<>(List.of(diplomas.get(3))));
+            roundV2Repository.save(round10);
 
-        RoundV2 round10 = new RoundV2();
-        round10.setName("Round 10");
-        round10.setStartDate(LocalDate.of(2026, 5, 20));
-        round10.setEndDate(LocalDate.of(2026, 9, 20));
-        round10.setDiplomas(new HashSet<>(List.of(diplomas.get(3))));
-        roundV2Repository.save(round10);
+            // Seed Instructors V2
+            if (instructorV2Repository.count() == 0) {
+                InstructorV2 inst1 = new InstructorV2();
+                inst1.setName("Eng. Mohamed Saleh");
+                inst1.setPhoneNumber("01127268622");
+                inst1.setSalary(18000.0);
+                inst1.setPaymentMethod("Cash");
+                inst1.setAssignedDiplomas(new HashSet<>(diplomas.subList(0, 1)));
+                instructorV2Repository.save(inst1);
 
-        // Seed Instructors V2
-        if (instructorV2Repository.count() == 0) {
-            InstructorV2 inst1 = new InstructorV2();
-            inst1.setName("Eng. Mohamed Saleh");
-            inst1.setPhoneNumber("01127268622");
-            inst1.setSalary(18000.0);
-            inst1.setPaymentMethod("Cash");
-            inst1.setAssignedDiplomas(new HashSet<>(diplomas.subList(0, 1)));
-            instructorV2Repository.save(inst1);
+                InstructorV2 inst2 = new InstructorV2();
+                inst2.setName("Ms. Nermin Adel");
+                inst2.setPhoneNumber("01127268622");
+                inst2.setSalary(18000.0);
+                inst2.setPaymentMethod("Cash");
+                inst2.setAssignedDiplomas(new HashSet<>(diplomas.subList(1, 2)));
+                instructorV2Repository.save(inst2);
 
-            InstructorV2 inst2 = new InstructorV2();
-            inst2.setName("Ms. Nermin Adel");
-            inst2.setPhoneNumber("01127268622");
-            inst2.setSalary(18000.0);
-            inst2.setPaymentMethod("Cash");
-            inst2.setAssignedDiplomas(new HashSet<>(diplomas.subList(1, 2)));
-            instructorV2Repository.save(inst2);
-
-            InstructorV2 inst3 = new InstructorV2();
-            inst3.setName("Eng. Karim Mostafa");
-            inst3.setPhoneNumber("01127268622");
-            inst3.setSalary(18000.0);
-            inst3.setPaymentMethod("Cash");
-            inst3.setAssignedDiplomas(new HashSet<>(diplomas.subList(2, 3)));
-            instructorV2Repository.save(inst3);
+                InstructorV2 inst3 = new InstructorV2();
+                inst3.setName("Eng. Karim Mostafa");
+                inst3.setPhoneNumber("01127268622");
+                inst3.setSalary(18000.0);
+                inst3.setPaymentMethod("Cash");
+                inst3.setAssignedDiplomas(new HashSet<>(diplomas.subList(2, 3)));
+                instructorV2Repository.save(inst3);
+            }
         }
+
+        // Ensure Interior Design & Decoration - Online and Round 9 are seeded
+        DiplomaV2 idOnline = diplomaV2Repository.findByName("Interior Design & Decoration - Online")
+                .orElseGet(() -> diplomaV2Repository.save(new DiplomaV2("Interior Design & Decoration - Online")));
+
+        RoundV2 round9 = roundV2Repository.findByName("Round 9")
+                .orElseGet(() -> {
+                    RoundV2 r = new RoundV2();
+                    r.setName("Round 9");
+                    r.setStartDate(LocalDate.of(2026, 4, 12));
+                    r.setEndDate(LocalDate.of(2026, 8, 12));
+                    r.setDiplomas(new HashSet<>(List.of(idOnline)));
+                    return roundV2Repository.save(r);
+                });
+
+        // Ensure RoundDiplomaV2 exists
+        RoundDiplomaV2 rd = roundDiplomaV2Repository.findByRoundAndDiploma(round9, idOnline)
+                .orElseGet(() -> {
+                    RoundDiplomaV2 newRd = new RoundDiplomaV2();
+                    newRd.setRound(round9);
+                    newRd.setDiploma(idOnline);
+                    newRd.setTotalPrice(new BigDecimal("4500.00"));
+                    newRd.setStartDate(LocalDate.of(2026, 4, 12));
+                    newRd.setEndDate(LocalDate.of(2026, 8, 12));
+                    newRd.setTotalStudents(10);
+                    newRd.setCurrentEnrollment(7);
+                    
+                    // Setup Installments info
+                    newRd.setInstallment1Amount(new BigDecimal("2250.00"));
+                    newRd.setInstallment1Date(LocalDate.of(2026, 4, 12));
+                    newRd.setInstallment1Percent(50);
+                    
+                    newRd.setInstallment2Amount(new BigDecimal("2250.00"));
+                    newRd.setInstallment2Date(LocalDate.of(2026, 5, 12));
+                    newRd.setInstallment2Percent(50);
+                    
+                    newRd.setInstallment3Amount(new BigDecimal("0.00"));
+                    newRd.setInstallment3Date(LocalDate.of(2026, 6, 12));
+                    newRd.setInstallment3Percent(0);
+
+                    newRd.setInstallment4Amount(new BigDecimal("0.00"));
+                    newRd.setInstallment4Date(LocalDate.of(2026, 7, 12));
+                    newRd.setInstallment4Percent(0);
+
+                    return roundDiplomaV2Repository.save(newRd);
+                });
+
+        org.springframework.data.domain.Page<StudentV2> existingStudents = studentV2Repository.findByRoundAndDiploma(
+                round9, idOnline, org.springframework.data.domain.PageRequest.of(0, 10));
+
+        if (existingStudents.isEmpty()) {
+            // Seed 7 identical student rows with different statuses
+            // Row 1: Cancelled
+            createAndSaveSeededStudent(round9, idOnline, StudentStatus.CANCELLED);
+            // Row 2: Postponed
+            createAndSaveSeededStudent(round9, idOnline, StudentStatus.POSTPONED);
+            // Rows 3-7: Active
+            for (int i = 0; i < 5; i++) {
+                createAndSaveSeededStudent(round9, idOnline, StudentStatus.ACTIVE);
+            }
+            
+            rd.setCurrentEnrollment(7);
+            roundDiplomaV2Repository.save(rd);
+        }
+    }
+
+    private void createAndSaveSeededStudent(RoundV2 round, DiplomaV2 diploma, StudentStatus status) {
+        StudentV2 s = new StudentV2();
+        s.setName("Samah Ebrahim Alaa Ahmed");
+        s.setPhone("1094233420");
+        s.setEmail("shehffcsef@gmail.com");
+        s.setPassword("Xdik1!01F3r8VpaKhj4f#MMS");
+        s.setNotes("Transferred from R24");
+        s.setItStatus(false);
+        s.setStatus(status);
+        s.setRound(round);
+        s.setDiploma(diploma);
+        s.setEnrollmentDate(LocalDate.of(2026, 4, 12).atStartOfDay());
+        s.setDepositAmount(new BigDecimal("500.00"));
+        s.setInstallment1Paid(new BigDecimal("1150.00"));
+        s.setInstallment1Notes("Lorem Epsom Lorem Epsom");
+        s.setInstallment2Paid(new BigDecimal("600.00"));
+        s.setInstallment2Notes("Lorem Epsom Lorem Epsom");
+        s.setInstallment3Paid(BigDecimal.ZERO);
+        s.setInstallment4Paid(BigDecimal.ZERO);
+        studentV2Repository.save(s);
     }
 }

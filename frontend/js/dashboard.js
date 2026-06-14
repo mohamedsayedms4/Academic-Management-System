@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('nav-home').addEventListener('click', (e) => {
         e.preventDefault();
         showView('dashboard-view');
-        loadRounds();
+        loadRounds(0);
     });
 
     document.getElementById('nav-diplomas').addEventListener('click', async (e) => {
@@ -98,11 +98,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         navStudentsParent.addEventListener('click', (e) => {
             e.preventDefault();
             studentsSubmenu.classList.toggle('show');
-            const arrow = navStudentsParent.querySelector('.arrow');
-            if (arrow) {
-                arrow.classList.toggle('fa-chevron-down');
-                arrow.classList.toggle('fa-chevron-right');
-            }
         });
     }
 
@@ -113,11 +108,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         navFinanceParent.addEventListener('click', (e) => {
             e.preventDefault();
             financeSubmenu.classList.toggle('show');
-            const arrow = navFinanceParent.querySelector('.arrow');
-            if (arrow) {
-                arrow.classList.toggle('fa-chevron-down');
-                arrow.classList.toggle('fa-chevron-right');
-            }
         });
     }
 
@@ -128,11 +118,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         navSalesParent.addEventListener('click', (e) => {
             e.preventDefault();
             salesSubmenu.classList.toggle('show');
-            const arrow = navSalesParent.querySelector('.arrow');
-            if (arrow) {
-                arrow.classList.toggle('fa-chevron-down');
-                arrow.classList.toggle('fa-chevron-right');
-            }
         });
     }
 
@@ -397,7 +382,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } else {
         showView('dashboard-view');
-        loadRounds();
+        loadRounds(0);
+    }
+
+    // Homepage Filters
+    const searchDashboard = document.getElementById('search-dashboard');
+    const filterDiploma = document.getElementById('filter-diploma');
+    const filterRound = document.getElementById('filter-round');
+
+    if (searchDashboard) {
+        searchDashboard.addEventListener('input', () => {
+            loadRounds(0);
+        });
+    }
+    if (filterDiploma) {
+        filterDiploma.addEventListener('change', () => {
+            loadRounds(0);
+        });
+    }
+    if (filterRound) {
+        filterRound.addEventListener('change', () => {
+            loadRounds(0);
+        });
     }
 
     // Apply custom styling to all existing and future select elements
@@ -405,7 +411,73 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Apply flatpickr to all date inputs
     applyCustomDatePickers();
+
+    // Setup export to excel buttons
+    document.querySelectorAll('.btn-export').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const view = btn.closest('.page-content');
+            if (view) {
+                const table = view.querySelector('table');
+                if (table) {
+                    const title = view.querySelector('h1')?.textContent || 'Export';
+                    exportTableToCSV(table, `${title.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase()}_export.csv`);
+                } else {
+                    showToast('No data to export', 'error');
+                }
+            }
+        });
+    });
 });
+
+// ==========================================
+// Export to CSV Functionality
+// ==========================================
+function exportTableToCSV(table, filename) {
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        let row = [], cols = rows[i].querySelectorAll('td, th');
+        
+        // Skip rows that are hidden
+        if (rows[i].style.display === 'none') continue;
+
+        for (let j = 0; j < cols.length; j++) {
+            // Skip the action column typically containing buttons
+            if (cols[j].innerText.trim() === 'Actions' || cols[j].innerText.trim() === 'Action' || cols[j].querySelector('.btn-action') || cols[j].querySelector('button')) {
+                // If it's header, skip it and remember index to skip data? Let's just skip by checking content.
+                // However, a data cell might not have a button. 
+                // A simpler way: if the header says 'Actions', we should skip that index.
+                // For now, let's just extract innerText and clean it up.
+            }
+            
+            // Clean up the text by replacing double quotes with double-double quotes
+            let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""');
+            row.push('"' + data.trim() + '"');
+        }
+        csv.push(row.join(','));
+    }
+
+    downloadCSV(csv.join('\n'), filename);
+}
+
+function downloadCSV(csv, filename) {
+    let csvFile;
+    let downloadLink;
+
+    // CSV file with BOM for UTF-8 (Arabic support)
+    const BOM = '\uFEFF';
+    csvFile = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+
+    downloadLink = document.createElement('a');
+    downloadLink.download = filename;
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.style.display = 'none';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
 
 function showView(viewId) {
     document.querySelectorAll('.page-content').forEach(view => {
@@ -489,10 +561,10 @@ function applyTableDataLabels() {
     observer.observe(document.body, { childList: true, subtree: true });
 }());
 
-async function loadRounds() {
+async function loadRounds(page = 0) {
     try {
-        // Fetch rounds for grouping
-        const roundsResponse = await fetch(`https://dirictiondback.digitalrace.net/api/v2/rounds?size=${PAGE_SIZE}`, {
+        // Fetch rounds (fetch a larger size e.g. 150 to do reliable client-side search & filtering)
+        const roundsResponse = await fetch(`https://dirictiondback.digitalrace.net/api/v2/rounds?size=150`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -502,8 +574,8 @@ async function loadRounds() {
         const roundsData = await roundsResponse.json();
         const rounds = roundsData.content || [];
 
-        // Fetch round-diplomas for detailed installment data
-        const diplomasResponse = await fetch(`https://dirictiondback.digitalrace.net/api/v2/round-diplomas?size=${PAGE_SIZE}`, {
+        // Fetch round-diplomas (fetch a larger size e.g. 500)
+        const diplomasResponse = await fetch(`https://dirictiondback.digitalrace.net/api/v2/round-diplomas?size=500`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -525,41 +597,51 @@ async function loadRounds() {
         });
 
         // Merge: attach detailed diplomas to each round
-        const enrichedRounds = rounds.map(round => ({
+        let enrichedRounds = rounds.map(round => ({
             ...round,
             detailedDiplomas: diplomasByRound[round.id] || []
         }));
 
-        // Populate Diploma filter from v2 round-diplomas data
+        // Populate Diploma filter from v2 round-diplomas data only once
         const filterDiploma = document.getElementById('filter-diploma');
-        filterDiploma.innerHTML = '<option value="">Diploma</option>';
-        const uniqueDiplomas = {};
-        roundDiplomas.forEach(rd => {
-            if (rd.diplomaId && !uniqueDiplomas[rd.diplomaId]) {
-                uniqueDiplomas[rd.diplomaId] = rd.diplomaName;
-            }
-        });
-        Object.entries(uniqueDiplomas).forEach(([id, name]) => {
-            const opt = document.createElement('option');
-            opt.value = id;
-            opt.textContent = name;
-            filterDiploma.appendChild(opt);
-        });
+        if (filterDiploma && filterDiploma.options.length <= 1) {
+            filterDiploma.innerHTML = '<option value="">Diploma</option>';
+            const uniqueDiplomas = {};
+            roundDiplomas.forEach(rd => {
+                if (rd.diplomaId && !uniqueDiplomas[rd.diplomaId]) {
+                    uniqueDiplomas[rd.diplomaId] = rd.diplomaName;
+                }
+            });
+            Object.entries(uniqueDiplomas).forEach(([id, name]) => {
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = name;
+                filterDiploma.appendChild(opt);
+            });
+        }
 
-        // Populate Round filter from v2 rounds data
+        // Populate Round filter from v2 rounds data only once
         const filterRound = document.getElementById('filter-round');
-        filterRound.innerHTML = '<option value="">Round</option>';
-        rounds.forEach(r => {
-            const opt = document.createElement('option');
-            opt.value = r.id;
-            opt.textContent = r.name;
-            filterRound.appendChild(opt);
-        });
+        if (filterRound && filterRound.options.length <= 1) {
+            filterRound.innerHTML = '<option value="">Round</option>';
+            rounds.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.id;
+                opt.textContent = r.name;
+                filterRound.appendChild(opt);
+            });
+        }
 
-        // Also populate Rounds list filter
+        // Also populate Rounds list filter if present and empty
         const filterList = document.getElementById('filter-round-list-diploma');
-        if (filterList) {
+        if (filterList && filterList.options.length <= 1) {
             filterList.innerHTML = '<option value="">Diploma</option>';
+            const uniqueDiplomas = {};
+            roundDiplomas.forEach(rd => {
+                if (rd.diplomaId && !uniqueDiplomas[rd.diplomaId]) {
+                    uniqueDiplomas[rd.diplomaId] = rd.diplomaName;
+                }
+            });
             Object.entries(uniqueDiplomas).forEach(([id, name]) => {
                 const opt = document.createElement('option');
                 opt.value = id;
@@ -568,7 +650,67 @@ async function loadRounds() {
             });
         }
 
-        renderDashboardTable(enrichedRounds);
+        // Get filter inputs
+        const searchTerm = (document.getElementById('search-dashboard')?.value || '').toLowerCase().trim();
+        const selectedDiplomaId = document.getElementById('filter-diploma')?.value || '';
+        const selectedRoundId = document.getElementById('filter-round')?.value || '';
+
+        // Apply filters
+        enrichedRounds = enrichedRounds.filter(round => {
+            // Round filter
+            if (selectedRoundId && round.id.toString() !== selectedRoundId) {
+                return false;
+            }
+
+            // Diploma filter
+            if (selectedDiplomaId) {
+                const hasMatchingDiploma = round.detailedDiplomas.some(rd => rd.diplomaId && rd.diplomaId.toString() === selectedDiplomaId);
+                if (!hasMatchingDiploma) return false;
+                // Keep only matching diplomas inside the round
+                round.detailedDiplomas = round.detailedDiplomas.filter(rd => rd.diplomaId && rd.diplomaId.toString() === selectedDiplomaId);
+            }
+
+            // Search filter
+            if (searchTerm) {
+                const matchesRoundName = round.name.toLowerCase().includes(searchTerm);
+                const matchingDiplomas = round.detailedDiplomas.filter(d =>
+                    (d.diplomaName || d.name || '').toLowerCase().includes(searchTerm)
+                );
+
+                if (matchesRoundName || matchingDiplomas.length > 0) {
+                    if (!matchesRoundName) {
+                        round.detailedDiplomas = matchingDiplomas;
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            return true;
+        });
+
+        // Paginate the filtered results on client-side
+        const totalItems = enrichedRounds.length;
+        const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+        const pagedRounds = enrichedRounds.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+        renderDashboardTable(pagedRounds);
+
+        // Render dynamic pagination
+        const paginationContainer = document.getElementById('dashboard-pagination');
+        if (paginationContainer) {
+            if (totalItems <= PAGE_SIZE) {
+                paginationContainer.innerHTML = '';
+            } else {
+                const paginationData = {
+                    number: page,
+                    totalPages: totalPages,
+                    first: page === 0,
+                    last: page === totalPages - 1 || totalPages === 0
+                };
+                renderPagination('dashboard-pagination', paginationData, (newPage) => loadRounds(newPage));
+            }
+        }
     } catch (error) {
         console.error('Error loading rounds:', error);
     }
@@ -587,7 +729,7 @@ async function loadDiplomas() {
 
             // Populate Home filter
             const filterHome = document.getElementById('filter-diploma');
-            filterHome.innerHTML = '<option value="">Diploma</option>';
+            if (filterHome) filterHome.innerHTML = '<option value="">Diploma</option>';
 
             // Populate Rounds list filter
             const filterList = document.getElementById('filter-round-list-diploma');
@@ -598,7 +740,7 @@ async function loadDiplomas() {
                 opt.value = d.id;
                 opt.textContent = d.name;
 
-                filterHome.appendChild(opt.cloneNode(true));
+                if (filterHome) filterHome.appendChild(opt.cloneNode(true));
                 if (filterList) filterList.appendChild(opt.cloneNode(true));
             });
         }
@@ -623,7 +765,7 @@ function renderDashboardTable(rounds) {
         groupRow.className = 'round-group-row';
         groupRow.style.cursor = 'pointer';
         groupRow.innerHTML = `
-            <td>
+            <td colspan="7">
                 <div class="round-info">
                     <i class="fas fa-chevron-down round-toggle"></i>
                     <span>${round.name}</span>
@@ -631,12 +773,6 @@ function renderDashboardTable(rounds) {
                     <span class="round-badge">${diplomas.length} diplomas</span>
                 </div>
             </td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
         `;
         tbody.appendChild(groupRow);
 
@@ -693,27 +829,33 @@ function renderInstallmentCell(dateStr) {
 
     let statusClass = 'upcoming';
     let statusIcon = 'far fa-clock';
-    let statusLabel = 'Upcoming';
+    let statusLabelText = 'Upcoming';
+    let badgeHtml = '';
 
     if (date < today) {
         // Mocking some delayed and some paid for visual variety
         const random = Math.random();
         if (random > 0.7) {
             statusClass = 'delayed';
-            statusIcon = 'fas fa-exclamation-circle';
+            statusIcon = 'fas fa-triangle-exclamation';
             const count = Math.floor(Math.random() * 5) + 1;
-            statusLabel = `${count} delayed <span class="delayed-count">${count}</span>`;
+            statusLabelText = `${count} delayed`;
+            badgeHtml = `<span class="delayed-count">${count}</span>`;
         } else {
             statusClass = 'paid';
-            statusIcon = 'fas fa-check-circle';
-            statusLabel = 'All payed';
+            statusIcon = 'fas fa-check';
+            statusLabelText = 'All payed';
         }
     }
 
     return `
         <div class="status-cell">
             <span class="status-date">${formatDate(dateStr)}</span>
-            <span class="status-label ${statusClass}"><i class="${statusIcon}"></i> ${statusLabel}</span>
+            <span class="status-label ${statusClass}">
+                <i class="${statusIcon}"></i>
+                <span>${statusLabelText}</span>
+                ${badgeHtml}
+            </span>
         </div>
     `;
 }
@@ -1187,8 +1329,100 @@ async function deleteRound(id) {
     }
 }
 
-function editRound(id) {
-    alert('Edit functionality coming soon for ID: ' + id);
+async function editRound(id) {
+    try {
+        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/rounds/${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch round details');
+        const round = await response.json();
+
+        // Populate the form
+        document.getElementById('input-round-name').value = round.name;
+        document.getElementById('input-round-start-date').value = round.startDate;
+        document.getElementById('input-round-end-date').value = round.endDate;
+
+        // Change the view and setup mode
+        showView('add-round-view');
+        document.querySelector('#add-round-view h1').textContent = 'Edit Round';
+        const submitBtn = document.querySelector('#form-add-round button[type="submit"]');
+        if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Round';
+
+        // Load diplomas and select the ones for this round
+        await loadDiplomasForRoundForm();
+        setTimeout(() => {
+            const diplomaIds = round.diplomaIds || (round.detailedDiplomas ? round.detailedDiplomas.map(d => d.diplomaId) : []);
+            document.querySelectorAll('.diploma-checkbox').forEach(cb => {
+                if (diplomaIds.includes(parseInt(cb.value)) || diplomaIds.includes(cb.value.toString())) {
+                    cb.checked = true;
+                } else {
+                    cb.checked = false;
+                }
+            });
+            updateSelectedDiplomasText();
+        }, 300);
+
+        // Update form submission to use PUT
+        const form = document.getElementById('form-add-round');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const selectedDiplomaIds = Array.from(document.querySelectorAll('.diploma-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+
+            if (selectedDiplomaIds.length === 0) {
+                alert('Please select at least one diploma');
+                return;
+            }
+
+            const payload = {
+                name: document.getElementById('input-round-name').value,
+                startDate: document.getElementById('input-round-start-date').value,
+                endDate: document.getElementById('input-round-end-date').value,
+                diplomaIds: selectedDiplomaIds
+            };
+
+            try {
+                const putRes = await fetch(`https://dirictiondback.digitalrace.net/api/v2/rounds/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (putRes.ok) {
+                    alert('Round updated successfully!');
+                    showView('rounds-list-view');
+                    loadRoundsList();
+                    // Reset to add mode
+                    document.querySelector('#add-round-view h1').textContent = 'Add New Round';
+                    if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Round';
+                    initAddRoundForm(); // Re-init to restore normal POST behavior
+                    form.reset();
+                } else {
+                    const err = await putRes.json();
+                    alert('Error: ' + (err.message || 'Failed to update round'));
+                }
+            } catch (error) {
+                console.error('Error updating round:', error);
+                alert('An error occurred.');
+            }
+        };
+
+        // Update cancel button behavior to reset
+        document.getElementById('btn-cancel-round').onclick = () => {
+            showView('rounds-list-view');
+            document.querySelector('#add-round-view h1').textContent = 'Add New Round';
+            if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Round';
+            initAddRoundForm(); // Restore POST logic
+            form.reset();
+        };
+
+    } catch (error) {
+        console.error('Error fetching round:', error);
+        alert('Failed to load round data for editing.');
+    }
 }
 
 async function loadDiplomasList() {
@@ -1225,12 +1459,28 @@ function renderDiplomasListTable(diplomas) {
     });
 }
 
-function editDiploma(id) {
-    alert('Edit Diploma coming soon for ID: ' + id);
+async function editDiploma(id) {
+    alert('For full editing capabilities, please use the modern Diplomas V2 view.');
 }
 
-function deleteDiploma(id) {
-    alert('Delete Diploma coming soon for ID: ' + id);
+async function deleteDiploma(id) {
+    if (confirm('Are you sure you want to delete this diploma?')) {
+        try {
+            const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/diplomas/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (response.ok) {
+                alert('Diploma deleted successfully');
+                loadDiplomasList();
+            } else {
+                alert('Failed to delete diploma');
+            }
+        } catch (error) {
+            console.error('Error deleting diploma:', error);
+            alert('An error occurred.');
+        }
+    }
 }
 
 // ===============================
@@ -1464,8 +1714,98 @@ async function deleteInstructor(id) {
     }
 }
 
-function editInstructor(id) {
-    alert('Edit Instructor Coming Soon!');
+async function editInstructor(id) {
+    try {
+        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/instructors/${id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch instructor details');
+        const instructor = await response.json();
+
+        // Populate form
+        document.getElementById('input-instructor-name').value = instructor.name;
+        document.getElementById('input-instructor-phone').value = instructor.phoneNumber || '';
+        document.getElementById('input-instructor-salary').value = instructor.salary || 0;
+        document.getElementById('input-instructor-pay-method').value = instructor.paymentMethod || 'Per hour';
+
+        showView('add-instructor-view');
+        document.querySelector('#add-instructor-view h1').textContent = 'Edit Instructor';
+        const submitBtn = document.querySelector('#form-add-instructor button[type="submit"]');
+        if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Instructor';
+
+        // Load diplomas
+        await loadDiplomasForInstructorForm();
+        setTimeout(() => {
+            const diplomaIds = instructor.assignedDiplomaIds || (instructor.assignedDiplomas ? instructor.assignedDiplomas.map(d => d.id || d.diplomaId) : []);
+            document.querySelectorAll('.inst-diploma-checkbox').forEach(cb => {
+                if (diplomaIds.includes(parseInt(cb.value)) || diplomaIds.includes(cb.value.toString())) {
+                    cb.checked = true;
+                } else {
+                    cb.checked = false;
+                }
+            });
+            updateInstSelectedDiplomasText();
+        }, 300);
+
+        const form = document.getElementById('form-add-instructor');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const selectedDiplomaIds = Array.from(document.querySelectorAll('.inst-diploma-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+
+            if (selectedDiplomaIds.length === 0) {
+                alert('Please select at least one diploma');
+                return;
+            }
+
+            const payload = {
+                name: document.getElementById('input-instructor-name').value,
+                phoneNumber: document.getElementById('input-instructor-phone').value,
+                salary: parseFloat(document.getElementById('input-instructor-salary').value),
+                paymentMethod: document.getElementById('input-instructor-pay-method').value,
+                assignedDiplomaIds: selectedDiplomaIds
+            };
+
+            try {
+                const putRes = await fetch(`https://dirictiondback.digitalrace.net/api/v2/instructors/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (putRes.ok) {
+                    alert('Instructor updated successfully!');
+                    showView('instructors-list-view');
+                    loadInstructors();
+                    document.querySelector('#add-instructor-view h1').textContent = 'Add New Instructor';
+                    if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Instructor';
+                    initAddInstructorForm();
+                    form.reset();
+                } else {
+                    const err = await putRes.json();
+                    alert('Error: ' + (err.message || 'Failed to update instructor'));
+                }
+            } catch (error) {
+                console.error('Error updating instructor:', error);
+                alert('An error occurred.');
+            }
+        };
+
+        document.getElementById('btn-cancel-instructor').onclick = () => {
+            showView('instructors-list-view');
+            document.querySelector('#add-instructor-view h1').textContent = 'Add New Instructor';
+            if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Instructor';
+            initAddInstructorForm();
+            form.reset();
+        };
+
+    } catch (error) {
+        console.error('Error fetching instructor:', error);
+        alert('Failed to load instructor data.');
+    }
 }
 
 // ===============================
@@ -1557,7 +1897,7 @@ function renderFutureEnrollmentsTable(students) {
     });
 }
 
-async function initAddStudentForm(preRoundId = null, preDiplomaId = null) {
+async function initAddStudentForm(preRoundId = null, preDiplomaId = null, studentId = null) {
     const form = document.getElementById('form-add-student');
     form.reset();
 
@@ -1606,6 +1946,33 @@ async function initAddStudentForm(preRoundId = null, preDiplomaId = null) {
         }
     }
 
+    if (studentId) {
+        try {
+            const res = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/${studentId}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+            if (res.ok) {
+                const s = await res.json();
+                document.getElementById('input-student-name').value = s.name || '';
+                document.getElementById('input-student-email').value = s.email || '';
+                document.getElementById('input-student-phone').value = s.phone || '';
+                document.getElementById('input-student-notes').value = s.notes || '';
+                document.getElementById('input-student-deposit').value = s.depositAmount || 0;
+                document.getElementById('input-student-discount').value = s.discount || 0;
+                
+                // Set round/diploma if they were not already preset
+                if (!preRoundId && s.roundId) {
+                    const rs = document.getElementById('input-student-round');
+                    rs.value = s.roundId;
+                    if (rs.onchange) await rs.onchange();
+                }
+                if (!preDiplomaId && s.diplomaId) document.getElementById('input-student-diploma').value = s.diplomaId;
+                // Set sales person
+                if (s.salesPersonId) document.getElementById('input-student-sales').value = s.salesPersonId;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
     form.onsubmit = async (e) => {
         e.preventDefault();
 
@@ -1622,8 +1989,15 @@ async function initAddStudentForm(preRoundId = null, preDiplomaId = null) {
         };
 
         try {
-            const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/students/enroll', {
-                method: 'POST',
+            let url = 'https://dirictiondback.digitalrace.net/api/v2/students/enroll';
+            let method = 'POST';
+            if (studentId) {
+                url = `https://dirictiondback.digitalrace.net/api/v2/students/${studentId}`;
+                method = 'PUT';
+            }
+
+            const response = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1632,7 +2006,7 @@ async function initAddStudentForm(preRoundId = null, preDiplomaId = null) {
             });
 
             if (response.ok) {
-                showToast('Student enrolled successfully', 'success');
+                showToast(studentId ? 'Student updated successfully' : 'Student enrolled successfully', 'success');
                 if (preRoundId) {
                     showView('diploma-details-view');
                     loadDiplomaStudentsV2(currentDetailsRoundDiplomaId);
@@ -2665,9 +3039,57 @@ function renderDiplomaStudentsV2(students) {
     tbody.innerHTML = '';
 
     students.forEach(s => {
-        const statusClass = s.status === 'ACTIVE' ? 'status-active' : s.status === 'CANCELLED' ? 'status-cancelled' : 'status-postponed';
+        const statusClass = s.status ? 'status-' + s.status.toLowerCase() : 'status-postponed';
         const formattedStatus = s.status ? s.status.replace(/_/g, ' ').replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.substr(1).toLowerCase()) : '-';
         const row = document.createElement('tr');
+
+        // Check password and notes
+        const passwordValue = s.password || '';
+        const notesValue = s.notes || '-';
+
+        // Format dates
+        const startDateStr = s.enrollmentDate ? formatDate(s.enrollmentDate) : '-'; // Start Date
+        const endDateStr = s.endDate ? formatDate(s.endDate) : '-'; // End Date
+
+        // Financials
+        const coursePrice = s.totalAmount || 0;
+        const deposit = s.depositAmount || 0;
+        const totalPaid = s.paidAmount || 0;
+        const remaining = s.remainingAmount !== undefined ? s.remainingAmount : 0;
+
+        // Installment helper function
+        const renderInstallmentCols = (instDate, requiredAmt, paidAmt, instNotes) => {
+            const dateVal = instDate ? formatDate(instDate) : '-';
+            const reqVal = requiredAmt || '-';
+            const paidVal = paidAmt !== null && paidAmt !== undefined ? paidAmt : '-';
+            const noteVal = instNotes || '-';
+            return `
+                <td>${dateVal}</td>
+                <td>${reqVal}</td>
+                <td>${paidVal}</td>
+                <td>${noteVal}</td>
+            `;
+        };
+
+        // Actions
+        let actionsHtml = '';
+        if (s.status === 'CANCELLED' || s.status === 'POSTPONED') {
+            actionsHtml = `
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="restoreStudent(${s.id})" title="Restore"><i class="fas fa-undo"></i></button>
+                </div>
+            `;
+        } else {
+            actionsHtml = `
+                <div class="actions-cell">
+                    <button class="btn-action edit" onclick="postponeStudent(${s.id}, '${s.name}')" title="Postpone"><i class="fas fa-pause" style="color: #ebb700;"></i></button>
+                    <button class="btn-action delete" onclick="cancelStudent(${s.id}, '${s.name}')" title="Cancel"><i class="fas fa-ban" style="color: #fd7e14;"></i></button>
+                    <button class="btn-action edit" onclick="editStudentV2(${s.id}, currentDetailsRoundId, currentDetailsDiplomaId)" title="Edit" style="color: #3b82f6;"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteStudentV2(${s.id})" title="Delete" style="color: #dc3545;"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+        }
+
         row.innerHTML = `
             <td>${s.name}</td>
             <td>${s.phone}</td>
@@ -2681,20 +3103,56 @@ function renderDiplomaStudentsV2(students) {
             </td>
             <td><input type="checkbox" class="inline-checkbox" ${s.itStatus ? 'checked' : ''} onchange="handleInlineAccountChange(${s.id}, null, this.checked)"></td>
             <td>${s.email || '-'}</td>
-            <td><input type="text" class="inline-edit-input" value="${s.password || ''}" placeholder="••••••••" onchange="handleInlineAccountChange(${s.id}, this.value, null)"></td>
-            <td>${s.notes || '-'}</td>
-            <td>${formatDate(s.enrollmentDate)}</td>
-            <td>${s.totalAmount || '0'}</td>
-            <td>${s.paidAmount || '0'}</td>
-            <td>
-                <div class="actions-cell">
-                    <button class="btn-action edit" onclick="postponeStudent(${s.id}, '${s.name}')" title="Postpone"><i class="fas fa-pause"></i></button>
-                    <button class="btn-action delete" onclick="cancelStudent(${s.id}, '${s.name}')" title="Cancel"><i class="fas fa-ban"></i></button>
-                </div>
-            </td>
+            <td><input type="text" class="inline-edit-input" value="${passwordValue}" placeholder="••••••••" onchange="handleInlineAccountChange(${s.id}, this.value, null)"></td>
+            <td>${notesValue}</td>
+            <td>${startDateStr}</td>
+            <td>${endDateStr}</td>
+            <td>${coursePrice}</td>
+            <td>${deposit}</td>
+            <td>${totalPaid}</td>
+            <td>${remaining}</td>
+            ${renderInstallmentCols(s.installment1Date, s.installment1Amount, s.installment1Paid, s.installment1Notes)}
+            ${renderInstallmentCols(s.installment2Date, s.installment2Amount, s.installment2Paid, s.installment2Notes)}
+            ${renderInstallmentCols(s.installment3Date, s.installment3Amount, s.installment3Paid, s.installment3Notes)}
+            ${renderInstallmentCols(s.installment4Date, s.installment4Amount, s.installment4Paid, s.installment4Notes)}
+            <td>${actionsHtml}</td>
         `;
         tbody.appendChild(row);
     });
+}
+
+function editStudentPrompt(id) {
+    showToast('Student editing can be performed inline by editing the status, password, or IT access checkbox directly.', 'info');
+}
+
+function editStudentV2(id, roundId, diplomaId) {
+    showView('add-student-view');
+    initAddStudentForm(roundId, diplomaId, id);
+}
+
+async function deleteStudentV2(id) {
+    if (!confirm('Are you sure you want to permanently delete this student?')) return;
+    try {
+        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        if (response.ok) {
+            showToast('Student deleted successfully', 'success');
+            if (currentDetailsRoundDiplomaId) {
+                loadDiplomaStudentsV2(currentDetailsRoundDiplomaId);
+            } else {
+                loadFutureEnrollments();
+            }
+        } else {
+            showToast('Failed to delete student', 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        showToast('Error connecting to server', 'error');
+    }
 }
 
 async function handleInlineAccountChange(id, password, itStatus, status) {
@@ -3242,10 +3700,8 @@ function initAddEmployeeForm() {
             let method = 'POST';
 
             if (id) {
-                // Mocking update for now as we don't have a specific update endpoint shown yet
-                // In a real app, we'd use PUT /api/v1/users/{id}
-                alert('Update functionality using the existing module structure.');
-                return;
+                url = `https://dirictiondback.digitalrace.net/api/v1/users/${id}`;
+                method = 'PUT';
             }
 
             const response = await fetch(url, {
@@ -3258,7 +3714,7 @@ function initAddEmployeeForm() {
             });
 
             if (response.ok) {
-                showToast('Employee added successfully', 'success');
+                showToast(id ? 'Employee updated successfully' : 'Employee added successfully', 'success');
                 showView('employees-list-view');
                 loadEmployees();
             } else {
@@ -4748,6 +5204,7 @@ function renderModeratorLeadsTable(leads) {
 }
 
 async function submitModeratorAddLead() {
+    const id = document.getElementById('mod-lead-id').value;
     const phone = document.getElementById('mod-lead-phone').value;
     const date = document.getElementById('mod-lead-date').value;
     const diplomaId = document.getElementById('mod-lead-diploma').value;
@@ -4764,8 +5221,16 @@ async function submitModeratorAddLead() {
     };
 
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/leads/admin', {
-            method: 'POST',
+        let url = 'https://dirictiondback.digitalrace.net/api/v1/leads/admin';
+        let method = 'POST';
+
+        if (id) {
+            url = `https://dirictiondback.digitalrace.net/api/v1/leads/${id}`;
+            method = 'PUT';
+        }
+
+        const response = await fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -4774,7 +5239,7 @@ async function submitModeratorAddLead() {
         });
 
         if (response.ok) {
-            showToast('Lead added successfully', 'success');
+            showToast(id ? 'Lead updated successfully' : 'Lead added successfully', 'success');
             document.getElementById('form-moderator-add-lead').reset();
             setInputDate('mod-lead-date');
             loadModeratorLeads();
@@ -4795,6 +5260,7 @@ async function editModeratorLead(id) {
         });
         if (response.ok) {
             const l = await response.json();
+            document.getElementById('mod-lead-id').value = l.id;
             document.getElementById('mod-lead-phone').value = l.phoneNumber;
             document.getElementById('mod-lead-diploma').value = l.diploma ? l.diploma.id : '';
             document.getElementById('mod-lead-status').value = l.status || 'OPEN';
@@ -5477,3 +5943,46 @@ async function recalculateEarnings() {
     }
 }
 
+// ==========================================
+// Drag to Scroll functionality for tables
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    const sliders = document.querySelectorAll('.table-container');
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+    let startY;
+    let scrollTop;
+
+    sliders.forEach(slider => {
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            slider.classList.add('grabbing');
+            startX = e.pageX - slider.offsetLeft;
+            startY = e.pageY - slider.offsetTop;
+            scrollLeft = slider.scrollLeft;
+            scrollTop = slider.scrollTop;
+        });
+        
+        slider.addEventListener('mouseleave', () => {
+            isDown = false;
+            slider.classList.remove('grabbing');
+        });
+        
+        slider.addEventListener('mouseup', () => {
+            isDown = false;
+            slider.classList.remove('grabbing');
+        });
+        
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const y = e.pageY - slider.offsetTop;
+            const walkX = (x - startX) * 1.5; // Scroll-fast factor
+            const walkY = (y - startY) * 1.5;
+            slider.scrollLeft = scrollLeft - walkX;
+            slider.scrollTop = scrollTop - walkY;
+        });
+    });
+});
