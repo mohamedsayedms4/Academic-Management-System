@@ -1351,7 +1351,15 @@ async function editRound(id) {
         // Load diplomas and select the ones for this round
         await loadDiplomasForRoundForm();
         setTimeout(() => {
-            const diplomaIds = round.diplomaIds || (round.detailedDiplomas ? round.detailedDiplomas.map(d => d.diplomaId) : []);
+            let diplomaIds = [];
+            if (round.diplomas && round.diplomas.length > 0) {
+                diplomaIds = round.diplomas.map(d => d.id);
+            } else if (round.diplomaIds) {
+                diplomaIds = round.diplomaIds;
+            } else if (round.detailedDiplomas) {
+                diplomaIds = round.detailedDiplomas.map(d => d.diplomaId);
+            }
+            
             document.querySelectorAll('.diploma-checkbox').forEach(cb => {
                 if (diplomaIds.includes(parseInt(cb.value)) || diplomaIds.includes(cb.value.toString())) {
                     cb.checked = true;
