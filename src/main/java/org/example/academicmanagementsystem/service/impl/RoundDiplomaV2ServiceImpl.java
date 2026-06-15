@@ -96,6 +96,43 @@ public class RoundDiplomaV2ServiceImpl implements RoundDiplomaV2Service {
                 instructorRepository.findById(request.getInstructorId()).orElse(null) : null;
         
         rd.setInstructor(instructor);
+
+        if (request.getRoundId() != null && !request.getRoundId().equals(rd.getRound().getId())) {
+            RoundV2 round = roundRepository.findById(request.getRoundId())
+                    .orElseThrow(() -> new RuntimeException("Round not found"));
+            rd.setRound(round);
+            
+            // Ensure the diploma is also added to the ManyToMany relationship
+            if (round.getDiplomas() == null) {
+                round.setDiplomas(new java.util.HashSet<>());
+            }
+            if (!round.getDiplomas().contains(rd.getDiploma())) {
+                round.getDiplomas().add(rd.getDiploma());
+                roundRepository.save(round);
+            }
+        }
+
+        if (request.getDiplomaName() != null && !request.getDiplomaName().equals(rd.getDiploma().getName())) {
+            DiplomaV2 diploma = diplomaRepository.findByName(request.getDiplomaName())
+                    .orElseGet(() -> {
+                        DiplomaV2 newDiploma = new DiplomaV2();
+                        newDiploma.setName(request.getDiplomaName());
+                        return diplomaRepository.save(newDiploma);
+                    });
+            rd.setDiploma(diploma);
+            
+            // Also add to round if not present
+            if (rd.getRound() != null) {
+                if (rd.getRound().getDiplomas() == null) {
+                    rd.getRound().setDiplomas(new java.util.HashSet<>());
+                }
+                if (!rd.getRound().getDiplomas().contains(diploma)) {
+                    rd.getRound().getDiplomas().add(diploma);
+                    roundRepository.save(rd.getRound());
+                }
+            }
+        }
+
         mapRequestToEntity(request, rd);
 
         RoundDiplomaV2 updated = roundDiplomaRepository.save(rd);
