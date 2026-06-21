@@ -44,5 +44,7 @@ public class LeadResponse {
         private Integer sequence;
         private String message;
         private String employeeName;
+        private LocalDateTime createdAt;
+        private org.example.academicmanagementsystem.model.LeadStatus status;
     }
 }

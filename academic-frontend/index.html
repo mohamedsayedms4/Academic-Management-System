@@ -717,7 +717,7 @@
                 </div>
                 <div class="content-header">
                     <div class="header-titles">
-                        <h1 id="details-diploma-title">Interior Design & Decoration – Online</h1>
+                        <h1 id="details-diploma-title">Interior Design & Decoration ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ Online</h1>
                     </div>
                 </div>
 
@@ -1501,7 +1501,6 @@
                                     <option value="MODERATOR">Moderator</option>
                                     <option value="TELESALES">Tele sales</option>
                                     <option value="ACCOUNTANT">Accountant</option>
-                                    <option value="EMPLOYEE">Employee</option>
                                 </select>
                                 <i class="fas fa-chevron-down chevron"></i>
                             </div>
@@ -1579,7 +1578,6 @@
                                     <option value="MODERATOR">Moderator</option>
                                     <option value="TELESALES">Tele sales</option>
                                     <option value="ACCOUNTANT">Accountant</option>
-                                    <option value="EMPLOYEE">Employee</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -1589,7 +1587,7 @@
                             <div class="form-group">
                                 <label>Password*</label>
                                 <input type="password" id="input-employee-password" placeholder="Enter password"
-                                    required>
+                                    autocomplete="new-password" required>
                             </div>
                         </div>
                     </div>
@@ -1712,7 +1710,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Password*</label>
-                                <input type="password" id="input-sales-password" placeholder="Enter password">
+                                <input type="password" id="input-sales-password" placeholder="Enter password" autocomplete="new-password">
                                 <small id="sales-password-help"
                                     style="color: #888; font-size: 11px; margin-top: 4px; display: block;"></small>
                             </div>
@@ -1787,60 +1785,80 @@
                         </div>
                     </div>
                     <div class="unified-container" style="margin-top: 0;">
-                        <p style="color: #666; margin-top: 0; margin-bottom: 20px; font-size: 14px;">Track all leads in
-                            one place.</p>
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: #e8f5e9; color: #4caf50;"><i
-                                    class="fas fa-check-circle"></i></div>
-                            <div class="stat-info">
-                                <h3>Opened</h3>
-                                <p id="stat-opened-leads">0</p>
+                        <p style="color: #666; margin-top: 0; margin-bottom: 20px; font-size: 14px;">Track all leads in one place.</p>
+                        
+                        <div class="leads-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                            <!-- Total Leads -->
+                            <div class="stat-card" style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 0; min-height: 80px; box-sizing: border-box; flex-direction: row; box-shadow: none;">
+                                <div style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #ebb700; background: #1a1a1a; flex-shrink: 0; margin: 0;">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="stat-info" style="display: flex; flex-direction: column; align-items: flex-start; margin: 0; padding: 0; text-align: left; background: none; box-shadow: none; border: none;">
+                                    <span style="display: block; font-size: 11px; color: #666; margin-bottom: 2px;">Total Leads</span>
+                                    <span id="stat-total-leads" style="display: block; font-size: 18px; font-weight: 700; color: #1a1a1a;">0</span>
+                                </div>
+                            </div>
+                            <!-- Opened -->
+                            <div class="stat-card" style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 0; min-height: 80px; box-sizing: border-box; flex-direction: row; box-shadow: none;">
+                                <div style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #ebb700; background: #1a1a1a; flex-shrink: 0; margin: 0;">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="stat-info" style="display: flex; flex-direction: column; align-items: flex-start; margin: 0; padding: 0; text-align: left; background: none; box-shadow: none; border: none;">
+                                    <span style="display: block; font-size: 11px; color: #666; margin-bottom: 2px;">Opened</span>
+                                    <span id="stat-opened-leads" style="display: block; font-size: 18px; font-weight: 700; color: #1a1a1a;">0</span>
+                                </div>
+                            </div>
+                            <!-- Closed -->
+                            <div class="stat-card" style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 0; min-height: 80px; box-sizing: border-box; flex-direction: row; box-shadow: none;">
+                                <div style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #ebb700; background: #1a1a1a; flex-shrink: 0; margin: 0;">
+                                    <i class="fas fa-times"></i>
+                                </div>
+                                <div class="stat-info" style="display: flex; flex-direction: column; align-items: flex-start; margin: 0; padding: 0; text-align: left; background: none; box-shadow: none; border: none;">
+                                    <span style="display: block; font-size: 11px; color: #666; margin-bottom: 2px;">Closed</span>
+                                    <span id="stat-closed-leads" style="display: block; font-size: 18px; font-weight: 700; color: #1a1a1a;">0</span>
+                                </div>
+                            </div>
+                            <!-- Enrolled -->
+                            <div class="stat-card" style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 0; min-height: 80px; box-sizing: border-box; flex-direction: row; box-shadow: none;">
+                                <div style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #ebb700; background: #1a1a1a; flex-shrink: 0; margin: 0;">
+                                    <i class="fas fa-user-plus"></i>
+                                </div>
+                                <div class="stat-info" style="display: flex; flex-direction: column; align-items: flex-start; margin: 0; padding: 0; text-align: left; background: none; box-shadow: none; border: none;">
+                                    <span style="display: block; font-size: 11px; color: #666; margin-bottom: 2px;">Enrolled</span>
+                                    <span id="stat-enrolled-leads" style="display: block; font-size: 18px; font-weight: 700; color: #1a1a1a;">0</span>
+                                </div>
+                            </div>
+                            <!-- Countries Reached -->
+                            <div class="stat-card" style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 0; min-height: 80px; box-sizing: border-box; flex-direction: row; box-shadow: none;">
+                                <div style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #ebb700; background: #1a1a1a; flex-shrink: 0; margin: 0;">
+                                    <i class="fas fa-globe"></i>
+                                </div>
+                                <div class="stat-info" style="display: flex; flex-direction: column; align-items: flex-start; margin: 0; padding: 0; text-align: left; background: none; box-shadow: none; border: none;">
+                                    <span style="display: block; font-size: 11px; color: #666; margin-bottom: 2px;">Countries Reached</span>
+                                    <span id="stat-countries-leads" style="display: block; font-size: 18px; font-weight: 700; color: #1a1a1a;">0</span>
+                                </div>
+                            </div>
+                            <!-- No Responses -->
+                            <div class="stat-card" style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 0; min-height: 80px; box-sizing: border-box; flex-direction: row; box-shadow: none;">
+                                <div style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #ebb700; background: #1a1a1a; flex-shrink: 0; margin: 0;">
+                                    <i class="fas fa-phone-slash"></i>
+                                </div>
+                                <div class="stat-info" style="display: flex; flex-direction: column; align-items: flex-start; margin: 0; padding: 0; text-align: left; background: none; box-shadow: none; border: none;">
+                                    <span style="display: block; font-size: 11px; color: #666; margin-bottom: 2px;">No Responses</span>
+                                    <span id="stat-no-responses-leads" style="display: block; font-size: 18px; font-weight: 700; color: #1a1a1a;">0</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: #ffebee; color: #f44336;"><i
-                                    class="fas fa-times-circle"></i></div>
-                            <div class="stat-info">
-                                <h3>Closed</h3>
-                                <p id="stat-closed-leads">0</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: #e3f2fd; color: #2196f3;"><i
-                                    class="fas fa-user-graduate"></i></div>
-                            <div class="stat-info">
-                                <h3>Enrolled</h3>
-                                <p id="stat-enrolled-leads">0</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: #f3e5f5; color: #9c27b0;"><i
-                                    class="fas fa-globe"></i></div>
-                            <div class="stat-info">
-                                <h3>Countries</h3>
-                                <p id="stat-countries-leads">0</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: #eceff1; color: #607d8b;"><i
-                                    class="fas fa-phone-slash"></i></div>
-                            <div class="stat-info">
-                                <h3>No Responses</h3>
-                                <p id="stat-no-responses-leads">0</p>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="content-controls">
-                        <div class="filters">
-                            <div class="control-item search">
+                        <div class="content-controls" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; justify-content: flex-start;">
+                            <div class="control-item search" style="width: 300px; max-width: 100%;">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="search-leads" placeholder="Search by name or phone...">
+                                <input type="text" id="search-leads" placeholder="Search ...">
                             </div>
-                            <div class="control-item select">
-                                <i class="fas fa-filter"></i>
+                            <div class="control-item select" style="width: 200px;">
+                                <i class="fas fa-sync-alt"></i>
                                 <select id="filter-leads-status">
-                                    <option value="">All Statuses</option>
+                                    <option value="">Final status</option>
                                     <option value="OPEN">Open</option>
                                     <option value="INTERESTED">Interested</option>
                                     <option value="FOLLOW_UP">Follow Up</option>
@@ -1851,27 +1869,26 @@
                                 <i class="fas fa-chevron-down chevron"></i>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="table-container">
-                        <table class="modern-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Phone</th>
-                                    <th>Diploma</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Assigned to</th>
-                                    <th>Follow-ups</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leads-list-tbody">
-                            </tbody>
-                        </table>
+                        <div class="table-container">
+                            <table class="modern-table" style="width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Phone</th>
+                                        <th style="padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Diploma</th>
+                                        <th style="padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Date</th>
+                                        <th style="padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Source</th>
+                                        <th style="padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Assigned to</th>
+                                        <th style="padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Response 1</th>
+                                        <th style="padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Response 2</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leads-list-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination" id="admin-leads-pagination"></div>
                     </div>
-                    <div class="pagination" id="admin-leads-pagination"></div>
                 </div>
 
                 <!-- Moderator Leads Layout -->
@@ -2103,7 +2120,6 @@
                         style="margin-top: 20px; display: flex; justify-content: flex-end;"></div>
                 </div>
             </div>
-    </div>
 
     <!-- 21. Work Hours View -->
     <div class="page-content" id="work-hours-view" style="display: none;">
@@ -2111,6 +2127,11 @@
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
             <div class="header-titles">
                 <h1>Work hours</h1>
+            </div>
+            <div class="weekly-hours-badge" style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 16px; display: flex; align-items: center; gap: 8px;">
+                <i class="far fa-clock" style="color: #ebb700;"></i>
+                <span style="font-size: 14px; color: #666; font-weight: 500;">Weekly Hours:</span>
+                <span id="weekly-hours-val" style="font-size: 16px; font-weight: 700; color: #1a1a1a;">0 hrs</span>
             </div>
         </div>
         <div class="unified-container" style="margin-top: 0;">
@@ -2167,7 +2188,6 @@
         <!-- Pagination -->
         <div class="pagination" id="work-hours-pagination"
             style="margin-top: 20px; display: flex; justify-content: flex-end;"></div>
-    </div>
     </div>
 
     <!-- 22. Leaderboard View -->
@@ -2279,68 +2299,65 @@
                         style="background: #ebb700; color: #000; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;">1</span>
                     Lead details
                 </h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
-                    <!-- Col 1 -->
-                    <div style="display: flex; flex-direction: column; gap: 15px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div
-                                style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
-                                <i class="fas fa-phone"></i></div>
-                            <div>
-                                <span style="display: block; font-size: 0.75rem; color: #888;">Phone</span>
-                                <span id="det-lead-phone" style="font-weight: 600; color: #333;">-</span>
-                            </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #fff;">
+                    <!-- Phone (Row 1, Col 1) -->
+                    <div style="padding: 20px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px;">
+                        <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                            <i class="fas fa-phone"></i>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div
-                                style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
-                                <i class="far fa-calendar-alt"></i></div>
-                            <div>
-                                <span style="display: block; font-size: 0.75rem; color: #888;">Inquiry Date</span>
-                                <span id="det-lead-date" style="font-weight: 600; color: #333;">-</span>
-                            </div>
+                        <div>
+                            <span style="display: block; font-size: 0.75rem; color: #888; margin-bottom: 4px;">Phone</span>
+                            <span id="det-lead-phone" style="font-weight: 600; color: #333; font-size: 0.95rem;">-</span>
                         </div>
                     </div>
-                    <!-- Col 2 -->
-                    <div style="display: flex; flex-direction: column; gap: 15px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div
-                                style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
-                                <i class="fas fa-graduation-cap"></i></div>
-                            <div>
-                                <span style="display: block; font-size: 0.75rem; color: #888;">Diploma</span>
-                                <span id="det-lead-diploma" style="font-weight: 600; color: #333;">-</span>
-                            </div>
+                    <!-- Diploma (Row 1, Col 2) -->
+                    <div style="padding: 20px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px;">
+                        <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                            <i class="fas fa-graduation-cap"></i>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div
-                                style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
-                                <i class="fas fa-headphones-alt"></i></div>
-                            <div>
-                                <span style="display: block; font-size: 0.75rem; color: #888;">Call Attempt</span>
-                                <span id="det-lead-attempts" style="font-weight: 600; color: #333;">0/3</span>
-                            </div>
+                        <div>
+                            <span style="display: block; font-size: 0.75rem; color: #888; margin-bottom: 4px;">Diploma</span>
+                            <span id="det-lead-diploma" style="font-weight: 600; color: #333; font-size: 0.95rem;">-</span>
                         </div>
                     </div>
-                    <!-- Col 3 -->
-                    <div style="display: flex; flex-direction: column; gap: 15px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div
-                                style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
-                                <i class="fas fa-toggle-on"></i></div>
-                            <div>
-                                <span style="display: block; font-size: 0.75rem; color: #888;">Status</span>
-                                <span id="det-lead-status" style="font-weight: 600; color: #333;">-</span>
-                            </div>
+                    <!-- Status (Row 1, Col 3) -->
+                    <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px;">
+                        <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                            <i class="fas fa-sync-alt"></i>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div
-                                style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
-                                <i class="far fa-sticky-note"></i></div>
-                            <div>
-                                <span style="display: block; font-size: 0.75rem; color: #888;">Notes</span>
-                                <span id="det-lead-notes" style="font-weight: 600; color: #333;">-</span>
-                            </div>
+                        <div>
+                            <span style="display: block; font-size: 0.75rem; color: #888; margin-bottom: 4px;">Status</span>
+                            <span id="det-lead-status" style="font-weight: 600; color: #333; font-size: 0.95rem; display: inline-block;">-</span>
+                        </div>
+                    </div>
+                    <!-- Inquiry Date (Row 2, Col 1) -->
+                    <div style="padding: 20px; border-right: 1px solid #eee; display: flex; align-items: center; gap: 15px;">
+                        <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                            <i class="far fa-calendar-alt"></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.75rem; color: #888; margin-bottom: 4px;">Inquiry Date</span>
+                            <span id="det-lead-date" style="font-weight: 600; color: #333; font-size: 0.95rem;">-</span>
+                        </div>
+                    </div>
+                    <!-- Call Attempt (Row 2, Col 2) -->
+                    <div style="padding: 20px; border-right: 1px solid #eee; display: flex; align-items: center; gap: 15px;">
+                        <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                            <i class="fas fa-headphones-alt"></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.75rem; color: #888; margin-bottom: 4px;">Call Attempt</span>
+                            <span id="det-lead-attempts" style="font-weight: 600; color: #333; font-size: 0.95rem;">0/3</span>
+                        </div>
+                    </div>
+                    <!-- Notes (Row 2, Col 3) -->
+                    <div style="padding: 20px; display: flex; align-items: center; gap: 15px;">
+                        <div style="background: #fff8e1; color: #ebb700; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                            <i class="far fa-sticky-note"></i>
+                        </div>
+                        <div>
+                            <span style="display: block; font-size: 0.75rem; color: #888; margin-bottom: 4px;">Notes</span>
+                            <span id="det-lead-notes" style="font-weight: 600; color: #333; font-size: 0.95rem;">-</span>
                         </div>
                     </div>
                 </div>
@@ -2455,86 +2472,55 @@
     </div>
 
     <!-- 15. Finance Overview View -->
-    <div class="page-content" id="finance-overview-view"
-        style="display: none; background-color: #f8f9fa; padding: 30px;">
-        <div class="content-header" style="margin-bottom: 30px;">
+    <div class="page-content" id="finance-overview-view" style="display: none;">
+        <div class="content-header" style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
             <div class="header-titles">
-                <h1 style="font-size: 1.5rem; font-weight: 700; color: #333;">Overview</h1>
+                <h1 style="font-size: 1.5rem; font-weight: 700; color: #333;">Finance Overview</h1>
+            </div>
+            <div class="header-controls">
+                <select id="finance-overview-month" class="month-selector" style="padding: 10px 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; font-weight: 500; font-size: 14px; outline: none; cursor: pointer;">
+                    <option value="2026-04">April 2026</option>
+                    <option value="2026-05">May 2026</option>
+                </select>
             </div>
         </div>
 
-        <div class="overview-month-filter" style="margin-bottom: 25px;">
-            <label
-                style="display: block; font-size: 0.85rem; color: #666; margin-bottom: 8px; font-weight: 600;">Month</label>
-            <select id="finance-overview-month" class="month-selector"
-                style="width: 250px; background: #fff; border: 1px solid #ddd; padding: 10px 15px; border-radius: 8px; font-weight: 600;">
-                <option value="2026-04">April 2026</option>
-                <option value="2026-05">May 2026</option>
-            </select>
-        </div>
-
-        <div class="finance-stats-row"
-            style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
-            <!-- Total Revenue -->
-            <div class="f-stat-card"
-                style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
-                <div
-                    style="background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <i class="fas fa-dollar-sign" style="color: #ebb700; font-size: 20px;"></i>
-                </div>
-                <div>
-                    <span style="display: block; font-size: 0.8rem; color: #888; font-weight: 600;">Total Revenue</span>
-                    <strong id="finance-total-revenue"
-                        style="display: block; font-size: 1.5rem; color: #000; margin: 4px 0;">0</strong>
-                    <small style="color: #bbb; font-size: 0.75rem;">Total expected this month</small>
-                </div>
-            </div>
+        <div class="finance-stats-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 35px;">
             <!-- Collected -->
-            <div class="f-stat-card"
-                style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
-                <div
-                    style="background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <i class="fas fa-coins" style="color: #ebb700; font-size: 20px;"></i>
+            <div class="f-stat-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                <div style="background: #ebb700; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-coins" style="color: #000; font-size: 20px;"></i>
                 </div>
                 <div>
-                    <span style="display: block; font-size: 0.8rem; color: #888; font-weight: 600;">Collected</span>
-                    <strong id="finance-collected-revenue"
-                        style="display: block; font-size: 1.5rem; color: #000; margin: 4px 0;">0</strong>
-                    <small style="color: #bbb; font-size: 0.75rem;">Received so far</small>
+                    <span style="display: block; font-size: 0.85rem; color: #888; font-weight: 600; margin-bottom: 4px;">Collected</span>
+                    <strong id="finance-collected-revenue" style="display: block; font-size: 1.8rem; color: #333; margin: 0;">0</strong>
+                    <small style="color: #aaa; font-size: 0.75rem;">Received so far</small>
                 </div>
             </div>
             <!-- Pending -->
-            <div class="f-stat-card"
-                style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
-                <div
-                    style="background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <i class="fas fa-hourglass-half" style="color: #ebb700; font-size: 20px;"></i>
+            <div class="f-stat-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                <div style="background: #ebb700; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-hourglass-half" style="color: #000; font-size: 20px;"></i>
                 </div>
                 <div>
-                    <span style="display: block; font-size: 0.8rem; color: #888; font-weight: 600;">Pending</span>
-                    <strong id="finance-pending-revenue"
-                        style="display: block; font-size: 1.5rem; color: #000; margin: 4px 0;">0</strong>
-                    <small style="color: #bbb; font-size: 0.75rem;">Left to collect</small>
+                    <span style="display: block; font-size: 0.85rem; color: #888; font-weight: 600; margin-bottom: 4px;">Pending</span>
+                    <strong id="finance-pending-revenue" style="display: block; font-size: 1.8rem; color: #333; margin: 0;">0</strong>
+                    <small style="color: #aaa; font-size: 0.75rem;">Left to collect</small>
                 </div>
             </div>
             <!-- Net Profit -->
-            <div class="f-stat-card"
-                style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
-                <div
-                    style="background: #000; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <i class="fas fa-chart-pie" style="color: #ebb700; font-size: 20px;"></i>
+            <div class="f-stat-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                <div style="background: #ebb700; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-chart-pie" style="color: #000; font-size: 20px;"></i>
                 </div>
                 <div>
-                    <span style="display: block; font-size: 0.8rem; color: #888; font-weight: 600;">Net profit</span>
-                    <strong id="finance-net-profit"
-                        style="display: block; font-size: 1.5rem; color: #000; margin: 4px 0;">0</strong>
-                    <small style="color: #bbb; font-size: 0.75rem;">After all expenses</small>
+                    <span style="display: block; font-size: 0.85rem; color: #888; font-weight: 600; margin-bottom: 4px;">Net profit</span>
+                    <strong id="finance-net-profit" style="display: block; font-size: 1.8rem; color: #333; margin: 0;">0</strong>
+                    <small style="color: #aaa; font-size: 0.75rem;">After all expenses</small>
                 </div>
             </div>
         </div>
-
-        <div class="f-charts-container"
-            style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px;">
+        <div class="f-charts-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px;">
             <!-- Financial Breakdown -->
             <div style="background: #fff; padding: 25px; border-radius: 16px; border: 1px solid #eee;">
                 <h3 style="font-size: 1.1rem; font-weight: 700; color: #333; margin-bottom: 25px;">Financial Breakdown
@@ -2593,7 +2579,6 @@
             </table>
         </div>
     </div>
-
     <!-- 17. Finance Salaries View -->
     <div class="page-content" id="finance-salaries-view" style="display: none;">
         <div class="content-header" style="margin-bottom: 15px;">
@@ -3012,6 +2997,11 @@
             </div>
         </form>
     </div>
+        <!-- 9. Leads View -->
+
+
+    </div>
+
     </main>
     </div>
 
@@ -3412,8 +3402,8 @@
                                     <option value="OPEN">Open</option>
                                     <option value="INTERESTED">Interested</option>
                                     <option value="FOLLOW_UP">Follow Up</option>
-                                    <option value="ENROLLED">Enrolled ✅</option>
-                                    <option value="REJECTED">Rejected ❌</option>
+                                    <option value="ENROLLED">Enrolled ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦</option>
+                                    <option value="REJECTED">Rejected ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢</option>
                                     <option value="CLOSED">Closed</option>
                                 </select>
                             </div>

@@ -1,0 +1,49 @@
+    <!-- 15. Finance Overview View -->
+    <div class="page-content" id="finance-overview-view" style="display: none;">
+        <div class="content-header" style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="header-titles">
+                <h1 style="font-size: 1.5rem; font-weight: 700; color: #333;">Finance Overview</h1>
+            </div>
+            <div class="header-controls">
+                <select id="finance-overview-month" class="month-selector" style="padding: 10px 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; font-weight: 500; font-size: 14px; outline: none; cursor: pointer;">
+                    <option value="2026-04">April 2026</option>
+                    <option value="2026-05">May 2026</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="finance-stats-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 35px;">
+            <!-- Collected -->
+            <div class="f-stat-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                <div style="background: #ebb700; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-coins" style="color: #000; font-size: 20px;"></i>
+                </div>
+                <div>
+                    <span style="display: block; font-size: 0.85rem; color: #888; font-weight: 600; margin-bottom: 4px;">Collected</span>
+                    <strong id="finance-collected-revenue" style="display: block; font-size: 1.8rem; color: #333; margin: 0;">0</strong>
+                    <small style="color: #aaa; font-size: 0.75rem;">Received so far</small>
+                </div>
+            </div>
+            <!-- Pending -->
+            <div class="f-stat-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                <div style="background: #ebb700; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-hourglass-half" style="color: #000; font-size: 20px;"></i>
+                </div>
+                <div>
+                    <span style="display: block; font-size: 0.85rem; color: #888; font-weight: 600; margin-bottom: 4px;">Pending</span>
+                    <strong id="finance-pending-revenue" style="display: block; font-size: 1.8rem; color: #333; margin: 0;">0</strong>
+                    <small style="color: #aaa; font-size: 0.75rem;">Left to collect</small>
+                </div>
+            </div>
+            <!-- Net Profit -->
+            <div class="f-stat-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                <div style="background: #ebb700; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-chart-pie" style="color: #000; font-size: 20px;"></i>
+                </div>
+                <div>
+                    <span style="display: block; font-size: 0.85rem; color: #888; font-weight: 600; margin-bottom: 4px;">Net profit</span>
+                    <strong id="finance-net-profit" style="display: block; font-size: 1.8rem; color: #333; margin: 0;">0</strong>
+                    <small style="color: #aaa; font-size: 0.75rem;">After all expenses</small>
+                </div>
+            </div>
+        </div>
