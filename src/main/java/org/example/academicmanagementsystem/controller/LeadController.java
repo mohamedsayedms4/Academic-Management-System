@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -103,7 +104,7 @@ public class LeadController {
     // Get moderator leaderboard - accessible by all authenticated users
     @GetMapping("/leaderboard")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<java.util.List<org.example.academicmanagementsystem.dto.ModeratorLeaderboardResponse>> getModeratorLeaderboard() {
+    public ResponseEntity<List<org.example.academicmanagementsystem.dto.ModeratorLeaderboardResponse>> getModeratorLeaderboard() {
         return ResponseEntity.ok(leadService.getModeratorLeaderboard());
     }
 
@@ -116,10 +117,7 @@ public class LeadController {
             @RequestParam(defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-
-        Page<LeadResponse> leads =
-                leadService.getLeadsByStatus(pageable , status);
-
+        Page<LeadResponse> leads = leadService.getLeadsByStatus(pageable, status);
         return ResponseEntity.ok(leads);
     }
 
@@ -150,4 +148,84 @@ public class LeadController {
         response.put("service", "Lead Service");
         return ResponseEntity.ok(response);
     }
+
+    // ---- NEW ENDPOINTS ----
+
+    /**
+     * GET /api/v1/leads/my-leads
+     * Returns paginated leads assigned to the currently logged-in TELESALES user.
+     * Optional ?status=OPEN|INTERESTED|... filter.
+     */
+    @GetMapping("/my-leads")
+    @PreAuthorize("hasAnyRole('TELESALES', 'ADMIN', 'MODERATOR')")
+    public ResponseEntity<Page<LeadResponse>> getMyLeads(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(required = false) LeadStatus status,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection) {
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        return ResponseEntity.ok(leadService.getMyLeads(pageable, status));
+    }
+
+    /**
+     * GET /api/v1/leads/my-leads/stats
+     * Returns status breakdown statistics for the currently logged-in TELESALES user.
+     */
+    @GetMapping("/my-leads/stats")
+    @PreAuthorize("hasAnyRole('TELESALES', 'ADMIN', 'MODERATOR')")
+    public ResponseEntity<Map<String, Long>> getMyLeadsStats() {
+        return ResponseEntity.ok(leadService.getMyLeadsStats());
+    }
+
+    /**
+     * POST /api/v1/leads/bulk-import
+     * Bulk-creates leads from a JSON array. Leads are left unassigned (teleSales = null).
+     * MODERATOR / ADMIN only.
+     */
+    @PostMapping("/bulk-import")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    public ResponseEntity<List<LeadDetailResponse>> bulkImport(@RequestBody List<LeadRequest> leads) {
+        List<LeadDetailResponse> saved = leadService.bulkImport(leads);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    /**
+     * POST /api/v1/leads/distribute
+     * Distributes unassigned leads round-robin across all active TELESALES agents.
+     * @param leadsPerAgent max leads to assign per agent (default 30; 0 = all remaining)
+     */
+    @PostMapping("/distribute")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    public ResponseEntity<Map<String, Object>> distributeLeads(
+            @RequestParam(defaultValue = "30") int leadsPerAgent) {
+        Map<String, Object> result = leadService.distributeLeads(leadsPerAgent);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * GET /api/v1/leads/unassigned
+     * Returns paginated leads that have no telesales agent assigned yet.
+     * MODERATOR / ADMIN only.
+     */
+    @GetMapping("/unassigned")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    public ResponseEntity<Page<LeadResponse>> getUnassignedLeads(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(leadService.getUnassignedLeads(pageable));
+    }
+
+    /**
+     * GET /api/v1/leads/telesales-performance
+     * Returns a per-agent breakdown of lead counts by status (for MODERATOR dashboard).
+     */
+    @GetMapping("/telesales-performance")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    public ResponseEntity<List<Map<String, Object>>> getTelesalesPerformance() {
+        return ResponseEntity.ok(leadService.getTelesalesPerformance());
+    }
 }
+

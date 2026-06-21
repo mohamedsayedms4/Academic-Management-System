@@ -17,11 +17,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -268,20 +266,19 @@ public class LeadServiceImpl implements LeadService {
     }
 
     @Override
-    public Page<LeadResponse> getLeadsByStatus(Pageable pageable , LeadStatus leadStatus ) {
-
-        return  leadRepository.findLeadsByStatus(leadStatus, pageable).map(leadMapper::toLeadResponse);
+    public Page<LeadResponse> getLeadsByStatus(Pageable pageable, LeadStatus leadStatus) {
+        return leadRepository.findLeadsByStatus(leadStatus, pageable).map(leadMapper::toLeadResponse);
     }
 
     @Override
-    public java.util.List<org.example.academicmanagementsystem.dto.ModeratorLeaderboardResponse> getModeratorLeaderboard() {
+    public List<org.example.academicmanagementsystem.dto.ModeratorLeaderboardResponse> getModeratorLeaderboard() {
         java.time.LocalDate today = java.time.LocalDate.now();
-        int daysToSubtract = today.getDayOfWeek().getValue() % 7; 
+        int daysToSubtract = today.getDayOfWeek().getValue() % 7;
         java.time.LocalDate startOfWeekDate = today.minusDays(daysToSubtract);
         java.time.LocalDateTime startOfWeek = startOfWeekDate.atStartOfDay();
 
-        java.util.List<User> moderators = userRepository.findByRole(UserRole.MODERATOR);
-        java.util.List<org.example.academicmanagementsystem.dto.ModeratorLeaderboardResponse> response = new java.util.ArrayList<>();
+        List<User> moderators = userRepository.findByRole(UserRole.MODERATOR);
+        List<org.example.academicmanagementsystem.dto.ModeratorLeaderboardResponse> response = new ArrayList<>();
 
         for (User moderator : moderators) {
             long count = leadRepository.countByCreatedByAndCreatedAtGreaterThanEqual(moderator.getUsername(), startOfWeek);
@@ -294,9 +291,9 @@ public class LeadServiceImpl implements LeadService {
     }
 
     @Override
-    public java.util.Map<String, Integer> getLeadStatistics() {
-        java.util.List<Lead> allLeads = leadRepository.findAll();
-        
+    public Map<String, Integer> getLeadStatistics() {
+        List<Lead> allLeads = leadRepository.findAll();
+
         int total = allLeads.size();
         int opened = (int) allLeads.stream()
                 .filter(l -> l.getStatus() == LeadStatus.OPEN || l.getStatus() == LeadStatus.INTERESTED || l.getStatus() == LeadStatus.FOLLOW_UP)
@@ -320,14 +317,14 @@ public class LeadServiceImpl implements LeadService {
                 .filter(l -> l.getFollowUps() == null || l.getFollowUps().isEmpty())
                 .count();
 
-        java.util.Map<String, Integer> statistics = new java.util.HashMap<>();
+        Map<String, Integer> statistics = new HashMap<>();
         statistics.put("total", total);
         statistics.put("opened", opened);
         statistics.put("closed", closed);
         statistics.put("enrolled", enrolled);
         statistics.put("countries", countries);
         statistics.put("noResponses", noResponses);
-        
+
         // For backwards compatibility
         statistics.put("completed", enrolled);
         statistics.put("inProgress", opened);
@@ -351,7 +348,7 @@ public class LeadServiceImpl implements LeadService {
         }
 
         if (lead.getFollowUps() == null) {
-            lead.setFollowUps(new java.util.ArrayList<>());
+            lead.setFollowUps(new ArrayList<>());
         }
 
         if (lead.getFollowUps().size() >= 3) {
@@ -380,5 +377,194 @@ public class LeadServiceImpl implements LeadService {
         Lead savedLead = leadRepository.save(lead);
 
         return leadMapper.toLeadDetailResponse(savedLead);
+    }
+
+    // ---- NEW METHODS ----
+
+    @Override
+    public Page<LeadResponse> getMyLeads(Pageable pageable, LeadStatus status) {
+        User currentUser = getCurrentUser();
+        if (status != null) {
+            return leadRepository.findByTeleSalesIdAndStatus(currentUser.getId(), status, pageable)
+                    .map(leadMapper::toLeadResponse);
+        }
+        return leadRepository.findByTeleSalesId(currentUser.getId(), pageable)
+                .map(leadMapper::toLeadResponse);
+    }
+
+    @Override
+    public Map<String, Long> getMyLeadsStats() {
+        User currentUser = getCurrentUser();
+        Long agentId = currentUser.getId();
+
+        long total = leadRepository.countByTeleSalesId(agentId);
+        long open = leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.OPEN);
+        long interested = leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.INTERESTED);
+        long followUp = leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.FOLLOW_UP);
+        long enrolled = leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.ENROLLED);
+        long rejected = leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.REJECTED);
+        long closed = leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.CLOSED);
+
+        Map<String, Long> stats = new LinkedHashMap<>();
+        stats.put("total", total);
+        stats.put("open", open);
+        stats.put("interested", interested);
+        stats.put("followUp", followUp);
+        stats.put("enrolled", enrolled);
+        stats.put("rejected", rejected);
+        stats.put("closed", closed);
+        return stats;
+    }
+
+    @Override
+    @Transactional
+    public List<LeadDetailResponse> bulkImport(List<LeadRequest> leads) {
+        if (leads == null || leads.isEmpty()) {
+            throw new IllegalArgumentException("Leads list is null or empty");
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication != null ? authentication.getName() : "system";
+
+        List<LeadDetailResponse> results = new ArrayList<>();
+        for (LeadRequest req : leads) {
+            Lead lead = leadMapper.toLeadEntity(req);
+            lead.setCreatedBy(username);
+            lead.setUpdatedBy(username);
+            if (lead.getStatus() == null) {
+                lead.setStatus(LeadStatus.OPEN);
+            }
+            if (req.getDiplomaId() != null) {
+                lead.setDiploma(diplomaRepository.findById(req.getDiplomaId()).orElse(null));
+            }
+            // Leave teleSales null â€” will be assigned later by distributeLeads
+            Lead saved = leadRepository.save(lead);
+            results.add(leadMapper.toLeadDetailResponse(saved));
+        }
+
+        notificationService.createForRole(UserRole.ADMIN, org.example.academicmanagementsystem.model.NotificationType.LEAD_CREATED,
+                leads.size() + " leads imported in bulk by " + username, null);
+        notificationService.createForRole(UserRole.MODERATOR, org.example.academicmanagementsystem.model.NotificationType.LEAD_CREATED,
+                leads.size() + " leads imported in bulk by " + username, null);
+
+        return results;
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> distributeLeads(int leadsPerAgent) {
+        // Get all unassigned leads
+        List<Lead> unassigned = leadRepository.findByTeleSalesIsNull();
+        if (unassigned.isEmpty()) {
+            Map<String, Object> empty = new LinkedHashMap<>();
+            empty.put("total", 0);
+            empty.put("message", "No unassigned leads to distribute");
+            return empty;
+        }
+
+        // Get all active TELESALES users
+        List<User> agents = userRepository.findByRole(UserRole.TELESALES).stream()
+                .filter(u -> Boolean.TRUE.equals(u.getActive()))
+                .toList();
+
+        if (agents.isEmpty()) {
+            throw new RuntimeException("No active TELESALES agents found");
+        }
+
+        int effectiveLimit = (leadsPerAgent <= 0) ? Integer.MAX_VALUE : leadsPerAgent;
+        Map<String, Long> agentAssignedCount = new LinkedHashMap<>();
+        for (User agent : agents) {
+            agentAssignedCount.put(agent.getFullName(), 0L);
+        }
+
+        int agentIndex = 0;
+        int totalDistributed = 0;
+        List<Lead> toSave = new ArrayList<>();
+
+        for (Lead lead : unassigned) {
+            // Round-robin: pick next agent that hasn't hit the limit
+            int checked = 0;
+            while (checked < agents.size()) {
+                User agent = agents.get(agentIndex % agents.size());
+                long alreadyAssigned = agentAssignedCount.get(agent.getFullName());
+                if (alreadyAssigned < effectiveLimit) {
+                    lead.setTeleSales(agent);
+                    lead.setUpdatedBy("system-distribution");
+                    agentAssignedCount.put(agent.getFullName(), alreadyAssigned + 1);
+                    toSave.add(lead);
+                    totalDistributed++;
+                    agentIndex++;
+                    break;
+                }
+                agentIndex++;
+                checked++;
+            }
+            if (checked >= agents.size()) {
+                // All agents hit their limit â€” stop distributing
+                break;
+            }
+        }
+
+        leadRepository.saveAll(toSave);
+
+        // Send notifications to each agent
+        for (User agent : agents) {
+            long count = agentAssignedCount.get(agent.getFullName());
+            if (count > 0) {
+                notificationService.createForUser(agent.getId(),
+                        org.example.academicmanagementsystem.model.NotificationType.LEAD_CREATED,
+                        count + " new leads have been assigned to you", null);
+            }
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("total", totalDistributed);
+        result.put("remaining", unassigned.size() - totalDistributed);
+        for (Map.Entry<String, Long> entry : agentAssignedCount.entrySet()) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
+
+    @Override
+    public Page<LeadResponse> getUnassignedLeads(Pageable pageable) {
+        return leadRepository.findByTeleSalesIsNull(pageable).map(leadMapper::toLeadResponse);
+    }
+
+    @Override
+    public List<Map<String, Object>> getTelesalesPerformance() {
+        List<User> agents = userRepository.findByRole(UserRole.TELESALES);
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (User agent : agents) {
+            Long agentId = agent.getId();
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", agentId);
+            row.put("name", agent.getFullName());
+            row.put("username", agent.getUsername());
+            row.put("total", leadRepository.countByTeleSalesId(agentId));
+            row.put("open", leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.OPEN));
+            row.put("interested", leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.INTERESTED));
+            row.put("followUp", leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.FOLLOW_UP));
+            row.put("enrolled", leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.ENROLLED));
+            row.put("rejected", leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.REJECTED));
+            row.put("closed", leadRepository.countByTeleSalesIdAndStatus(agentId, LeadStatus.CLOSED));
+            result.add(row);
+        }
+
+        // Sort by total desc
+        result.sort((a, b) -> Long.compare((Long) b.get("total"), (Long) a.get("total")));
+        return result;
+    }
+
+    // ---- Helpers ----
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("No authenticated user found");
+        }
+        return userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found: " + authentication.getName()));
     }
 }

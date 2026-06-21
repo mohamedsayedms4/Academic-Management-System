@@ -436,10 +436,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 function exportTableToCSV(table, filename) {
     let csv = [];
     const rows = table.querySelectorAll('tr');
-    
+
     for (let i = 0; i < rows.length; i++) {
         let row = [], cols = rows[i].querySelectorAll('td, th');
-        
+
         // Skip rows that are hidden
         if (rows[i].style.display === 'none') continue;
 
@@ -451,7 +451,7 @@ function exportTableToCSV(table, filename) {
                 // A simpler way: if the header says 'Actions', we should skip that index.
                 // For now, let's just extract innerText and clean it up.
             }
-            
+
             // Clean up the text by replacing double quotes with double-double quotes
             let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""');
             row.push('"' + data.trim() + '"');
@@ -1359,7 +1359,7 @@ async function editRound(id) {
             } else if (round.detailedDiplomas) {
                 diplomaIds = round.detailedDiplomas.map(d => d.diplomaId);
             }
-            
+
             document.querySelectorAll('.diploma-checkbox').forEach(cb => {
                 if (diplomaIds.includes(parseInt(cb.value)) || diplomaIds.includes(cb.value.toString())) {
                     cb.checked = true;
@@ -1965,7 +1965,7 @@ async function initAddStudentForm(preRoundId = null, preDiplomaId = null, studen
                 document.getElementById('input-student-notes').value = s.notes || '';
                 document.getElementById('input-student-deposit').value = s.depositAmount || 0;
                 document.getElementById('input-student-discount').value = s.discount || 0;
-                
+
                 // Set round/diploma if they were not already preset
                 if (!preRoundId && s.roundId) {
                     const rs = document.getElementById('input-student-round');
@@ -3877,9 +3877,9 @@ function renderLeadsTable(leads) {
         const row = document.createElement('tr');
         row.style.cursor = 'pointer';
         row.onclick = () => openLeadDetailModal(l.id);
-        
+
         const dateStr = l.createdAt ? formatDate(l.createdAt) : '-';
-        
+
         let resp1 = '-';
         let resp2 = '-';
         if (l.followUps && l.followUps.length > 0) {
@@ -3890,7 +3890,7 @@ function renderLeadsTable(leads) {
                 resp2 = l.followUps[1].message || '-';
             }
         }
-        
+
         if (resp1.length > 25) resp1 = resp1.substring(0, 25) + '...';
         if (resp2.length > 25) resp2 = resp2.substring(0, 25) + '...';
 
@@ -5980,17 +5980,17 @@ document.addEventListener('DOMContentLoaded', () => {
             scrollLeft = slider.scrollLeft;
             scrollTop = slider.scrollTop;
         });
-        
+
         slider.addEventListener('mouseleave', () => {
             isDown = false;
             slider.classList.remove('grabbing');
         });
-        
+
         slider.addEventListener('mouseup', () => {
             isDown = false;
             slider.classList.remove('grabbing');
         });
-        
+
         slider.addEventListener('mousemove', (e) => {
             if (!isDown) return;
             e.preventDefault();
@@ -6003,3 +6003,573 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// ==========================================
+// Lead Management – Shared Helpers
+// ==========================================
+
+const API_BASE = 'http://localhost:8085';
+
+function renderLeadStatus(status) {
+    const map = {
+        OPEN: { label: 'Open', cls: 'badge-info' },
+        INTERESTED: { label: 'Interested', cls: 'badge-warning' },
+        FOLLOW_UP: { label: 'Follow Up', cls: 'badge-primary' },
+        ENROLLED: { label: 'Enrolled', cls: 'badge-success' },
+        REJECTED: { label: 'Rejected', cls: 'badge-danger' },
+        CLOSED: { label: 'Closed', cls: 'badge-secondary' },
+    };
+    const s = map[status] || { label: status, cls: 'badge-secondary' };
+    return `<span class="badge ${s.cls}" style="
+        padding:4px 10px; border-radius:20px; font-size:0.78rem; font-weight:600; display:inline-block;
+        background:${s.cls === 'badge-info' ? '#e3f2fd' : s.cls === 'badge-warning' ? '#fff8e1' : s.cls === 'badge-primary' ? '#ede7f6' : s.cls === 'badge-success' ? '#e8f5e9' : s.cls === 'badge-danger' ? '#ffebee' : '#f5f5f5'};
+        color:${s.cls === 'badge-info' ? '#1976d2' : s.cls === 'badge-warning' ? '#f57f17' : s.cls === 'badge-primary' ? '#6200ea' : s.cls === 'badge-success' ? '#388e3c' : s.cls === 'badge-danger' ? '#d32f2f' : '#616161'};
+    ">${s.label}</span>`;
+}
+
+function renderAttemptDots(count) {
+    const max = 3;
+    let html = '<div style="display:flex;gap:5px;align-items:center;">';
+    for (let i = 1; i <= max; i++) {
+        const filled = i <= count;
+        html += `<span title="Attempt ${i}" style="
+            width:12px;height:12px;border-radius:50%;display:inline-block;
+            background:${filled ? '#e53935' : '#e0e0e0'};
+            border:2px solid ${filled ? '#b71c1c' : '#bdbdbd'};
+        "></span>`;
+    }
+    html += `<span style="font-size:0.78rem;color:#666;margin-left:4px;">${count}/3</span>`;
+    html += '</div>';
+    return html;
+}
+
+// ==========================================
+// ADMIN – loadLeads (all leads)
+// ==========================================
+
+let _leadsPage = 0;
+
+async function loadLeads() {
+    const search = (document.getElementById('search-leads')?.value || '').toLowerCase();
+    const status = document.getElementById('filter-leads-status')?.value || '';
+
+    try {
+        let url = `${API_BASE}/api/v1/leads?size=50&sortBy=id&sortDirection=DESC`;
+        if (status) url = `${API_BASE}/api/v1/leads/status/${status}?size=50`;
+
+        const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        if (!resp.ok) throw new Error('Failed');
+        const data = await resp.json();
+        let leads = (data.content || []);
+
+        if (search) {
+            leads = leads.filter(l =>
+                (l.fullName || '').toLowerCase().includes(search) ||
+                (l.phoneNumber || '').includes(search)
+            );
+        }
+
+        renderAdminLeadsTable(leads);
+        renderPagination('leads-pagination', data, (p) => { _leadsPage = p; loadLeads(); });
+    } catch (e) {
+        console.error('loadLeads error:', e);
+        showToast('Failed to load leads', 'error');
+    }
+}
+
+function renderAdminLeadsTable(leads) {
+    const tbody = document.getElementById('leads-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!leads.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#888;">No leads found.</td></tr>';
+        return;
+    }
+    leads.forEach(l => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><span style="font-weight:600">${l.fullName || '-'}</span></td>
+            <td>${l.phoneNumber || '-'}</td>
+            <td>${l.diploma?.name || '-'}</td>
+            <td>${renderLeadStatus(l.status)}</td>
+            <td>${renderAttemptDots((l.followUps || []).length)}</td>
+            <td>${l.teleSales?.fullName || '<span style="color:#bbb">Unassigned</span>'}</td>
+            <td>
+                <button class="btn-action edit" onclick="openLeadDetail(${l.id})" style="background:#e3f2fd;color:#1565c0;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;" title="View Details">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>`;
+        tbody.appendChild(row);
+    });
+}
+
+function openAddLeadModal(mode) {
+    const modal = document.getElementById('add-lead-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function initAddLeadModalListeners() {
+    const closeBtn = document.getElementById('close-add-lead-modal');
+    if (closeBtn) closeBtn.onclick = () => { document.getElementById('add-lead-modal').style.display = 'none'; };
+
+    const form = document.getElementById('form-add-lead');
+    if (form) form.onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = {
+            fullName: document.getElementById('lead-name').value,
+            phoneNumber: document.getElementById('lead-phone').value,
+            source: document.getElementById('lead-source')?.value || '',
+            moderatorNotes: document.getElementById('lead-notes')?.value || '',
+            diplomaId: document.getElementById('lead-diploma')?.value ? Number(document.getElementById('lead-diploma').value) : null,
+            teleSalesId: document.getElementById('lead-telesales-id')?.value ? Number(document.getElementById('lead-telesales-id').value) : null,
+        };
+        try {
+            const resp = await fetch(`${API_BASE}/api/v1/leads/admin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                body: JSON.stringify(payload)
+            });
+            if (resp.ok) {
+                showToast('Lead created successfully', 'success');
+                document.getElementById('add-lead-modal').style.display = 'none';
+                loadLeads();
+            } else {
+                showToast('Failed to create lead', 'error');
+            }
+        } catch (e) {
+            showToast('Error creating lead', 'error');
+        }
+    };
+}
+
+function initLeadDetailModalListeners() {
+    const closeBtn = document.getElementById('close-lead-detail-modal');
+    if (closeBtn) closeBtn.onclick = () => {
+        const m = document.getElementById('lead-detail-modal');
+        if (m) m.style.display = 'none';
+    };
+}
+
+async function openLeadDetail(id) {
+    try {
+        const resp = await fetch(`${API_BASE}/api/v1/leads/${id}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        if (!resp.ok) throw new Error();
+        const lead = await resp.json();
+        const modal = document.getElementById('lead-detail-modal');
+        const body = document.getElementById('lead-detail-body');
+        if (!modal || !body) return;
+
+        const followUps = lead.followUps || [];
+        body.innerHTML = `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+                <div><label style="color:#888;font-size:0.8rem;">Name</label><p style="font-weight:600;margin:4px 0">${lead.fullName}</p></div>
+                <div><label style="color:#888;font-size:0.8rem;">Phone</label><p style="font-weight:600;margin:4px 0">${lead.phoneNumber}</p></div>
+                <div><label style="color:#888;font-size:0.8rem;">Status</label><p style="margin:4px 0">${renderLeadStatus(lead.status)}</p></div>
+                <div><label style="color:#888;font-size:0.8rem;">Diploma</label><p style="margin:4px 0">${lead.diploma?.name || '-'}</p></div>
+                <div><label style="color:#888;font-size:0.8rem;">Assigned To</label><p style="margin:4px 0">${lead.teleSales?.fullName || 'Unassigned'}</p></div>
+                <div><label style="color:#888;font-size:0.8rem;">Source</label><p style="margin:4px 0">${lead.source || '-'}</p></div>
+            </div>
+            ${lead.moderatorNotes ? `<div style="background:#f9f9f9;padding:12px;border-radius:8px;margin-bottom:16px;"><label style="color:#888;font-size:0.8rem;">Moderator Notes</label><p style="margin:4px 0">${lead.moderatorNotes}</p></div>` : ''}
+            <div>
+                <label style="color:#888;font-size:0.8rem;font-weight:600;">Call Attempts (${followUps.length}/3)</label>
+                ${followUps.map(f => `
+                    <div style="background:#f5f5f5;border-radius:8px;padding:12px;margin-top:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:600;color:#333;">Attempt ${f.sequence}</span>
+                            ${renderLeadStatus(f.status)}
+                        </div>
+                        <p style="margin:6px 0 0;color:#555;">${f.message}</p>
+                        <small style="color:#aaa;">${f.createdAt ? new Date(f.createdAt).toLocaleString() : ''}</small>
+                    </div>`).join('')}
+                ${followUps.length === 0 ? '<p style="color:#bbb;margin-top:8px;">No attempts yet</p>' : ''}
+            </div>`;
+        modal.style.display = 'flex';
+    } catch (e) {
+        showToast('Failed to load lead details', 'error');
+    }
+}
+
+// ==========================================
+// MODERATOR – Leads Management
+// ==========================================
+
+let _modLeadsPage = 0;
+
+async function loadDiplomasForModeratorForm() {
+    try {
+        const resp = await fetch(`${API_BASE}/api/v2/diplomas`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        if (!resp.ok) return;
+        const diplomas = await resp.json();
+        const selects = document.querySelectorAll('#mod-lead-diploma, #mod-filter-diploma');
+        selects.forEach(sel => {
+            if (!sel) return;
+            sel.innerHTML = '<option value="">All Diplomas</option>';
+            diplomas.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = d.name;
+                sel.appendChild(opt);
+            });
+        });
+    } catch (e) { console.error('loadDiplomasForModeratorForm error:', e); }
+}
+
+async function loadModeratorLeads(page = 0) {
+    const status = document.getElementById('mod-filter-status')?.value || '';
+    const search = (document.getElementById('mod-search-leads')?.value || '').toLowerCase();
+
+    try {
+        let url = `${API_BASE}/api/v1/leads?size=30&page=${page}&sortBy=id&sortDirection=DESC`;
+        if (status) url = `${API_BASE}/api/v1/leads/status/${status}?size=30&page=${page}`;
+
+        const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        if (!resp.ok) throw new Error('Failed');
+        const data = await resp.json();
+        let leads = data.content || [];
+
+        if (search) leads = leads.filter(l => (l.fullName || '').toLowerCase().includes(search) || (l.phoneNumber || '').includes(search));
+
+        renderModeratorLeadsTable(leads);
+        renderPagination('mod-leads-pagination', data, (p) => loadModeratorLeads(p));
+
+        // Also load stats & performance
+        loadTelesalesPerformance();
+        loadUnassignedCount();
+    } catch (e) {
+        showToast('Failed to load leads', 'error');
+    }
+}
+
+function renderModeratorLeadsTable(leads) {
+    const tbody = document.getElementById('mod-leads-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!leads.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#888;">No leads found.</td></tr>';
+        return;
+    }
+    leads.forEach(l => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><span style="font-weight:600">${l.fullName || '-'}</span></td>
+            <td>${l.phoneNumber || '-'}</td>
+            <td>${l.diploma?.name || '-'}</td>
+            <td>${renderLeadStatus(l.status)}</td>
+            <td>${renderAttemptDots((l.followUps || []).length)}</td>
+            <td>${l.teleSales?.fullName || '<span style="color:#f57c00;font-weight:600;">⚠ Unassigned</span>'}</td>
+            <td>
+                <button onclick="openLeadDetail(${l.id})" style="background:#e8f5e9;color:#2e7d32;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>`;
+        tbody.appendChild(row);
+    });
+}
+
+async function loadUnassignedCount() {
+    try {
+        const resp = await fetch(`${API_BASE}/api/v1/leads/unassigned?size=1`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const el = document.getElementById('mod-unassigned-count');
+        if (el) el.textContent = data.totalElements || 0;
+    } catch (e) { /* silent */ }
+}
+
+async function loadTelesalesPerformance() {
+    try {
+        const resp = await fetch(`${API_BASE}/api/v1/leads/telesales-performance`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        if (!resp.ok) return;
+        const agents = await resp.json();
+        const tbody = document.getElementById('telesales-performance-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        if (!agents.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:12px;">No telesales agents found.</td></tr>';
+            return;
+        }
+        agents.forEach(a => {
+            const convRate = a.total > 0 ? Math.round((a.enrolled / a.total) * 100) : 0;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="font-weight:600">${a.name}</td>
+                <td style="font-weight:700;color:#1565c0;">${a.total}</td>
+                <td>${a.open}</td>
+                <td style="color:#f57f17">${a.interested}</td>
+                <td style="color:#6200ea">${a.followUp}</td>
+                <td style="color:#388e3c;font-weight:700">${a.enrolled}</td>
+                <td style="color:#d32f2f">${a.rejected}</td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="flex:1;background:#e0e0e0;border-radius:4px;height:8px;min-width:60px;">
+                            <div style="width:${convRate}%;background:#43a047;height:100%;border-radius:4px;transition:width 0.5s;"></div>
+                        </div>
+                        <span style="font-weight:600;color:#388e3c;">${convRate}%</span>
+                    </div>
+                </td>`;
+            tbody.appendChild(row);
+        });
+    } catch (e) { console.error('loadTelesalesPerformance error:', e); }
+}
+
+async function distributeLeads() {
+    const perAgent = parseInt(document.getElementById('mod-leads-per-agent')?.value || '30');
+    const btn = document.getElementById('btn-distribute-leads');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Distributing...'; }
+
+    try {
+        const resp = await fetch(`${API_BASE}/api/v1/leads/distribute?leadsPerAgent=${perAgent}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (!resp.ok) throw new Error('Failed');
+        const result = await resp.json();
+
+        const total = result.total || 0;
+        if (total === 0) {
+            showToast(result.message || 'No unassigned leads to distribute', 'warning');
+        } else {
+            showToast(`✅ Distributed ${total} leads successfully!`, 'success');
+        }
+        loadModeratorLeads();
+    } catch (e) {
+        showToast('Distribution failed', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-random"></i> Distribute Now'; }
+    }
+}
+
+async function bulkImportLeads() {
+    const textarea = document.getElementById('mod-bulk-leads-input');
+    if (!textarea) return;
+
+    let lines = textarea.value.trim().split('\n').filter(l => l.trim());
+    if (!lines.length) { showToast('No leads entered', 'error'); return; }
+
+    // Parse format: "Full Name,Phone,Source,Notes"
+    const leads = lines.map(line => {
+        const parts = line.split(',').map(p => p.trim());
+        return {
+            fullName: parts[0] || 'Unknown',
+            phoneNumber: parts[1] || '',
+            source: parts[2] || '',
+            moderatorNotes: parts[3] || '',
+        };
+    }).filter(l => l.phoneNumber);
+
+    if (!leads.length) { showToast('No valid leads found. Format: Name,Phone,Source,Notes', 'error'); return; }
+
+    const btn = document.getElementById('btn-bulk-import');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...'; }
+
+    try {
+        const resp = await fetch(`${API_BASE}/api/v1/leads/bulk-import`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify(leads)
+        });
+        if (!resp.ok) throw new Error();
+        const saved = await resp.json();
+        showToast(`✅ Imported ${saved.length} leads successfully!`, 'success');
+        textarea.value = '';
+        loadModeratorLeads();
+        loadUnassignedCount();
+    } catch (e) {
+        showToast('Bulk import failed', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> Import Leads'; }
+    }
+}
+
+function setupModeratorListeners() {
+    const btnDist = document.getElementById('btn-distribute-leads');
+    if (btnDist && !btnDist._listenerAdded) {
+        btnDist.addEventListener('click', distributeLeads);
+        btnDist._listenerAdded = true;
+    }
+    const btnImport = document.getElementById('btn-bulk-import');
+    if (btnImport && !btnImport._listenerAdded) {
+        btnImport.addEventListener('click', bulkImportLeads);
+        btnImport._listenerAdded = true;
+    }
+    const modStatus = document.getElementById('mod-filter-status');
+    if (modStatus && !modStatus._listenerAdded) {
+        modStatus.addEventListener('change', () => loadModeratorLeads(0));
+        modStatus._listenerAdded = true;
+    }
+    const modSearch = document.getElementById('mod-search-leads');
+    if (modSearch && !modSearch._listenerAdded) {
+        modSearch.addEventListener('input', () => loadModeratorLeads(0));
+        modSearch._listenerAdded = true;
+    }
+}
+
+// ==========================================
+// TELESALES – My Leads
+// ==========================================
+
+let _myLeadsPage = 0;
+let _currentCallLeadId = null;
+
+async function loadDiplomasForTelesalesForm() {
+    // Same as moderator – just populate filters
+    await loadDiplomasForModeratorForm();
+}
+
+async function loadTelesalesLeads(page = 0) {
+    const status = document.getElementById('tele-filter-status')?.value || '';
+
+    try {
+        let url = `${API_BASE}/api/v1/leads/my-leads?size=30&page=${page}&sortBy=createdAt&sortDirection=DESC`;
+        if (status) url += `&status=${status}`;
+
+        const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        if (!resp.ok) throw new Error('Failed');
+        const data = await resp.json();
+
+        renderTelesalesLeadsTable(data.content || []);
+        renderPagination('tele-leads-pagination', data, (p) => loadTelesalesLeads(p));
+
+        // Load stats
+        loadMyLeadsStats();
+    } catch (e) {
+        console.error('loadTelesalesLeads error:', e);
+        showToast('Failed to load your leads', 'error');
+    }
+}
+
+async function loadMyLeadsStats() {
+    try {
+        const resp = await fetch(`${API_BASE}/api/v1/leads/my-leads/stats`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        if (!resp.ok) return;
+        const stats = await resp.json();
+
+        const map = { total: 'tele-stat-total', open: 'tele-stat-open', interested: 'tele-stat-interested', enrolled: 'tele-stat-enrolled', rejected: 'tele-stat-rejected' };
+        Object.entries(map).forEach(([key, id]) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = stats[key] || 0;
+        });
+    } catch (e) { /* silent */ }
+}
+
+function renderTelesalesLeadsTable(leads) {
+    const tbody = document.getElementById('tele-leads-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!leads.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#aaa;"><i class="fas fa-inbox" style="font-size:2rem;display:block;margin-bottom:8px;"></i>No leads assigned to you yet.</td></tr>';
+        return;
+    }
+
+    leads.forEach(l => {
+        const attempts = (l.followUps || []).length;
+        const canAttempt = attempts < 3;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><div style="font-weight:600;color:#333;">${l.fullName || '-'}</div></td>
+            <td>
+                <a href="tel:${l.phoneNumber}" style="color:#1565c0;font-weight:600;text-decoration:none;">
+                    <i class="fas fa-phone" style="margin-right:4px;"></i>${l.phoneNumber || '-'}
+                </a>
+            </td>
+            <td>${l.diploma?.name || '<span style="color:#bbb">—</span>'}</td>
+            <td>${renderLeadStatus(l.status)}</td>
+            <td>${renderAttemptDots(attempts)}</td>
+            <td>
+                ${canAttempt
+                ? `<button onclick="openCallModal(${l.id}, ${attempts})" style="
+                        background:linear-gradient(135deg,#1565c0,#42a5f5);color:#fff;border:none;
+                        padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.82rem;
+                        display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(21,101,192,0.3);">
+                        <i class="fas fa-phone-alt"></i> Attempt ${attempts + 1}
+                      </button>`
+                : `<span style="color:#bbb;font-size:0.8rem;"><i class="fas fa-lock"></i> Max reached</span>`
+            }
+                <button onclick="openLeadDetail(${l.id})" style="
+                    background:#f5f5f5;color:#555;border:none;padding:7px 10px;
+                    border-radius:8px;cursor:pointer;margin-left:4px;">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>`;
+        tbody.appendChild(row);
+    });
+}
+
+function openCallModal(leadId, currentAttempts) {
+    _currentCallLeadId = leadId;
+    const modal = document.getElementById('call-attempt-modal');
+    if (!modal) return;
+
+    const attemptNum = currentAttempts + 1;
+    const modalTitle = modal.querySelector('#call-modal-title');
+    const attemptIndicator = modal.querySelector('#call-attempt-indicator');
+
+    if (modalTitle) modalTitle.textContent = `Record Call Attempt ${attemptNum}/3`;
+    if (attemptIndicator) attemptIndicator.innerHTML = renderAttemptDots(currentAttempts) + `<span style="margin-left:8px;font-size:0.85rem;color:#666;">This will be attempt <strong>${attemptNum}</strong></span>`;
+
+    // Reset form
+    const form = modal.querySelector('#form-call-attempt');
+    if (form) form.reset();
+
+    modal.style.display = 'flex';
+}
+
+async function saveCallAttempt() {
+    if (!_currentCallLeadId) return;
+
+    const status = document.getElementById('call-status')?.value;
+    const message = document.getElementById('call-notes')?.value?.trim();
+
+    if (!status) { showToast('Please select a status', 'error'); return; }
+    if (!message) { showToast('Please enter call notes', 'error'); return; }
+
+    const btn = document.getElementById('btn-save-call');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; }
+
+    try {
+        const resp = await fetch(`${API_BASE}/api/v1/leads/${_currentCallLeadId}/follow-ups`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify({ status, message })
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.message || 'Failed');
+        }
+
+        showToast('✅ Call attempt recorded successfully!', 'success');
+        document.getElementById('call-attempt-modal').style.display = 'none';
+        _currentCallLeadId = null;
+        loadTelesalesLeads(_myLeadsPage);
+    } catch (e) {
+        showToast(e.message || 'Failed to record attempt', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Attempt'; }
+    }
+}
+
+function setupTelesalesListeners() {
+    const filterStatus = document.getElementById('tele-filter-status');
+    if (filterStatus && !filterStatus._listenerAdded) {
+        filterStatus.addEventListener('change', () => loadTelesalesLeads(0));
+        filterStatus._listenerAdded = true;
+    }
+
+    const closeModal = document.getElementById('close-call-modal');
+    if (closeModal && !closeModal._listenerAdded) {
+        closeModal.addEventListener('click', () => {
+            document.getElementById('call-attempt-modal').style.display = 'none';
+            _currentCallLeadId = null;
+        });
+        closeModal._listenerAdded = true;
+    }
+
+    const saveBtn = document.getElementById('btn-save-call');
+    if (saveBtn && !saveBtn._listenerAdded) {
+        saveBtn.addEventListener('click', saveCallAttempt);
+        saveBtn._listenerAdded = true;
+    }
+}
+
