@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const baseApiUrl = 'http://localhost:8085/api/v1/notifications';
+    const baseApiUrl = 'https://dirictiondback.digitalrace.net/api/v1/notifications';
     const pageSize = 5;
     let currentPage = 0;
     let totalPages = 0;
