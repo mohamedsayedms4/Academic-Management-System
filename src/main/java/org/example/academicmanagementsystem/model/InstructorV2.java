@@ -5,12 +5,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "instructors_v2")
+@SQLDelete(sql = "UPDATE instructors_v2 SET deleted = true WHERE id=?")
+@SQLRestriction("deleted = false")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor

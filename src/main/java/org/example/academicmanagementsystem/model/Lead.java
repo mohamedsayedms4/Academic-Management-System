@@ -10,6 +10,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "leads")
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE leads SET deleted = true WHERE id=?")
+@org.hibernate.annotations.SQLRestriction("deleted = false")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -26,7 +28,7 @@ public class Lead extends BaseEntity{
 
     @ManyToOne
     @JoinColumn(name = "diploma_id")
-    private Diploma diploma;
+    private DiplomaV2 diploma;
 
     @Column(columnDefinition = "TEXT")
     private String moderatorNotes;

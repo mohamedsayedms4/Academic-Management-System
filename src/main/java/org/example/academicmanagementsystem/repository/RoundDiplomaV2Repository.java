@@ -11,17 +11,21 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RoundDiplomaV2Repository extends JpaRepository<RoundDiplomaV2, Long> {
 
-    @Query("SELECT rd FROM RoundDiplomaV2 rd WHERE " +
+    @Query("SELECT rd FROM RoundDiplomaV2 rd JOIN rd.round r WHERE " +
            "LOWER(rd.diploma.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(rd.instructor.name) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<RoundDiplomaV2> searchDiplomas(@Param("search") String search, Pageable pageable);
 
-    @Query("SELECT rd FROM RoundDiplomaV2 rd WHERE rd.instructor.id = :instructorId AND (" +
+    @Query("SELECT rd FROM RoundDiplomaV2 rd JOIN rd.round r WHERE rd.instructor.id = :instructorId AND (" +
            "LOWER(rd.diploma.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(rd.instructor.name) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<RoundDiplomaV2> searchDiplomasByInstructor(@Param("search") String search, @Param("instructorId") Long instructorId, Pageable pageable);
 
+    @Query("SELECT rd FROM RoundDiplomaV2 rd JOIN rd.round r WHERE rd.instructor.id = :instructorId")
     Page<RoundDiplomaV2> findByInstructorId(Long instructorId, Pageable pageable);
+
+    @Query("SELECT rd FROM RoundDiplomaV2 rd JOIN rd.round r")
+    Page<RoundDiplomaV2> findAllDiplomas(Pageable pageable);
 
     java.util.List<RoundDiplomaV2> findByRound(org.example.academicmanagementsystem.model.RoundV2 round);
 

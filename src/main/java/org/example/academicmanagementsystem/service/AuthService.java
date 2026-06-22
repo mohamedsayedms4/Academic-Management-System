@@ -27,6 +27,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final UserMapper userMapper;
+    private final org.example.academicmanagementsystem.repository.SalaryRepository salaryRepository;
+    private final org.example.academicmanagementsystem.repository.PayrollRecordRepository payrollRecordRepository;
 
     @Transactional
     public AuthResponse login(LoginRequest loginRequest) {
@@ -74,9 +76,31 @@ public class AuthService {
         user.setBaseSalary(registerRequest.getBaseSalary());
         user.setPaymentMethod(registerRequest.getPaymentMethod());
         user.setCommission(registerRequest.getCommission());
+        user.setEmploymentType(registerRequest.getEmploymentType());
         user.setActive(true);
 
         User savedUser = userRepository.save(user);
+
+        // Auto-add to specified month's payroll if it exists, otherwise current month
+        String targetMonth = registerRequest.getTargetMonth();
+        if (targetMonth == null || targetMonth.trim().isEmpty()) {
+            targetMonth = java.time.YearMonth.now().toString();
+        }
+        
+        java.util.Optional<org.example.academicmanagementsystem.model.PayrollRecord> recordOpt = payrollRecordRepository.findByMonth(targetMonth);
+        if (recordOpt.isPresent()) {
+            org.example.academicmanagementsystem.model.Salary salary = new org.example.academicmanagementsystem.model.Salary();
+            salary.setEmployee(savedUser);
+            salary.setMonth(targetMonth);
+            salary.setBaseSalary(java.math.BigDecimal.valueOf(savedUser.getBaseSalary() != null ? savedUser.getBaseSalary() : 0.0));
+            salary.setNetSalary(salary.getBaseSalary());
+            salary.setStatus(org.example.academicmanagementsystem.model.SalaryStatus.PENDING);
+            salaryRepository.save(salary);
+
+            org.example.academicmanagementsystem.model.PayrollRecord record = recordOpt.get();
+            record.setTotalPayroll(record.getTotalPayroll().add(salary.getNetSalary()));
+            payrollRecordRepository.save(record);
+        }
 
         return userMapper.toUserResponse(savedUser);
     }

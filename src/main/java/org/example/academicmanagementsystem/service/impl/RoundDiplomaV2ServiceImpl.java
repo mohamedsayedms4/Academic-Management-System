@@ -1,6 +1,8 @@
 package org.example.academicmanagementsystem.service.impl;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.academicmanagementsystem.dto.RoundDiplomaV2Request;
 import org.example.academicmanagementsystem.dto.RoundDiplomaV2Response;
 import org.example.academicmanagementsystem.model.DiplomaV2;
@@ -13,10 +15,15 @@ import org.example.academicmanagementsystem.repository.RoundDiplomaV2Repository;
 import org.example.academicmanagementsystem.repository.RoundV2Repository;
 import org.example.academicmanagementsystem.service.RoundDiplomaV2Service;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoundDiplomaV2ServiceImpl implements RoundDiplomaV2Service {
@@ -74,9 +81,17 @@ public class RoundDiplomaV2ServiceImpl implements RoundDiplomaV2Service {
         } else if (instructorId != null) {
             diplomas = roundDiplomaRepository.findByInstructorId(instructorId, pageable);
         } else {
-            diplomas = roundDiplomaRepository.findAll(pageable);
+            diplomas = roundDiplomaRepository.findAllDiplomas(pageable);
         }
-        return diplomas.map(this::mapToResponse);
+        // Filter out orphaned records whose Round was soft-deleted
+        List<RoundDiplomaV2Response> validResponses = new ArrayList<>();
+        for (RoundDiplomaV2 rd : diplomas.getContent()) {
+            RoundDiplomaV2Response resp = mapToResponse(rd);
+            if (resp != null) {
+                validResponses.add(resp);
+            }
+        }
+        return new PageImpl<>(validResponses, pageable, diplomas.getTotalElements());
     }
 
     @Override
@@ -168,35 +183,47 @@ public class RoundDiplomaV2ServiceImpl implements RoundDiplomaV2Service {
     }
 
     private RoundDiplomaV2Response mapToResponse(RoundDiplomaV2 rd) {
-        RoundDiplomaV2Response res = new RoundDiplomaV2Response();
-        res.setId(rd.getId());
-        res.setRoundId(rd.getRound().getId());
-        res.setRoundName(rd.getRound().getName());
-        res.setDiplomaId(rd.getDiploma().getId());
-        res.setDiplomaName(rd.getDiploma().getName());
-        res.setInstructorId(rd.getInstructor() != null ? rd.getInstructor().getId() : null);
-        res.setInstructorName(rd.getInstructor() != null ? rd.getInstructor().getName() : "N/A");
-        res.setTotalPrice(rd.getTotalPrice());
-        res.setStartDate(rd.getStartDate());
-        res.setEndDate(rd.getEndDate());
-        res.setTotalStudents(rd.getTotalStudents());
-        res.setCurrentEnrollment(rd.getCurrentEnrollment());
-        
-        res.setInstallment1Percent(rd.getInstallment1Percent());
-        res.setInstallment2Percent(rd.getInstallment2Percent());
-        res.setInstallment3Percent(rd.getInstallment3Percent());
-        res.setInstallment4Percent(rd.getInstallment4Percent());
-        
-        res.setInstallment1Amount(rd.getInstallment1Amount());
-        res.setInstallment2Amount(rd.getInstallment2Amount());
-        res.setInstallment3Amount(rd.getInstallment3Amount());
-        res.setInstallment4Amount(rd.getInstallment4Amount());
-        
-        res.setInstallment1Date(rd.getInstallment1Date());
-        res.setInstallment2Date(rd.getInstallment2Date());
-        res.setInstallment3Date(rd.getInstallment3Date());
-        res.setInstallment4Date(rd.getInstallment4Date());
-        
-        return res;
+        try {
+            // Eagerly access round to trigger proxy initialization.
+            // If the round was soft-deleted, Hibernate proxy throws EntityNotFoundException.
+            Long roundId = rd.getRound().getId();
+            String roundName = rd.getRound().getName();
+
+            RoundDiplomaV2Response res = new RoundDiplomaV2Response();
+            res.setId(rd.getId());
+            res.setRoundId(roundId);
+            res.setRoundName(roundName);
+            res.setDiplomaId(rd.getDiploma().getId());
+            res.setDiplomaName(rd.getDiploma().getName());
+            res.setInstructorId(rd.getInstructor() != null ? rd.getInstructor().getId() : null);
+            res.setInstructorName(rd.getInstructor() != null ? rd.getInstructor().getName() : "N/A");
+            res.setTotalPrice(rd.getTotalPrice());
+            res.setStartDate(rd.getStartDate());
+            res.setEndDate(rd.getEndDate());
+            res.setTotalStudents(rd.getTotalStudents());
+            res.setCurrentEnrollment(rd.getCurrentEnrollment());
+
+            res.setInstallment1Percent(rd.getInstallment1Percent());
+            res.setInstallment2Percent(rd.getInstallment2Percent());
+            res.setInstallment3Percent(rd.getInstallment3Percent());
+            res.setInstallment4Percent(rd.getInstallment4Percent());
+
+            res.setInstallment1Amount(rd.getInstallment1Amount());
+            res.setInstallment2Amount(rd.getInstallment2Amount());
+            res.setInstallment3Amount(rd.getInstallment3Amount());
+            res.setInstallment4Amount(rd.getInstallment4Amount());
+
+            res.setInstallment1Date(rd.getInstallment1Date());
+            res.setInstallment2Date(rd.getInstallment2Date());
+            res.setInstallment3Date(rd.getInstallment3Date());
+            res.setInstallment4Date(rd.getInstallment4Date());
+
+            return res;
+        } catch (Exception e) {
+            // Record references a soft-deleted (orphaned) Round — skip it gracefully
+            log.warn("Skipping RoundDiplomaV2 id={} — its Round is no longer available (soft-deleted). Error: {}",
+                    rd.getId(), e.getMessage());
+            return null;
+        }
     }
 }

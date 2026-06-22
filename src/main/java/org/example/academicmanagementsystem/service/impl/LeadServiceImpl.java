@@ -28,7 +28,7 @@ public class LeadServiceImpl implements LeadService {
     private final LeadRepository leadRepository;
     private final LeadMapper leadMapper;
     private final UserRepository userRepository;
-    private final org.example.academicmanagementsystem.repository.DiplomaRepository diplomaRepository;
+    private final org.example.academicmanagementsystem.repository.DiplomaV2Repository diplomaRepository;
     private final org.example.academicmanagementsystem.service.NotificationService notificationService;
 
     @Override
@@ -70,8 +70,17 @@ public class LeadServiceImpl implements LeadService {
                             .orElseThrow(() -> new RuntimeException(
                                     "Telesales user not found with id: " + leadRequest.getTeleSalesId()));
                     lead.setTeleSales(teleSales);
+                } else {
+                    // Auto-assign to a random active telesales user
+                    java.util.List<User> activeTelesales = userRepository.findByRole(UserRole.TELESALES).stream()
+                            .filter(u -> Boolean.TRUE.equals(u.getActive()))
+                            .toList();
+                    if (!activeTelesales.isEmpty()) {
+                        User randomTeleSales = activeTelesales.get(new java.util.Random().nextInt(activeTelesales.size()));
+                        lead.setTeleSales(randomTeleSales);
+                    }
                 }
-                // If no teleSalesId provided, leave it null
+                // If no teleSalesId provided, it's auto-assigned or left null if no telesales available
             } else if (currentUser.getRole() == UserRole.TELESALES) {
                 // TELESALES user is automatically assigned to the lead
                 lead.setTeleSales(currentUser);

@@ -1,5 +1,16 @@
 const PAGE_SIZE = 5; // Global pagination size
 
+// Monkey-patch fetch to prevent aggressive caching on GET requests
+const originalFetch = window.fetch;
+window.fetch = function() {
+    let [resource, config] = arguments;
+    if (typeof resource === 'string' && resource.includes('/api/') && (!config || !config.method || config.method.toUpperCase() === 'GET')) {
+        config = config || {};
+        config.cache = 'no-store';
+        arguments[1] = config;
+    }
+    return originalFetch.apply(this, arguments);
+};
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('token');
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
@@ -338,6 +349,62 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('add-freelancer-modal').style.display = 'flex';
     });
 
+    // Payroll Modal Listeners
+    const payrollModal = document.getElementById('payroll-exists-modal');
+    if (payrollModal) {
+        const closeModalBtn = payrollModal.querySelector('.close-modal');
+        if (closeModalBtn) closeModalBtn.addEventListener('click', () => payrollModal.style.display = 'none');
+        const viewBtn = document.getElementById('btn-view-payroll');
+        if (viewBtn) viewBtn.addEventListener('click', () => payrollModal.style.display = 'none');
+        const regenBtn = document.getElementById('btn-regenerate-payroll');
+        if (regenBtn) regenBtn.addEventListener('click', () => payrollModal.style.display = 'none');
+    }
+
+    // Add Freelancer Submit
+    const formAddFreelancer = document.getElementById('form-add-freelancer');
+    if (formAddFreelancer) {
+        formAddFreelancer.onsubmit = async (e) => {
+            e.preventDefault();
+            const payload = {
+                fullName: document.getElementById('freelancer-name').value,
+                phone: document.getElementById('freelancer-phone').value,
+                baseSalary: parseFloat(document.getElementById('freelancer-salary').value),
+                paymentMethod: document.getElementById('freelancer-pay-method').value,
+                role: document.getElementById('freelancer-role').value.trim() || 'FREELANCER',
+                employmentType: 'Freelance',
+                targetMonth: document.getElementById('finance-salaries-month') ? document.getElementById('finance-salaries-month').value : null,
+                active: true,
+                username: document.getElementById('freelancer-name').value.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 1000),
+                email: document.getElementById('freelancer-name').value.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 1000) + '@freelance.local',
+                password: 'password123'
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    showToast('Freelancer added successfully', 'success');
+                    document.getElementById('add-freelancer-modal').style.display = 'none';
+                    formAddFreelancer.reset();
+                    loadSalaries(); // Refresh table
+                } else {
+                    const err = await response.json();
+                    showToast(err.message || 'Failed to add freelancer', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding freelancer:', error);
+                showToast('An error occurred', 'error');
+            }
+        };
+    }
+
     document.getElementById('form-add-expense-page').onsubmit = (e) => {
         e.preventDefault();
         addExpenseFromPage();
@@ -564,7 +631,7 @@ function applyTableDataLabels() {
 async function loadRounds(page = 0) {
     try {
         // Fetch rounds (fetch a larger size e.g. 150 to do reliable client-side search & filtering)
-        const roundsResponse = await fetch(`https://dirictiondback.digitalrace.net/api/v2/rounds?size=150`, {
+        const roundsResponse = await fetch(`${API_BASE}/api/v2/rounds?size=150`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -575,7 +642,7 @@ async function loadRounds(page = 0) {
         const rounds = roundsData.content || [];
 
         // Fetch round-diplomas (fetch a larger size e.g. 500)
-        const diplomasResponse = await fetch(`https://dirictiondback.digitalrace.net/api/v2/round-diplomas?size=500`, {
+        const diplomasResponse = await fetch(`${API_BASE}/api/v2/round-diplomas?size=500`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -718,7 +785,7 @@ async function loadRounds(page = 0) {
 
 async function loadDiplomas() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/diplomas', {
+        const response = await fetch(`${API_BASE}/api/v2/diplomas`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -981,7 +1048,7 @@ function initAddDiplomaForm() {
         try {
             const roundId = document.getElementById('input-round-id').value;
             // Fetch current round data first to keep other diplomas
-            const roundResp = await fetch(`https://dirictiondback.digitalrace.net/api/v1/rounds/${roundId}`, {
+            const roundResp = await fetch(`${API_BASE}/api/v1/rounds/${roundId}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             const existingRound = await roundResp.json();
@@ -1013,7 +1080,7 @@ function initAddDiplomaForm() {
             // Add new diploma
             updatePayload.diplomas.push(payload.diplomas[0]);
 
-            const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/rounds/${roundId}`, {
+            const response = await fetch(`${API_BASE}/api/v1/rounds/${roundId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1061,7 +1128,7 @@ function getInstDate(index) {
 }
 
 async function loadDiplomasForForm() {
-    const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/diplomas', {
+    const response = await fetch(`${API_BASE}/api/v1/diplomas`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (response.ok) {
@@ -1080,7 +1147,7 @@ async function loadDiplomasForForm() {
 }
 
 async function loadRoundsForForm() {
-    const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/rounds?size=${PAGE_SIZE}`, {
+    const response = await fetch(`${API_BASE}/api/v1/rounds?size=${PAGE_SIZE}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (response.ok) {
@@ -1097,7 +1164,7 @@ async function loadRoundsForForm() {
 }
 
 async function loadInstructorsForForm() {
-    const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/users/role/EMPLOYEE', {
+    const response = await fetch(`${API_BASE}/api/v1/users/role/EMPLOYEE`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (response.ok) {
@@ -1115,7 +1182,7 @@ async function loadInstructorsForForm() {
 
 async function loadRoundsList(page = 0) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/rounds?page=${page}&size=${PAGE_SIZE}`, {
+        const response = await fetch(`${API_BASE}/api/v2/rounds?page=${page}&size=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!response.ok) throw new Error('Failed to fetch rounds');
@@ -1155,6 +1222,7 @@ function renderRoundsListTable(rounds) {
 }
 
 function initAddRoundForm() {
+    // Load diplomas for the dropdown
     loadDiplomasForRoundForm();
 
     const form = document.getElementById('form-add-round');
@@ -1181,7 +1249,7 @@ function initAddRoundForm() {
         };
 
         try {
-            const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/rounds', {
+            const response = await fetch(`${API_BASE}/api/v2/rounds`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1221,11 +1289,15 @@ function initAddRoundForm() {
         trigger.classList.remove('active');
     };
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', () => {
+    // Close dropdown when clicking outside — remove old listener first to prevent stacking
+    if (window._roundDropdownClickHandler) {
+        document.removeEventListener('click', window._roundDropdownClickHandler);
+    }
+    window._roundDropdownClickHandler = () => {
         dropdown.classList.remove('show');
         trigger.classList.remove('active');
-    });
+    };
+    document.addEventListener('click', window._roundDropdownClickHandler);
 
     dropdown.onclick = (e) => e.stopPropagation();
 
@@ -1242,7 +1314,7 @@ function initAddRoundForm() {
 
 async function loadDiplomasForRoundForm() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/diplomas', {
+        const response = await fetch(`${API_BASE}/api/v2/diplomas`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -1314,7 +1386,7 @@ async function deleteRound(id) {
     if (!confirm('Are you sure you want to delete this round?')) return;
 
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/rounds/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v2/rounds/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -1331,46 +1403,55 @@ async function deleteRound(id) {
 
 async function editRound(id) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/rounds/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v2/rounds/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!response.ok) throw new Error('Failed to fetch round details');
         const round = await response.json();
 
-        // Populate the form
-        document.getElementById('input-round-name').value = round.name;
-        document.getElementById('input-round-start-date').value = round.startDate;
-        document.getElementById('input-round-end-date').value = round.endDate;
-
-        // Change the view and setup mode
+        // Show the view first
         showView('add-round-view');
         document.querySelector('#add-round-view h1').textContent = 'Edit Round';
         const submitBtn = document.querySelector('#form-add-round button[type="submit"]');
         if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Round';
 
-        // Load diplomas and select the ones for this round
-        await loadDiplomasForRoundForm();
-        setTimeout(() => {
-            let diplomaIds = [];
-            if (round.diplomas && round.diplomas.length > 0) {
-                diplomaIds = round.diplomas.map(d => d.id);
-            } else if (round.diplomaIds) {
-                diplomaIds = round.diplomaIds;
-            } else if (round.detailedDiplomas) {
-                diplomaIds = round.detailedDiplomas.map(d => d.diplomaId);
-            }
+        // Wire up dropdown toggle, search, and load diplomas list
+        initAddRoundForm();
 
-            document.querySelectorAll('.diploma-checkbox').forEach(cb => {
-                if (diplomaIds.includes(parseInt(cb.value)) || diplomaIds.includes(cb.value.toString())) {
-                    cb.checked = true;
-                } else {
-                    cb.checked = false;
+        // Populate the form fields after loading
+        document.getElementById('input-round-name').value = round.name;
+        document.getElementById('input-round-start-date').value = round.startDate || '';
+        document.getElementById('input-round-end-date').value = round.endDate || '';
+        // Get diploma IDs from the round response
+        let diplomaIds = [];
+        if (round.diplomas && round.diplomas.length > 0) {
+            diplomaIds = round.diplomas.map(d => d.id);
+        }
+
+        // Fallback: fetch from round-diplomas API if round.diplomas is empty
+        if (diplomaIds.length === 0) {
+            try {
+                const rdRes = await fetch(`${API_BASE}/api/v2/round-diplomas?size=500`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (rdRes.ok) {
+                    const rdData = await rdRes.json();
+                    diplomaIds = (rdData.content || [])
+                        .filter(rd => rd.roundId === round.id)
+                        .map(rd => rd.diplomaId);
                 }
-            });
-            updateSelectedDiplomasText();
-        }, 300);
+            } catch (e) {
+                console.warn('Could not fetch round-diplomas for pre-selection:', e);
+            }
+        }
 
-        // Update form submission to use PUT
+        // Pre-select diplomas that belong to this round
+        document.querySelectorAll('.diploma-checkbox').forEach(cb => {
+            cb.checked = diplomaIds.includes(parseInt(cb.value)) || diplomaIds.includes(cb.value.toString());
+        });
+        updateSelectedDiplomasText();
+
+        // Override form submission to use PUT (after initAddRoundForm set it to POST)
         const form = document.getElementById('form-add-round');
         form.onsubmit = async (e) => {
             e.preventDefault();
@@ -1390,7 +1471,7 @@ async function editRound(id) {
             };
 
             try {
-                const putRes = await fetch(`https://dirictiondback.digitalrace.net/api/v2/rounds/${id}`, {
+                const putRes = await fetch(`${API_BASE}/api/v2/rounds/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1403,10 +1484,9 @@ async function editRound(id) {
                     alert('Round updated successfully!');
                     showView('rounds-list-view');
                     loadRoundsList();
-                    // Reset to add mode
                     document.querySelector('#add-round-view h1').textContent = 'Add New Round';
                     if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Round';
-                    initAddRoundForm(); // Re-init to restore normal POST behavior
+                    initAddRoundForm();
                     form.reset();
                 } else {
                     const err = await putRes.json();
@@ -1418,12 +1498,12 @@ async function editRound(id) {
             }
         };
 
-        // Update cancel button behavior to reset
+        // Cancel button resets to add mode
         document.getElementById('btn-cancel-round').onclick = () => {
             showView('rounds-list-view');
             document.querySelector('#add-round-view h1').textContent = 'Add New Round';
             if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Round';
-            initAddRoundForm(); // Restore POST logic
+            initAddRoundForm();
             form.reset();
         };
 
@@ -1433,9 +1513,10 @@ async function editRound(id) {
     }
 }
 
+
 async function loadDiplomasList() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/diplomas', {
+        const response = await fetch(`${API_BASE}/api/v1/diplomas`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!response.ok) throw new Error('Failed to fetch diplomas');
@@ -1474,7 +1555,7 @@ async function editDiploma(id) {
 async function deleteDiploma(id) {
     if (confirm('Are you sure you want to delete this diploma?')) {
         try {
-            const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/diplomas/${id}`, {
+            const response = await fetch(`${API_BASE}/api/v1/diplomas/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -1499,7 +1580,7 @@ async function loadInstructors(page = 0) {
     const search = document.getElementById('search-instructors').value;
     const diplomaId = document.getElementById('filter-instructor-diploma').value;
 
-    let url = `https://dirictiondback.digitalrace.net/api/v2/instructors?page=${page}&size=${PAGE_SIZE}`;
+    let url = `${API_BASE}/api/v2/instructors?page=${page}&size=${PAGE_SIZE}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
 
     try {
@@ -1570,7 +1651,7 @@ function initAddInstructorForm() {
         };
 
         try {
-            const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/instructors', {
+            const response = await fetch(`${API_BASE}/api/v2/instructors`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1620,7 +1701,7 @@ function initAddInstructorForm() {
 
 async function loadDiplomasForInstructorForm() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/diplomas', {
+        const response = await fetch(`${API_BASE}/api/v2/diplomas`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -1687,7 +1768,7 @@ function removeInstructorDiplomaTag(id) {
 
 async function loadDiplomasForFilters() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/diplomas', {
+        const response = await fetch(`${API_BASE}/api/v2/diplomas`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -1709,7 +1790,7 @@ async function loadDiplomasForFilters() {
 async function deleteInstructor(id) {
     if (confirm('Are you sure you want to delete this instructor?')) {
         try {
-            const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/instructors/${id}`, {
+            const response = await fetch(`${API_BASE}/api/v2/instructors/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -1724,7 +1805,7 @@ async function deleteInstructor(id) {
 
 async function editInstructor(id) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/instructors/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v2/instructors/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!response.ok) throw new Error('Failed to fetch instructor details');
@@ -1775,7 +1856,7 @@ async function editInstructor(id) {
             };
 
             try {
-                const putRes = await fetch(`https://dirictiondback.digitalrace.net/api/v2/instructors/${id}`, {
+                const putRes = await fetch(`${API_BASE}/api/v2/instructors/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1822,7 +1903,7 @@ async function editInstructor(id) {
 
 async function loadCancelledStudents(page = 0) {
     const search = document.getElementById('search-cancelled-students').value;
-    let url = `https://dirictiondback.digitalrace.net/api/v2/students/cancelled?page=${page}&size=${PAGE_SIZE}`;
+    let url = `${API_BASE}/api/v2/students/cancelled?page=${page}&size=${PAGE_SIZE}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
 
     try {
@@ -1865,7 +1946,7 @@ function renderCancelledStudentsTable(students) {
 
 async function loadFutureEnrollments(page = 0) {
     const search = document.getElementById('search-future-students').value;
-    let url = `https://dirictiondback.digitalrace.net/api/v2/students/future?page=${page}&size=${PAGE_SIZE}`;
+    let url = `${API_BASE}/api/v2/students/future?page=${page}&size=${PAGE_SIZE}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
 
     try {
@@ -1956,7 +2037,7 @@ async function initAddStudentForm(preRoundId = null, preDiplomaId = null, studen
 
     if (studentId) {
         try {
-            const res = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/${studentId}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+            const res = await fetch(`${API_BASE}/api/v2/students/${studentId}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
             if (res.ok) {
                 const s = await res.json();
                 document.getElementById('input-student-name').value = s.name || '';
@@ -1997,10 +2078,10 @@ async function initAddStudentForm(preRoundId = null, preDiplomaId = null, studen
         };
 
         try {
-            let url = 'https://dirictiondback.digitalrace.net/api/v2/students/enroll';
+            let url = `${API_BASE}/api/v2/students/enroll`;
             let method = 'POST';
             if (studentId) {
-                url = `https://dirictiondback.digitalrace.net/api/v2/students/${studentId}`;
+                url = `${API_BASE}/api/v2/students/${studentId}`;
                 method = 'PUT';
             }
 
@@ -2035,8 +2116,8 @@ async function initAddStudentForm(preRoundId = null, preDiplomaId = null, studen
 async function loadOptionsForStudentForm() {
     try {
         const [roundsRes, salesRes] = await Promise.all([
-            fetch('https://dirictiondback.digitalrace.net/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
-            fetch('https://dirictiondback.digitalrace.net/api/v1/users', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+            fetch(`${API_BASE}/api/v2/rounds/all`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch(`${API_BASE}/api/v1/users`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
         ]);
 
         const rounds = await roundsRes.json();
@@ -2058,7 +2139,7 @@ async function loadOptionsForStudentForm() {
             diplomaSelect.disabled = true;
 
             try {
-                const res = await fetch(`https://dirictiondback.digitalrace.net/api/v2/rounds/${roundId}`, {
+                const res = await fetch(`${API_BASE}/api/v2/rounds/${roundId}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 if (res.ok) {
@@ -2087,7 +2168,7 @@ async function loadOptionsForStudentForm() {
 async function restoreStudent(id) {
     if (confirm('Restore this student enrollment?')) {
         try {
-            const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/${id}/restore`, {
+            const response = await fetch(`${API_BASE}/api/v2/students/${id}/restore`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -2105,7 +2186,7 @@ async function cancelStudentPrompt(id) {
     if (reason === null) return;
 
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/${id}/cancel`, {
+        const response = await fetch(`${API_BASE}/api/v2/students/${id}/cancel`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -2127,7 +2208,7 @@ async function cancelStudentPrompt(id) {
 
 async function loadInvoices(page = 0) {
     const search = document.getElementById('search-invoices').value;
-    let url = `https://dirictiondback.digitalrace.net/api/v2/invoices?page=${page}&size=${PAGE_SIZE}`;
+    let url = `${API_BASE}/api/v2/invoices?page=${page}&size=${PAGE_SIZE}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
 
     try {
@@ -2174,7 +2255,7 @@ function renderInvoicesTable(invoices) {
 
 async function loadStudentsForInvoiceForm() {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/students?page=0&size=${PAGE_SIZE}`, {
+        const response = await fetch(`${API_BASE}/api/v1/students?page=0&size=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -2242,7 +2323,7 @@ function initAddInvoiceForm() {
         };
 
         try {
-            const url = id ? `https://dirictiondback.digitalrace.net/api/v2/invoices/${id}` : 'https://dirictiondback.digitalrace.net/api/v2/invoices';
+            const url = id ? `${API_BASE}/api/v2/invoices/${id}` : `${API_BASE}/api/v2/invoices`;
             const method = id ? 'PUT' : 'POST';
 
             const response = await fetch(url, {
@@ -2272,7 +2353,7 @@ function initAddInvoiceForm() {
 async function deleteInvoice(id) {
     if (confirm('Are you sure you want to delete this invoice?')) {
         try {
-            const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/invoices/${id}`, {
+            const response = await fetch(`${API_BASE}/api/v2/invoices/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -2291,7 +2372,7 @@ async function deleteInvoice(id) {
 
 async function editInvoice(id) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/invoices/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v2/invoices/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -2383,7 +2464,7 @@ function renderPagination(containerId, data, loadFn) {
 
 async function populateDiplomaInstructorFilter() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/instructors/all', {
+        const response = await fetch(`${API_BASE}/api/v2/instructors/all`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -2403,7 +2484,7 @@ async function loadDiplomasV2(page = 0) {
     const search = document.getElementById('search-diplomas-v2').value;
     const instructorId = document.getElementById('filter-diploma-instructor').value;
 
-    let url = `https://dirictiondback.digitalrace.net/api/v2/round-diplomas?page=${page}&size=${PAGE_SIZE}`;
+    let url = `${API_BASE}/api/v2/round-diplomas?page=${page}&size=${PAGE_SIZE}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (instructorId) url += `&instructorId=${instructorId}`;
 
@@ -2527,7 +2608,7 @@ async function initAddDiplomaV2Form() {
         };
 
         try {
-            const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/round-diplomas', {
+            const response = await fetch(`${API_BASE}/api/v2/round-diplomas`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2552,9 +2633,9 @@ async function initAddDiplomaV2Form() {
 async function loadV2LookupData() {
     try {
         const [roundsRes, diplomasRes, instructorsRes] = await Promise.all([
-            fetch('https://dirictiondback.digitalrace.net/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
-            fetch('https://dirictiondback.digitalrace.net/api/v2/diplomas/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
-            fetch('https://dirictiondback.digitalrace.net/api/v2/instructors/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+            fetch(`${API_BASE}/api/v2/rounds/all`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch(`${API_BASE}/api/v2/diplomas/all`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch(`${API_BASE}/api/v2/instructors/all`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
         ]);
 
         const rounds = await roundsRes.json();
@@ -2657,7 +2738,7 @@ function getV2InstDate(index) {
 async function deleteDiplomaV2(id, name = "this diploma") {
     showDeleteModal(`Delete "${name}"?`, async () => {
         try {
-            const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/round-diplomas/${id}`, {
+            const response = await fetch(`${API_BASE}/api/v2/round-diplomas/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -2665,7 +2746,12 @@ async function deleteDiplomaV2(id, name = "this diploma") {
                 showToast('Diploma Deleted successfully', 'success');
                 loadDiplomasV2();
             } else {
-                showToast('Failed to delete diploma', 'error');
+                let errMsg = 'Failed to delete diploma';
+                try {
+                    const errBody = await response.json();
+                    if (errBody.message) errMsg = errBody.message;
+                } catch(e) {}
+                showToast(errMsg, 'error');
             }
         } catch (error) {
             console.error('Error deleting diploma:', error);
@@ -2676,7 +2762,7 @@ async function deleteDiplomaV2(id, name = "this diploma") {
 
 async function editDiplomaV2(id) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/round-diplomas/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v2/round-diplomas/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -2720,8 +2806,8 @@ async function editDiplomaV2(id) {
 async function loadV2LookupDataForEdit() {
     try {
         const [roundsRes, instructorsRes] = await Promise.all([
-            fetch('https://dirictiondback.digitalrace.net/api/v2/rounds/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
-            fetch('https://dirictiondback.digitalrace.net/api/v2/instructors/all', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+            fetch(`${API_BASE}/api/v2/rounds/all`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+            fetch(`${API_BASE}/api/v2/instructors/all`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
         ]);
 
         const rounds = await roundsRes.json();
@@ -2803,7 +2889,7 @@ function initEditDiplomaFormLogic() {
         };
 
         try {
-            const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/round-diplomas/${id}`, {
+            const response = await fetch(`${API_BASE}/api/v2/round-diplomas/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2945,7 +3031,7 @@ let currentDetailsRoundDiplomaId = null;
 
 async function viewDiplomaDetailsV2(id) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/round-diplomas/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v2/round-diplomas/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -3006,7 +3092,7 @@ function initDetailsTabs(roundDiplomaId) {
 
 async function loadDiplomaStudentsV2(id, search = '') {
     try {
-        const url = new URL(`https://dirictiondback.digitalrace.net/api/v2/students/round-diploma/${id}`);
+        const url = new URL(`${API_BASE}/api/v2/students/round-diploma/${id}`);
         if (search) url.searchParams.append('search', search);
 
         const response = await fetch(url, {
@@ -3141,7 +3227,7 @@ function editStudentV2(id, roundId, diplomaId) {
 async function deleteStudentV2(id) {
     if (!confirm('Are you sure you want to permanently delete this student?')) return;
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v2/students/${id}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -3173,7 +3259,7 @@ async function handleInlineAccountChange(id, password, itStatus, status) {
         if (itStatus !== null) body.itStatus = itStatus;
         if (status !== null && status !== undefined) body.status = status;
 
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/${id}/account-info`, {
+        const response = await fetch(`${API_BASE}/api/v2/students/${id}/account-info`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -3225,7 +3311,7 @@ function handleInlineStatusChange(selectElement, id, name, oldStatus) {
 async function restoreStudent(id) {
     if (!confirm('Are you sure you want to mark this student as Active?')) return;
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/${id}/restore`, {
+        const response = await fetch(`${API_BASE}/api/v2/students/${id}/restore`, {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -3248,7 +3334,7 @@ function cancelStudent(id, name) {
     document.getElementById('btn-confirm-cancel-student').onclick = async () => {
         const reason = document.getElementById('cancel-reason-input').value;
         try {
-            const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/${id}/cancel`, {
+            const response = await fetch(`${API_BASE}/api/v2/students/${id}/cancel`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -3283,7 +3369,7 @@ async function postponeStudent(id, name) {
         }
 
         try {
-            const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/${id}/postpone`, {
+            const response = await fetch(`${API_BASE}/api/v2/students/${id}/postpone`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -3308,7 +3394,7 @@ async function postponeStudent(id, name) {
 
 async function loadPostponeRounds() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/rounds/all', {
+        const response = await fetch(`${API_BASE}/api/v2/rounds/all`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -3376,7 +3462,7 @@ async function createEmptySession(roundDiplomaId, date) {
         console.log('[Attendance] createEmptySession called:', { roundDiplomaId, date });
 
         // We get students and send a bulk update with default values
-        const stdResponse = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/round-diploma/${roundDiplomaId}?size=${PAGE_SIZE}`, {
+        const stdResponse = await fetch(`${API_BASE}/api/v2/students/round-diploma/${roundDiplomaId}?size=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const stdData = await stdResponse.json();
@@ -3398,7 +3484,7 @@ async function createEmptySession(roundDiplomaId, date) {
         const payload = { roundDiplomaId: roundDiplomaId, date: date, records: records };
         console.log('[Attendance] Sending bulk POST payload:', JSON.stringify(payload));
 
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/attendance/bulk', {
+        const response = await fetch(`${API_BASE}/api/v2/attendance/bulk`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -3423,7 +3509,7 @@ async function createEmptySession(roundDiplomaId, date) {
 
 async function loadSessionsSummary(roundDiplomaId) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/attendance/diploma/${roundDiplomaId}/sessions`, {
+        const response = await fetch(`${API_BASE}/api/v2/attendance/diploma/${roundDiplomaId}/sessions`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -3477,13 +3563,13 @@ function openSessionDetails(date) {
 
 async function loadSessionDetails(roundDiplomaId, date) {
     try {
-        const stdResponse = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/round-diploma/${roundDiplomaId}`, {
+        const stdResponse = await fetch(`${API_BASE}/api/v2/students/round-diploma/${roundDiplomaId}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const stdData = await stdResponse.json();
         const students = stdData.content;
 
-        const attResponse = await fetch(`https://dirictiondback.digitalrace.net/api/v2/attendance/diploma/${roundDiplomaId}?date=${date}`, {
+        const attResponse = await fetch(`${API_BASE}/api/v2/attendance/diploma/${roundDiplomaId}?date=${date}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const attendanceRecords = await attResponse.json();
@@ -3559,7 +3645,7 @@ async function saveSessionDetails(roundDiplomaId, date) {
     console.log('[Attendance] saveSessionDetails payload:', JSON.stringify(payload));
 
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v2/attendance/bulk', {
+        const response = await fetch(`${API_BASE}/api/v2/attendance/bulk`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -3586,7 +3672,7 @@ async function saveSessionDetails(roundDiplomaId, date) {
 
 async function loadTasksData(roundDiplomaId) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/tasks/diploma/${roundDiplomaId}`, {
+        const response = await fetch(`${API_BASE}/api/v2/tasks/diploma/${roundDiplomaId}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -3631,7 +3717,7 @@ async function loadEmployees() {
     const search = document.getElementById('search-employees').value;
     const role = document.getElementById('filter-employees-role').value;
 
-    let url = 'https://dirictiondback.digitalrace.net/api/v1/users';
+    let url = `${API_BASE}/api/v1/users`;
 
     try {
         const response = await fetch(url, {
@@ -3704,11 +3790,11 @@ function initAddEmployeeForm() {
         try {
             // Using /api/auth/register for new users
             // For update, we might need a separate endpoint. For now let's handle create.
-            let url = 'https://dirictiondback.digitalrace.net/api/auth/register';
+            let url = `${API_BASE}/api/auth/register`;
             let method = 'POST';
 
             if (id) {
-                url = `https://dirictiondback.digitalrace.net/api/v1/users/${id}`;
+                url = `${API_BASE}/api/v1/users/${id}`;
                 method = 'PUT';
             }
 
@@ -3739,7 +3825,7 @@ function initAddEmployeeForm() {
 
 async function editEmployee(id) {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/users', {
+        const response = await fetch(`${API_BASE}/api/v1/users`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const users = await response.json();
@@ -3770,7 +3856,7 @@ async function deleteUser(id) {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/users/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v1/users/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -3794,9 +3880,9 @@ async function loadLeads(page = 0) {
     const search = document.getElementById('search-leads') ? document.getElementById('search-leads').value : '';
     const status = document.getElementById('filter-leads-status') ? document.getElementById('filter-leads-status').value : '';
 
-    let url = `https://dirictiondback.digitalrace.net/api/v1/leads?page=${page}&size=${PAGE_SIZE}&sortBy=id&sortDirection=DESC`;
+    let url = `${API_BASE}/api/v1/leads?page=${page}&size=${PAGE_SIZE}&sortBy=id&sortDirection=DESC`;
     if (status) {
-        url = `https://dirictiondback.digitalrace.net/api/v1/leads/status/${status}?page=${page}&size=${PAGE_SIZE}`;
+        url = `${API_BASE}/api/v1/leads/status/${status}?page=${page}&size=${PAGE_SIZE}`;
     }
 
     try {
@@ -3825,7 +3911,7 @@ async function loadLeads(page = 0) {
 
 async function loadLeadStats() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/leads/statistics', {
+        const response = await fetch(`${API_BASE}/api/v1/leads/statistics`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -3913,7 +3999,7 @@ function renderLeadsTable(leads) {
 
 async function loadDiplomasForModeratorForm() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/diplomas', {
+        const response = await fetch(`${API_BASE}/api/v1/diplomas`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -3954,9 +4040,9 @@ async function loadModeratorLeads(page = 0) {
     const diplomaId = document.getElementById('mod-filter-diploma') ? document.getElementById('mod-filter-diploma').value : '';
     const status = document.getElementById('mod-filter-status') ? document.getElementById('mod-filter-status').value : '';
 
-    let url = `https://dirictiondback.digitalrace.net/api/v1/leads?page=${page}&size=${PAGE_SIZE}&sortBy=id&sortDirection=DESC`;
+    let url = `${API_BASE}/api/v1/leads?page=${page}&size=${PAGE_SIZE}&sortBy=id&sortDirection=DESC`;
     if (status) {
-        url = `https://dirictiondback.digitalrace.net/api/v1/leads/status/${status}?page=${page}&size=${PAGE_SIZE}`;
+        url = `${API_BASE}/api/v1/leads/status/${status}?page=${page}&size=${PAGE_SIZE}`;
     }
 
     try {
@@ -4008,76 +4094,19 @@ function renderModeratorLeadsTable(leads) {
     });
 }
 
-function setupModeratorListeners() {
-    const search = document.getElementById('mod-search-leads');
-    const dip = document.getElementById('mod-filter-diploma');
-    const status = document.getElementById('mod-filter-status');
-    if (search) search.oninput = () => loadModeratorLeads();
-    if (dip) dip.onchange = () => loadModeratorLeads();
-    if (status) status.onchange = () => loadModeratorLeads();
-
-    const modForm = document.getElementById('form-moderator-add-lead');
-    if (modForm) {
-        modForm.onsubmit = async (e) => {
-            e.preventDefault();
-            const phone = document.getElementById('mod-lead-phone').value;
-            const diplomaId = document.getElementById('mod-lead-diploma').value;
-            const status = document.getElementById('mod-lead-status').value;
-            const notes = document.getElementById('mod-lead-notes').value;
-
-            try {
-                const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/leads/admin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-                    body: JSON.stringify({ phoneNumber: phone, diplomaId: diplomaId || null, status, moderatorNotes: notes })
-                });
-                if (response.ok) {
-                    showToast('Lead added successfully!', 'success');
-                    modForm.reset();
-                    loadModeratorLeads();
-                } else {
-                    const err = await response.json();
-                    showToast(err.message || 'Failed to add lead', 'error');
-                }
-            } catch (err) {
-                showToast('Connection error', 'error');
-            }
-        };
-    }
-
-    // Also setup Add Lead modal button for moderator
-    const modBtn = document.getElementById('btn-open-add-lead-moderator');
-    if (modBtn) modBtn.onclick = () => openAddLeadModal('admin');
-}
+// Removed duplicated setupModeratorListeners
 
 // ===================================================
 // Add Lead Modal Logic
 // ===================================================
 
 async function loadDiplomasForLeadForm() {
-    try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/diplomas', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        if (response.ok) {
-            const diplomas = await response.json();
-            const el = document.getElementById('add-lead-diploma');
-            if (el) {
-                el.innerHTML = '<option value="">Select diploma</option>';
-                diplomas.forEach(d => {
-                    const opt = document.createElement('option');
-                    opt.value = d.id;
-                    opt.textContent = d.name;
-                    el.appendChild(opt);
-                });
-            }
-        }
-    } catch (e) { console.error('Error loading diplomas for lead form:', e); }
+    await loadDiplomasForModeratorForm();
 }
 
 async function loadTelesalesUsersForLeadForm() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/users', {
+        const response = await fetch(`${API_BASE}/api/v1/users`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4148,7 +4177,7 @@ async function saveNewLead(mode = 'admin') {
     if (mode !== 'telesales' && teleSalesId) payload.teleSalesId = parseInt(teleSalesId);
 
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net${endpoint}`, {
+        const response = await fetch(`${API_BASE}${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
             body: JSON.stringify(payload)
@@ -4230,7 +4259,7 @@ async function openLeadDetailModal(leadId) {
     document.getElementById('no-followups-placeholder').style.display = 'none';
 
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/leads/${leadId}`, {
+        const response = await fetch(`${API_BASE}/api/v1/leads/${leadId}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4324,7 +4353,7 @@ async function submitFollowUp() {
     const payload = { message, status, createdAt };
 
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/leads/${leadId}/follow-ups`, {
+        const response = await fetch(`${API_BASE}/api/v1/leads/${leadId}/follow-ups`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
             body: JSON.stringify(payload)
@@ -4355,7 +4384,7 @@ async function closeDeal(finalStatus) {
     if (!leadId) { showToast('No lead selected', 'error'); return; }
 
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/leads/${leadId}`, {
+        const response = await fetch(`${API_BASE}/api/v1/leads/${leadId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
             body: JSON.stringify({ status: finalStatus, closureReason: finalStatus === 'ENROLLED' ? 'Deal closed - Enrolled' : 'Deal closed - Rejected' })
@@ -4388,7 +4417,7 @@ async function closeDeal(finalStatus) {
 
 async function loadDiplomasForTelesalesForm() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/diplomas', {
+        const response = await fetch(`${API_BASE}/api/v1/diplomas`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4416,7 +4445,7 @@ async function loadTelesalesLeads(page = 0) {
     const status = document.getElementById('tele-filter-status').value;
     const attempts = document.getElementById('tele-filter-attempts').value;
 
-    let url = `https://dirictiondback.digitalrace.net/api/v1/leads?page=${page}&size=${PAGE_SIZE}`;
+    let url = `${API_BASE}/api/v1/leads?page=${page}&size=${PAGE_SIZE}`;
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -4537,7 +4566,7 @@ function setupTelesalesListeners() {
 async function viewTelesalesLead(id) {
     if (!id) { showToast('Invalid lead ID', 'error'); return; }
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/leads/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v1/leads/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4671,7 +4700,7 @@ async function submitTelesalesCallAttempt() {
     };
 
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/leads/${leadId}/follow-ups`, {
+        const response = await fetch(`${API_BASE}/api/v1/leads/${leadId}/follow-ups`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -4721,7 +4750,7 @@ let revenueChart = null;
 async function loadFinanceOverview() {
     const month = document.getElementById('finance-overview-month').value;
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/finance/overview?month=${month}`, {
+        const response = await fetch(`${API_BASE}/api/v1/finance/overview?month=${month}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4887,7 +4916,7 @@ function renderTopRevenueTable(diplomas) {
 async function loadSalaries() {
     const month = document.getElementById('finance-salaries-month').value;
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/finance/salaries?month=${month}`, {
+        const response = await fetch(`${API_BASE}/api/v1/finance/salaries?month=${month}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -4925,8 +4954,8 @@ function renderSalariesTable(salaries) {
             <td style='color: #d32f2f; font-weight: 700;'>${(s.remaining || 0).toLocaleString()}</td>
             <td>
                 <div style="display: flex; gap: 8px;">
-                    <button class='action-btn edit' style='background: #e3f2fd; color: #1976d2; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;'><i class='fas fa-pencil-alt'></i></button>
-                    ${typeClass === 'freelance' ? `<button class='action-btn delete' style='background: #ffebee; color: #d32f2f; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;'><i class='fas fa-trash-alt'></i></button>` : ''}
+                    <button class='action-btn edit' onclick="alert('Edit employee feature coming soon')" style='background: #e3f2fd; color: #1976d2; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;'><i class='fas fa-pencil-alt'></i></button>
+                    ${typeClass === 'freelance' ? `<button class='action-btn delete' onclick="deleteUser(${s.employeeId})" style='background: #ffebee; color: #d32f2f; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;'><i class='fas fa-trash-alt'></i></button>` : ''}
                 </div>
             </td>` ;
         tbody.appendChild(row);
@@ -4936,7 +4965,7 @@ function renderSalariesTable(salaries) {
 async function runPayroll() {
     const month = document.getElementById('finance-salaries-month').value;
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/finance/salaries/run-payroll?month=${month}`, {
+        const response = await fetch(`${API_BASE}/api/v1/finance/salaries/run-payroll?month=${month}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -4959,7 +4988,7 @@ async function runPayroll() {
 async function loadExpenses() {
     const month = document.getElementById('finance-expenses-month').value;
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/finance/expenses?month=${month}`, {
+        const response = await fetch(`${API_BASE}/api/v1/finance/expenses?month=${month}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -5008,7 +5037,7 @@ async function addExpense() {
     };
 
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/finance/expenses', {
+        const response = await fetch(`${API_BASE}/api/v1/finance/expenses`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -5027,17 +5056,18 @@ async function addExpense() {
 }
 
 async function addExpenseFromPage() {
+    const amount = parseFloat(document.getElementById('expense-page-amount').value) || 0;
     const expense = {
         title: document.getElementById('expense-page-title').value,
-        amount: parseFloat(document.getElementById('expense-page-amount').value),
-        paidAmount: 0,
+        amount: amount,
+        paidAmount: amount, // Defaults to fully paid for now, or you could add a paid input field on the page
         paymentMethod: document.getElementById('expense-page-pay-method').value,
         expenseDate: document.getElementById('expense-page-date').value,
         note: document.getElementById('expense-page-note').value
     };
 
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/finance/expenses', {
+        const response = await fetch(`${API_BASE}/api/v1/finance/expenses`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -5058,7 +5088,7 @@ async function addExpenseFromPage() {
 async function loadRevenue() {
     const month = document.getElementById('finance-revenue-month').value;
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/finance/overview?month=${month}`, {
+        const response = await fetch(`${API_BASE}/api/v1/finance/overview?month=${month}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -5101,34 +5131,11 @@ function renderRevenueTable(records) {
 // ==========================================
 // Moderator Logic & Dynamic Bindings
 // ==========================================
-function setupModeratorListeners() {
-    const leadForm = document.getElementById('form-moderator-add-lead');
-    if (leadForm) {
-        leadForm.onsubmit = async (e) => {
-            e.preventDefault();
-            await submitModeratorAddLead();
-        };
-    }
-
-    const hoursForm = document.getElementById('form-work-hours-entry');
-    if (hoursForm) {
-        hoursForm.onsubmit = async (e) => {
-            e.preventDefault();
-            await submitAttendanceEntry();
-        };
-    }
-
-    // Set default date to today in forms
-    const leadDate = document.getElementById('mod-lead-date');
-    if (leadDate) setInputDate(leadDate);
-
-    const hoursDate = document.getElementById('attendance-entry-date');
-    if (hoursDate) setInputDate(hoursDate);
-}
+// Removed duplicated setupModeratorListeners
 
 async function loadDiplomasForModeratorForm() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/diplomas', {
+        const response = await fetch(`${API_BASE}/api/v1/diplomas`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -5157,7 +5164,7 @@ async function loadModeratorLeads(page = 0) {
     const diplomaId = document.getElementById('mod-filter-diploma').value;
     const status = document.getElementById('mod-filter-status').value;
 
-    let url = `https://dirictiondback.digitalrace.net/api/v1/leads?page=${page}&size=${PAGE_SIZE}`;
+    let url = `${API_BASE}/api/v1/leads?page=${page}&size=${PAGE_SIZE}`;
     try {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -5235,11 +5242,11 @@ async function submitModeratorAddLead() {
     };
 
     try {
-        let url = 'https://dirictiondback.digitalrace.net/api/v1/leads/admin';
+        let url = `${API_BASE}/api/v1/leads/admin`;
         let method = 'POST';
 
         if (id) {
-            url = `https://dirictiondback.digitalrace.net/api/v1/leads/${id}`;
+            url = `${API_BASE}/api/v1/leads/${id}`;
             method = 'PUT';
         }
 
@@ -5269,7 +5276,7 @@ async function submitModeratorAddLead() {
 
 async function editModeratorLead(id) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/leads/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v1/leads/${id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -5289,7 +5296,7 @@ async function editModeratorLead(id) {
 async function deleteModeratorLead(id) {
     if (!confirm('Are you sure you want to delete this lead? Only Admins can execute deletes.')) return;
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/leads/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v1/leads/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -5311,7 +5318,7 @@ async function deleteModeratorLead(id) {
 // Work Hours
 async function loadWorkHours(page = 0) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/attendance/my-attendance?page=${page}&size=${PAGE_SIZE}`, {
+        const response = await fetch(`${API_BASE}/api/v1/attendance/my-attendance?page=${page}&size=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -5351,7 +5358,7 @@ function renderWorkHoursTable(entries) {
 
 async function loadWeeklyHours() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/attendance/weekly-hours', {
+        const response = await fetch(`${API_BASE}/api/v1/attendance/weekly-hours`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -5376,11 +5383,11 @@ async function submitAttendanceEntry() {
         totalHours: parseFloat(hours)
     };
 
-    let url = 'https://dirictiondback.digitalrace.net/api/v1/attendance';
+    let url = `${API_BASE}/api/v1/attendance`;
     let method = 'POST';
 
     if (id) {
-        url = `https://dirictiondback.digitalrace.net/api/v1/attendance/${id}`;
+        url = `${API_BASE}/api/v1/attendance/${id}`;
         method = 'PUT';
     }
 
@@ -5413,7 +5420,7 @@ async function submitAttendanceEntry() {
 
 async function editAttendance(id) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/attendance/my-attendance?size=${PAGE_SIZE}`, {
+        const response = await fetch(`${API_BASE}/api/v1/attendance/my-attendance?size=${PAGE_SIZE}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -5436,7 +5443,7 @@ async function deleteAttendance(id) {
     if (!confirm('Are you sure you want to delete this work hours log?')) return;
 
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/attendance/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v1/attendance/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -5458,7 +5465,7 @@ async function deleteAttendance(id) {
 // Leaderboard
 async function loadLeaderboard() {
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/leads/leaderboard', {
+        const response = await fetch(`${API_BASE}/api/v1/leads/leaderboard`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -5603,7 +5610,7 @@ async function openDelayedStudents(roundDiplomaId, diplomaName, roundName) {
     // if (titleEl) titleEl.textContent = `Students: ${diplomaName} - ${roundName}`;
 
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v2/students/round-diploma/${roundDiplomaId}?size=${PAGE_SIZE}`, {
+        const response = await fetch(`${API_BASE}/api/v2/students/round-diploma/${roundDiplomaId}?size=${PAGE_SIZE}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -5673,7 +5680,7 @@ async function loadSalesUsers() {
     const role = document.getElementById('filter-sales-role').value;
 
     try {
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/users', {
+        const response = await fetch(`${API_BASE}/api/v1/users`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -5787,11 +5794,11 @@ async function saveSalesUser() {
     };
 
     try {
-        let url = 'https://dirictiondback.digitalrace.net/api/auth/register';
+        let url = `${API_BASE}/api/auth/register`;
         let method = 'POST';
 
         if (id) {
-            url = `https://dirictiondback.digitalrace.net/api/v1/users/${id}`;
+            url = `${API_BASE}/api/v1/users/${id}`;
             method = 'PUT';
         }
 
@@ -5822,7 +5829,7 @@ async function deleteSalesUser(id) {
     if (!confirm('Are you sure you want to delete this sales user?')) return;
 
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/users/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v1/users/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -5846,7 +5853,7 @@ async function loadSalesEarnings() {
     const status = document.getElementById('filter-earnings-status').value;
 
     try {
-        let url = 'https://dirictiondback.digitalrace.net/api/v1/earnings';
+        let url = `${API_BASE}/api/v1/earnings`;
         const params = [];
         if (search) params.push(`search=${encodeURIComponent(search)}`);
         if (status) params.push(`status=${encodeURIComponent(status)}`);
@@ -5908,7 +5915,7 @@ function renderSalesEarningsTable(earnings) {
 
 async function toggleEarningStatus(id, newStatus) {
     try {
-        const response = await fetch(`https://dirictiondback.digitalrace.net/api/v1/earnings/${id}/status`, {
+        const response = await fetch(`${API_BASE}/api/v1/earnings/${id}/status`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -5937,7 +5944,7 @@ async function recalculateEarnings() {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculating...';
         }
 
-        const response = await fetch('https://dirictiondback.digitalrace.net/api/v1/earnings/calculate', {
+        const response = await fetch(`${API_BASE}/api/v1/earnings/calculate`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -6008,7 +6015,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Lead Management – Shared Helpers
 // ==========================================
 
-const API_BASE = 'https://dirictiondback.digitalrace.net';
+const API_BASE = 'http://localhost:8085';
 
 function renderLeadStatus(status) {
     const map = {
@@ -6108,39 +6115,7 @@ function openAddLeadModal(mode) {
     if (modal) modal.style.display = 'flex';
 }
 
-function initAddLeadModalListeners() {
-    const closeBtn = document.getElementById('close-add-lead-modal');
-    if (closeBtn) closeBtn.onclick = () => { document.getElementById('add-lead-modal').style.display = 'none'; };
 
-    const form = document.getElementById('form-add-lead');
-    if (form) form.onsubmit = async (e) => {
-        e.preventDefault();
-        const payload = {
-            fullName: document.getElementById('lead-name').value,
-            phoneNumber: document.getElementById('lead-phone').value,
-            source: document.getElementById('lead-source')?.value || '',
-            moderatorNotes: document.getElementById('lead-notes')?.value || '',
-            diplomaId: document.getElementById('lead-diploma')?.value ? Number(document.getElementById('lead-diploma').value) : null,
-            teleSalesId: document.getElementById('lead-telesales-id')?.value ? Number(document.getElementById('lead-telesales-id').value) : null,
-        };
-        try {
-            const resp = await fetch(`${API_BASE}/api/v1/leads/admin`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-                body: JSON.stringify(payload)
-            });
-            if (resp.ok) {
-                showToast('Lead created successfully', 'success');
-                document.getElementById('add-lead-modal').style.display = 'none';
-                loadLeads();
-            } else {
-                showToast('Failed to create lead', 'error');
-            }
-        } catch (e) {
-            showToast('Error creating lead', 'error');
-        }
-    };
-}
 
 function initLeadDetailModalListeners() {
     const closeBtn = document.getElementById('close-lead-detail-modal');
@@ -6200,7 +6175,7 @@ async function loadDiplomasForModeratorForm() {
         const resp = await fetch(`${API_BASE}/api/v2/diplomas`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
         if (!resp.ok) return;
         const diplomas = await resp.json();
-        const selects = document.querySelectorAll('#mod-lead-diploma, #mod-filter-diploma');
+        const selects = document.querySelectorAll('#mod-lead-diploma, #mod-filter-diploma, #add-lead-diploma, #filter-diploma');
         selects.forEach(sel => {
             if (!sel) return;
             sel.innerHTML = '<option value="">All Diplomas</option>';
@@ -6219,8 +6194,8 @@ async function loadModeratorLeads(page = 0) {
     const search = (document.getElementById('mod-search-leads')?.value || '').toLowerCase();
 
     try {
-        let url = `${API_BASE}/api/v1/leads?size=30&page=${page}&sortBy=id&sortDirection=DESC`;
-        if (status) url = `${API_BASE}/api/v1/leads/status/${status}?size=30&page=${page}`;
+        let url = `${API_BASE}/api/v1/leads?size=10&page=${page}&sortBy=id&sortDirection=DESC`;
+        if (status) url = `${API_BASE}/api/v1/leads/status/${status}?size=10&page=${page}`;
 
         const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
         if (!resp.ok) throw new Error('Failed');
@@ -6402,6 +6377,38 @@ function setupModeratorListeners() {
         modSearch.addEventListener('input', () => loadModeratorLeads(0));
         modSearch._listenerAdded = true;
     }
+    const dip = document.getElementById('mod-filter-diploma');
+    if (dip && !dip._listenerAdded) {
+        dip.addEventListener('change', () => loadModeratorLeads(0));
+        dip._listenerAdded = true;
+    }
+
+    const leadForm = document.getElementById('form-moderator-add-lead');
+    if (leadForm) {
+        leadForm.onsubmit = async (e) => {
+            e.preventDefault();
+            await submitModeratorAddLead();
+        };
+    }
+
+    const hoursForm = document.getElementById('form-work-hours-entry');
+    if (hoursForm) {
+        hoursForm.onsubmit = async (e) => {
+            e.preventDefault();
+            await submitAttendanceEntry();
+        };
+    }
+
+    // Set default date to today in forms
+    const leadDate = document.getElementById('mod-lead-date');
+    if (leadDate) setInputDate(leadDate);
+
+    const hoursDate = document.getElementById('attendance-entry-date');
+    if (hoursDate) setInputDate(hoursDate);
+
+    // Also setup Add Lead modal button for moderator
+    const modBtn = document.getElementById('btn-open-add-lead-moderator');
+    if (modBtn) modBtn.onclick = () => openAddLeadModal('admin');
 }
 
 // ==========================================
@@ -6420,7 +6427,7 @@ async function loadTelesalesLeads(page = 0) {
     const status = document.getElementById('tele-filter-status')?.value || '';
 
     try {
-        let url = `${API_BASE}/api/v1/leads/my-leads?size=30&page=${page}&sortBy=createdAt&sortDirection=DESC`;
+        let url = `${API_BASE}/api/v1/leads/my-leads?size=10&page=${page}&sortBy=createdAt&sortDirection=DESC`;
         if (status) url += `&status=${status}`;
 
         const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });

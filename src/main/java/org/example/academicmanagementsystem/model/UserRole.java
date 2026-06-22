@@ -5,5 +5,6 @@ public enum UserRole {
     MODERATOR,
     TELESALES,
     ACCOUNTANT,
-    EMPLOYEE
+    EMPLOYEE,
+    FREELANCER
 }

@@ -144,7 +144,7 @@ public class DataSeeder {
             for (String phone : seededPhones) {
                 leadRepository.findByPhoneNumber(phone).forEach(leadRepository::delete);
             }
-            seedLeads(users, diplomaRepository.findAll());
+            seedLeads(users, diplomaV2Repository.findAll());
             System.out.println(">>> Seeded fresh moderator leads for active week");
  
             log.info("Database seeding completed successfully!");
@@ -175,7 +175,10 @@ public class DataSeeder {
 
     private void autoSaveUser(List<User> users, String username, String email, String pass, String name, UserRole role, Double sal, String type, String method) {
         userRepository.findByUsername(username).ifPresentOrElse(
-            users::add,
+            user -> {
+                user.setPassword(passwordEncoder.encode(pass));
+                users.add(userRepository.save(user));
+            },
             () -> users.add(userRepository.save(createUser(username, email, pass, name, role, sal, type, method)))
         );
     }
@@ -216,11 +219,11 @@ public class DataSeeder {
         return d;
     }
 
-    private List<Lead> seedLeads(List<User> users, List<Diploma> diplomas) {
+    private List<Lead> seedLeads(List<User> users, List<DiplomaV2> diplomas) {
         List<Lead> leads = new ArrayList<>();
 
         User telesales = users.stream().filter(u -> u.getRole() == UserRole.TELESALES).findFirst().orElse(users.get(0));
-        Diploma dip = diplomas.isEmpty() ? null : diplomas.get(0);
+        DiplomaV2 dip = diplomas.isEmpty() ? null : diplomas.get(0);
 
         // Alaa (5 leads)
         for (int i = 1; i <= 5; i++) {
@@ -241,7 +244,7 @@ public class DataSeeder {
         return leadRepository.saveAll(leads);
     }
 
-    private Lead createLead(String fullName, String phone, Diploma diploma, String notes, LeadStatus status, User telesales,
+    private Lead createLead(String fullName, String phone, DiplomaV2 diploma, String notes, LeadStatus status, User telesales,
                             String closureReason, String email) {
         Lead lead = new Lead();
         lead.setFullName(fullName);

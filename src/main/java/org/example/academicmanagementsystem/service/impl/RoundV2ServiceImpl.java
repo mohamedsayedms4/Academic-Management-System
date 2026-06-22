@@ -93,7 +93,12 @@ public class RoundV2ServiceImpl implements RoundV2Service {
     @Override
     @Transactional
     public void deleteRound(Long id) {
-        roundRepository.deleteById(id);
+        RoundV2 round = roundRepository.findById(id).orElse(null);
+        if (round != null) {
+            List<org.example.academicmanagementsystem.model.RoundDiplomaV2> rds = roundDiplomaRepository.findByRound(round);
+            roundDiplomaRepository.deleteAll(rds);
+            roundRepository.delete(round);
+        }
     }
 
     private RoundResponseV2 mapToResponse(RoundV2 round) {

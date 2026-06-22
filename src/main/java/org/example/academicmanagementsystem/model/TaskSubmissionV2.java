@@ -5,12 +5,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "task_submissions_v2")
+@SQLDelete(sql = "UPDATE task_submissions_v2 SET deleted = true WHERE id=?")
+@SQLRestriction("deleted = false")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor

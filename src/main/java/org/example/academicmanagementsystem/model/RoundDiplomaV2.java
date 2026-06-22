@@ -2,12 +2,16 @@ package org.example.academicmanagementsystem.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "round_diplomas_v2")
+@SQLDelete(sql = "UPDATE round_diplomas_v2 SET deleted = true WHERE id=?")
+@SQLRestriction("deleted = false")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

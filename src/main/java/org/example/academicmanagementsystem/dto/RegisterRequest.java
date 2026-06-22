@@ -18,4 +18,6 @@ public class RegisterRequest {
     private Double baseSalary;
     private String paymentMethod;
     private Double commission;
+    private String employmentType;
+    private String targetMonth;
 }
