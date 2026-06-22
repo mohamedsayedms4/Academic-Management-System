@@ -2,7 +2,7 @@ const PAGE_SIZE = 5; // Global pagination size
 
 // Monkey-patch fetch to prevent aggressive caching on GET requests
 const originalFetch = window.fetch;
-window.fetch = function() {
+window.fetch = function () {
     let [resource, config] = arguments;
     if (typeof resource === 'string' && resource.includes('/api/') && (!config || !config.method || config.method.toUpperCase() === 'GET')) {
         config = config || {};
@@ -2750,7 +2750,7 @@ async function deleteDiplomaV2(id, name = "this diploma") {
                 try {
                     const errBody = await response.json();
                     if (errBody.message) errMsg = errBody.message;
-                } catch(e) {}
+                } catch (e) { }
                 showToast(errMsg, 'error');
             }
         } catch (error) {
@@ -6015,7 +6015,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Lead Management – Shared Helpers
 // ==========================================
 
-const API_BASE = 'http://localhost:8085';
+const API_BASE = 'https://dirictiondback.digitalrace.net';
 
 function renderLeadStatus(status) {
     const map = {

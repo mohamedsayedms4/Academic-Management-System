@@ -9,7 +9,7 @@ content = content.replace(/'https:\/\/dirictiondback\.digitalrace\.net([^']*)'/g
 content = content.replace(/`https:\/\/dirictiondback\.digitalrace\.net([^`]*)`/g, "`${API_BASE}$1`");
 
 // Change API_BASE to localhost for local testing
-content = content.replace("const API_BASE = 'http://localhost:8085';", "const API_BASE = 'http://localhost:8080';");
+content = content.replace("const API_BASE = 'https://dirictiondback.digitalrace.net';", "const API_BASE = 'http://localhost:8080';");
 
 // Change size=30 to size=10
 content = content.replaceAll('?size=30', '?size=10').replaceAll('&size=30', '&size=10');
