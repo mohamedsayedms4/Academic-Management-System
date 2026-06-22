@@ -11,6 +11,8 @@ import org.example.academicmanagementsystem.repository.UserRepository;
 import org.example.academicmanagementsystem.security.JwtTokenProvider;
 import org.example.academicmanagementsystem.security.UserDetailsImpl;
 import org.example.academicmanagementsystem.util.TestDataBuilder;
+import org.example.academicmanagementsystem.repository.SalaryRepository;
+import org.example.academicmanagementsystem.repository.PayrollRecordRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,6 +51,12 @@ class AuthServiceTest {
     @Mock
     private Authentication authentication;
 
+    @Mock
+    private SalaryRepository salaryRepository;
+
+    @Mock
+    private PayrollRecordRepository payrollRecordRepository;
+
     private final UserMapper userMapper = new UserMapper() {
         @Override
         public UserResponse toUserResponse(User user) {
@@ -82,7 +90,7 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(authenticationManager, userRepository, passwordEncoder, tokenProvider, userMapper);
+        authService = new AuthService(authenticationManager, userRepository, passwordEncoder, tokenProvider, userMapper, salaryRepository, payrollRecordRepository);
     }
 
     @Test
