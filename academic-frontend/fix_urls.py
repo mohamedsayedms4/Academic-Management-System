@@ -10,7 +10,7 @@ content = re.sub(r"'https://dirictiondback\.digitalrace\.net(.*?)'", r"`${API_BA
 content = re.sub(r"`https://dirictiondback\.digitalrace\.net(.*?)`", r"`${API_BASE}\1`", content)
 
 # Change API_BASE to localhost for local testing
-content = content.replace("const API_BASE = 'https://dirictiondback.digitalrace.net';", "const API_BASE = 'http://localhost:8080';")
+content = content.replace("const API_BASE = 'http://localhost:8085';", "const API_BASE = 'http://localhost:8080';")
 
 # Change size=30 to size=10
 content = content.replace('?size=30', '?size=10').replace('&size=30', '&size=10')

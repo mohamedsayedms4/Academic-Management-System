@@ -174,6 +174,13 @@ public class DataSeeder {
     }
 
     private void autoSaveUser(List<User> users, String username, String email, String pass, String name, UserRole role, Double sal, String type, String method) {
+        try {
+            // Restore soft-deleted users or those with NULL deleted flag so they can be found by findByUsername
+            jdbcTemplate.update("UPDATE users SET deleted = false WHERE username = ?", username);
+        } catch (Exception e) {
+            log.warn("Could not undelete user {}: {}", username, e.getMessage());
+        }
+
         userRepository.findByUsername(username).ifPresentOrElse(
             user -> {
                 user.setPassword(passwordEncoder.encode(pass));

@@ -1383,7 +1383,7 @@ function removeDiplomaTag(id) {
 }
 
 async function deleteRound(id) {
-    if (!confirm('Are you sure you want to delete this round?')) return;
+    if (!await showDeleteModal('Delete this round?')) return;
 
     try {
         const response = await fetch(`${API_BASE}/api/v2/rounds/${id}`, {
@@ -1553,7 +1553,7 @@ async function editDiploma(id) {
 }
 
 async function deleteDiploma(id) {
-    if (confirm('Are you sure you want to delete this diploma?')) {
+    if (await showDeleteModal('Delete this diploma?')) {
         try {
             const response = await fetch(`${API_BASE}/api/v1/diplomas/${id}`, {
                 method: 'DELETE',
@@ -1788,7 +1788,7 @@ async function loadDiplomasForFilters() {
 }
 
 async function deleteInstructor(id) {
-    if (confirm('Are you sure you want to delete this instructor?')) {
+    if (await showDeleteModal('Delete this instructor?')) {
         try {
             const response = await fetch(`${API_BASE}/api/v2/instructors/${id}`, {
                 method: 'DELETE',
@@ -2351,7 +2351,7 @@ function initAddInvoiceForm() {
 }
 
 async function deleteInvoice(id) {
-    if (confirm('Are you sure you want to delete this invoice?')) {
+    if (await showDeleteModal('Delete this invoice?')) {
         try {
             const response = await fetch(`${API_BASE}/api/v2/invoices/${id}`, {
                 method: 'DELETE',
@@ -2736,28 +2736,27 @@ function getV2InstDate(index) {
 }
 
 async function deleteDiplomaV2(id, name = "this diploma") {
-    showDeleteModal(`Delete "${name}"?`, async () => {
-        try {
-            const response = await fetch(`${API_BASE}/api/v2/round-diplomas/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-            });
-            if (response.ok) {
-                showToast('Diploma Deleted successfully', 'success');
-                loadDiplomasV2();
-            } else {
-                let errMsg = 'Failed to delete diploma';
-                try {
-                    const errBody = await response.json();
-                    if (errBody.message) errMsg = errBody.message;
-                } catch (e) { }
-                showToast(errMsg, 'error');
-            }
-        } catch (error) {
-            console.error('Error deleting diploma:', error);
-            showToast('Error connecting to server', 'error');
+    if (!await showDeleteModal(`Delete "${name}"?`)) return;
+    try {
+        const response = await fetch(`${API_BASE}/api/v2/round-diplomas/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+            showToast('Diploma Deleted successfully', 'success');
+            loadDiplomasV2();
+        } else {
+            let errMsg = 'Failed to delete diploma';
+            try {
+                const errBody = await response.json();
+                if (errBody.message) errMsg = errBody.message;
+            } catch (e) { }
+            showToast(errMsg, 'error');
         }
-    });
+    } catch (error) {
+        console.error('Error deleting diploma:', error);
+        showToast('Error connecting to server', 'error');
+    }
 }
 
 async function editDiplomaV2(id) {
@@ -3017,14 +3016,26 @@ function showDeleteModal(title, onConfirm) {
     document.getElementById('delete-modal-title').textContent = title;
     modal.style.display = 'flex';
 
-    document.getElementById('btn-confirm-delete').onclick = () => {
-        onConfirm();
-        modal.style.display = 'none';
-    };
-
-    document.getElementById('btn-cancel-delete').onclick = () => {
-        modal.style.display = 'none';
-    };
+    if (onConfirm) {
+        document.getElementById('btn-confirm-delete').onclick = () => {
+            onConfirm();
+            modal.style.display = 'none';
+        };
+        document.getElementById('btn-cancel-delete').onclick = () => {
+            modal.style.display = 'none';
+        };
+    } else {
+        return new Promise(resolve => {
+            document.getElementById('btn-confirm-delete').onclick = () => {
+                modal.style.display = 'none';
+                resolve(true);
+            };
+            document.getElementById('btn-cancel-delete').onclick = () => {
+                modal.style.display = 'none';
+                resolve(false);
+            };
+        });
+    }
 }
 
 let currentDetailsRoundDiplomaId = null;
@@ -3225,7 +3236,7 @@ function editStudentV2(id, roundId, diplomaId) {
 }
 
 async function deleteStudentV2(id) {
-    if (!confirm('Are you sure you want to permanently delete this student?')) return;
+    if (!await showDeleteModal('Delete this student permanently?')) return;
     try {
         const response = await fetch(`${API_BASE}/api/v2/students/${id}`, {
             method: 'DELETE',
@@ -3853,7 +3864,7 @@ async function editEmployee(id) {
 }
 
 async function deleteUser(id) {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    if (!await showDeleteModal('Delete this user?')) return;
 
     try {
         const response = await fetch(`${API_BASE}/api/v1/users/${id}`, {
@@ -5294,7 +5305,7 @@ async function editModeratorLead(id) {
 }
 
 async function deleteModeratorLead(id) {
-    if (!confirm('Are you sure you want to delete this lead? Only Admins can execute deletes.')) return;
+    if (!await showDeleteModal('Delete this lead? Only Admins can execute deletes.')) return;
     try {
         const response = await fetch(`${API_BASE}/api/v1/leads/${id}`, {
             method: 'DELETE',
@@ -5440,7 +5451,7 @@ async function editAttendance(id) {
 }
 
 async function deleteAttendance(id) {
-    if (!confirm('Are you sure you want to delete this work hours log?')) return;
+    if (!await showDeleteModal('Delete this work hours log?')) return;
 
     try {
         const response = await fetch(`${API_BASE}/api/v1/attendance/${id}`, {
@@ -5826,7 +5837,7 @@ async function saveSalesUser() {
 }
 
 async function deleteSalesUser(id) {
-    if (!confirm('Are you sure you want to delete this sales user?')) return;
+    if (!await showDeleteModal('Delete this sales user?')) return;
 
     try {
         const response = await fetch(`${API_BASE}/api/v1/users/${id}`, {
@@ -6015,7 +6026,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Lead Management – Shared Helpers
 // ==========================================
 
-const API_BASE = 'https://dirictiondback.digitalrace.net';
+const API_BASE = 'http://localhost:8085';
 
 function renderLeadStatus(status) {
     const map = {
@@ -6077,7 +6088,8 @@ async function loadLeads() {
         }
 
         renderAdminLeadsTable(leads);
-        renderPagination('leads-pagination', data, (p) => { _leadsPage = p; loadLeads(); });
+        renderPagination('admin-leads-pagination', data, (p) => { _leadsPage = p; loadLeads(); });
+        loadLeadStats();
     } catch (e) {
         console.error('loadLeads error:', e);
         showToast('Failed to load leads', 'error');
@@ -6085,7 +6097,7 @@ async function loadLeads() {
 }
 
 function renderAdminLeadsTable(leads) {
-    const tbody = document.getElementById('leads-tbody');
+    const tbody = document.getElementById('leads-list-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
     if (!leads.length) {

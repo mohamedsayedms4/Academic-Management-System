@@ -1,5 +1,5 @@
-$baseUrl = "https://dirictiondback.digitalrace.net/api/v1"
-$v2Url = "https://dirictiondback.digitalrace.net/api/v2"
+$baseUrl = "http://localhost:8085/api/v1"
+$v2Url = "http://localhost:8085/api/v2"
 
 # 1. Login
 $loginBody = @{
@@ -7,7 +7,7 @@ $loginBody = @{
     password = "admin123"
 } | ConvertTo-Json
 
-$loginResponse = Invoke-RestMethod -Uri "https://dirictiondback.digitalrace.net/api/auth/login" -Method Post -Body $loginBody -ContentType "application/json"
+$loginResponse = Invoke-RestMethod -Uri "http://localhost:8085/api/auth/login" -Method Post -Body $loginBody -ContentType "application/json"
 $token = $loginResponse.token
 Write-Host "Token obtained"
 
