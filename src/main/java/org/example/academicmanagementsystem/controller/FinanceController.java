@@ -31,6 +31,11 @@ public class FinanceController {
         return ResponseEntity.ok(financeService.getSalaries(month));
     }
 
+    @PutMapping("/salaries/{id}")
+    public ResponseEntity<SalaryResponse> updateSalary(@PathVariable Long id, @RequestBody org.example.academicmanagementsystem.dto.SalaryUpdateRequest request) {
+        return ResponseEntity.ok(financeService.updateSalary(id, request));
+    }
+
     @PostMapping("/salaries/run-payroll")
     public ResponseEntity<Map<String, String>> runPayroll(@RequestParam String month) {
         Map<String, String> result = financeService.runPayroll(month);
@@ -48,5 +53,10 @@ public class FinanceController {
     @PostMapping("/expenses")
     public ResponseEntity<ExpenseResponse> addExpense(@RequestBody Expense expense) {
         return ResponseEntity.ok(financeService.addExpense(expense));
+    }
+
+    @PutMapping("/expenses/{id}")
+    public ResponseEntity<ExpenseResponse> updateExpense(@PathVariable Long id, @RequestBody Expense expense) {
+        return ResponseEntity.ok(financeService.updateExpense(id, expense));
     }
 }

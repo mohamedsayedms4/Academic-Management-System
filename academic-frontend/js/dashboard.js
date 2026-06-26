@@ -4965,12 +4965,59 @@ function renderSalariesTable(salaries) {
             <td style='color: #d32f2f; font-weight: 700;'>${(s.remaining || 0).toLocaleString()}</td>
             <td>
                 <div style="display: flex; gap: 8px;">
-                    <button class='action-btn edit' onclick="alert('Edit employee feature coming soon')" style='background: #e3f2fd; color: #1976d2; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;'><i class='fas fa-pencil-alt'></i></button>
+                    <button class='action-btn edit' onclick="openEditSalaryModal(${s.id}, ${s.bonus || 0}, ${s.deductions || 0}, ${s.overtime || 0}, ${s.payed || 0}, '${s.status}')" style='background: #e3f2fd; color: #1976d2; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;'><i class='fas fa-pencil-alt'></i></button>
                     ${typeClass === 'freelance' ? `<button class='action-btn delete' onclick="deleteUser(${s.employeeId})" style='background: #ffebee; color: #d32f2f; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;'><i class='fas fa-trash-alt'></i></button>` : ''}
                 </div>
             </td>` ;
         tbody.appendChild(row);
     });
+}
+
+function openEditSalaryModal(id, bonus, deductions, overtime, paid, status) {
+    document.getElementById('edit-salary-id').value = id;
+    document.getElementById('edit-salary-bonus').value = bonus;
+    document.getElementById('edit-salary-deductions').value = deductions;
+    document.getElementById('edit-salary-overtime').value = overtime;
+    document.getElementById('edit-salary-paid').value = paid;
+    document.getElementById('edit-salary-status').value = status;
+    document.getElementById('edit-salary-modal').style.display = 'flex';
+}
+
+const formEditSalary = document.getElementById('form-edit-salary');
+if (formEditSalary) {
+    formEditSalary.onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('edit-salary-id').value;
+        const payload = {
+            bonuses: parseFloat(document.getElementById('edit-salary-bonus').value || 0),
+            deductions: parseFloat(document.getElementById('edit-salary-deductions').value || 0),
+            overtime: parseFloat(document.getElementById('edit-salary-overtime').value || 0),
+            paidAmount: parseFloat(document.getElementById('edit-salary-paid').value || 0),
+            status: document.getElementById('edit-salary-status').value
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/api/v1/finance/salaries/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                showToast('Salary updated successfully', 'success');
+                document.getElementById('edit-salary-modal').style.display = 'none';
+                loadSalaries(); // Reload the table
+            } else {
+                showToast('Failed to update salary', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating salary:', error);
+            showToast('Connection error', 'error');
+        }
+    };
 }
 
 async function runPayroll() {
@@ -5004,6 +5051,7 @@ async function loadExpenses() {
         });
         if (response.ok) {
             const expenses = await response.json();
+            window.currentExpensesData = expenses;
             renderExpensesTable(expenses);
 
             const total = expenses.reduce((acc, e) => acc + e.amount, 0);
@@ -5031,10 +5079,73 @@ function renderExpensesTable(expenses) {
             <td>${formatDate(e.date)}</td>
             <td>${e.note || '-'}</td>
             <td>
-                <button class='btn-save' style='padding: 5px 10px; background: #e3f2fd; color: #2196f3;'><i class='fas fa-edit'></i></button>
+                <button class='btn-save' onclick="openEditExpenseModal(${e.id})" style='padding: 5px 10px; background: #e3f2fd; color: #2196f3; border: none; cursor: pointer; border-radius: 6px;'><i class='fas fa-edit'></i></button>
             </td>`;
         tbody.appendChild(row);
     });
+}
+
+function openEditExpenseModal(id) {
+    const expense = window.currentExpensesData.find(e => e.id === id);
+    if (!expense) return;
+    
+    document.getElementById('edit-expense-id').value = expense.id;
+    document.getElementById('edit-expense-title').value = expense.title || '';
+    document.getElementById('edit-expense-amount').value = expense.amount || 0;
+    
+    let dateStr = '';
+    if (expense.date) {
+        if (Array.isArray(expense.date)) {
+            dateStr = `${expense.date[0]}-${String(expense.date[1]).padStart(2, '0')}-${String(expense.date[2]).padStart(2, '0')}`;
+        } else {
+            dateStr = new Date(expense.date).toISOString().split('T')[0];
+        }
+    }
+    document.getElementById('edit-expense-date').value = dateStr;
+    
+    document.getElementById('edit-expense-pay-method').value = expense.payMethod || '';
+    document.getElementById('edit-expense-paid').value = expense.payed || 0;
+    document.getElementById('edit-expense-note').value = expense.note || '';
+    
+    document.getElementById('edit-expense-modal').style.display = 'flex';
+}
+
+const formEditExpense = document.getElementById('form-edit-expense');
+if (formEditExpense) {
+    formEditExpense.onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('edit-expense-id').value;
+        const payload = {
+            title: document.getElementById('edit-expense-title').value,
+            amount: parseFloat(document.getElementById('edit-expense-amount').value || 0),
+            expenseDate: document.getElementById('edit-expense-date').value,
+            paymentMethod: document.getElementById('edit-expense-pay-method').value,
+            paidAmount: parseFloat(document.getElementById('edit-expense-paid').value || 0),
+            note: document.getElementById('edit-expense-note').value
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/api/v1/finance/expenses/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                showToast('Expense updated successfully', 'success');
+                document.getElementById('edit-expense-modal').style.display = 'none';
+                loadExpenses(); // Reload the table
+            } else {
+                showToast('Failed to update expense', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating expense:', error);
+            showToast('Connection error', 'error');
+        }
+    };
 }
 
 async function addExpense() {

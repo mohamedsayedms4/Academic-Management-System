@@ -21,6 +21,7 @@ public class SalaryResponse {
     private String phone;
     private BigDecimal salary;
     private BigDecimal bonus;
+    private BigDecimal deductions;
     private BigDecimal overtime;
     private BigDecimal total;
     private String payMethod;

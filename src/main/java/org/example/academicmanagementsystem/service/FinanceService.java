@@ -11,7 +11,9 @@ import java.util.Map;
 public interface FinanceService {
     FinanceOverviewResponse getOverview(String month);
     List<SalaryResponse> getSalaries(String month);
+    SalaryResponse updateSalary(Long id, org.example.academicmanagementsystem.dto.SalaryUpdateRequest request);
     Map<String, String> runPayroll(String month);
     List<ExpenseResponse> getExpenses(String month);
     ExpenseResponse addExpense(Expense expense);
+    ExpenseResponse updateExpense(Long id, Expense expense);
 }

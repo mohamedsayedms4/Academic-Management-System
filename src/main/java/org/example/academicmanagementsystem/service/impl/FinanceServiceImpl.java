@@ -172,23 +172,67 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     public List<SalaryResponse> getSalaries(String month) {
         return salaryRepository.findByMonth(month).stream()
-                .map(s -> SalaryResponse.builder()
+                .map(s -> {
+                    boolean hasEmp = s.getEmployee() != null;
+                    return SalaryResponse.builder()
                         .id(s.getId())
-                        .employeeId(s.getEmployee().getId())
-                        .employeeName(s.getEmployee().getFullName())
-                        .role(s.getEmployee().getRole().name())
-                        .employmentType(s.getEmployee().getEmploymentType())
-                        .phone(s.getEmployee().getPhone())
+                        .employeeId(hasEmp ? s.getEmployee().getId() : null)
+                        .employeeName(hasEmp ? s.getEmployee().getFullName() : "Deleted Employee")
+                        .role(hasEmp && s.getEmployee().getRole() != null ? s.getEmployee().getRole().name() : "N/A")
+                        .employmentType(hasEmp ? s.getEmployee().getEmploymentType() : "N/A")
+                        .phone(hasEmp ? s.getEmployee().getPhone() : "N/A")
                         .salary(s.getBaseSalary())
                         .bonus(s.getBonuses())
+                        .deductions(s.getDeductions())
                         .overtime(s.getOvertime())
                         .total(s.getNetSalary())
-                        .payMethod(s.getEmployee().getPaymentMethod())
+                        .payMethod(hasEmp ? s.getEmployee().getPaymentMethod() : "N/A")
                         .payed(s.getPaidAmount())
                         .remaining(s.getNetSalary().subtract(s.getPaidAmount()))
                         .status(s.getStatus())
-                        .build())
+                        .build();
+                })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public SalaryResponse updateSalary(Long id, org.example.academicmanagementsystem.dto.SalaryUpdateRequest request) {
+        Salary salary = salaryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Salary record not found"));
+
+        if (request.getBonuses() != null) salary.setBonuses(request.getBonuses());
+        if (request.getDeductions() != null) salary.setDeductions(request.getDeductions());
+        if (request.getOvertime() != null) salary.setOvertime(request.getOvertime());
+        if (request.getPaidAmount() != null) salary.setPaidAmount(request.getPaidAmount());
+        if (request.getStatus() != null) salary.setStatus(request.getStatus());
+
+        BigDecimal base = salary.getBaseSalary() != null ? salary.getBaseSalary() : BigDecimal.ZERO;
+        BigDecimal bonus = salary.getBonuses() != null ? salary.getBonuses() : BigDecimal.ZERO;
+        BigDecimal over = salary.getOvertime() != null ? salary.getOvertime() : BigDecimal.ZERO;
+        BigDecimal ded = salary.getDeductions() != null ? salary.getDeductions() : BigDecimal.ZERO;
+        salary.setNetSalary(base.add(bonus).add(over).subtract(ded));
+
+        salary = salaryRepository.save(salary);
+
+        boolean hasEmp = salary.getEmployee() != null;
+        return SalaryResponse.builder()
+                .id(salary.getId())
+                .employeeId(hasEmp ? salary.getEmployee().getId() : null)
+                .employeeName(hasEmp ? salary.getEmployee().getFullName() : "Deleted Employee")
+                .role(hasEmp && salary.getEmployee().getRole() != null ? salary.getEmployee().getRole().name() : "N/A")
+                .employmentType(hasEmp ? salary.getEmployee().getEmploymentType() : "N/A")
+                .phone(hasEmp ? salary.getEmployee().getPhone() : "N/A")
+                .salary(salary.getBaseSalary())
+                .bonus(salary.getBonuses())
+                .deductions(salary.getDeductions())
+                .overtime(salary.getOvertime())
+                .total(salary.getNetSalary())
+                .payMethod(hasEmp ? salary.getEmployee().getPaymentMethod() : "N/A")
+                .payed(salary.getPaidAmount())
+                .remaining(salary.getNetSalary().subtract(salary.getPaidAmount() != null ? salary.getPaidAmount() : BigDecimal.ZERO))
+                .status(salary.getStatus())
+                .build();
     }
 
     @Override
@@ -253,6 +297,31 @@ public class FinanceServiceImpl implements FinanceService {
                 .amount(saved.getAmount())
                 .payed(saved.getPaidAmount())
                 .remaining(saved.getAmount().subtract(saved.getPaidAmount()))
+                .payMethod(saved.getPaymentMethod())
+                .date(saved.getExpenseDate())
+                .note(saved.getNote())
+                .build();
+    }
+
+    @Override
+    public ExpenseResponse updateExpense(Long id, Expense request) {
+        Expense expense = expenseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Expense not found"));
+
+        if (request.getTitle() != null) expense.setTitle(request.getTitle());
+        if (request.getAmount() != null) expense.setAmount(request.getAmount());
+        if (request.getPaidAmount() != null) expense.setPaidAmount(request.getPaidAmount());
+        if (request.getPaymentMethod() != null) expense.setPaymentMethod(request.getPaymentMethod());
+        if (request.getExpenseDate() != null) expense.setExpenseDate(request.getExpenseDate());
+        if (request.getNote() != null) expense.setNote(request.getNote());
+
+        Expense saved = expenseRepository.save(expense);
+        return ExpenseResponse.builder()
+                .id(saved.getId())
+                .title(saved.getTitle())
+                .amount(saved.getAmount())
+                .payed(saved.getPaidAmount())
+                .remaining(saved.getAmount().subtract(saved.getPaidAmount() != null ? saved.getPaidAmount() : java.math.BigDecimal.ZERO))
                 .payMethod(saved.getPaymentMethod())
                 .date(saved.getExpenseDate())
                 .note(saved.getNote())

@@ -43,6 +43,7 @@ public class Payment extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "processed_by")
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private User processedBy;
 
     private LocalDateTime processedAt;

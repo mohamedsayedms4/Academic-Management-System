@@ -19,6 +19,7 @@ public class Salary extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "employee_id", nullable = false)
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private User employee;
 
     @Column(nullable = false)
@@ -48,6 +49,7 @@ public class Salary extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "processed_by_id")
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private User processedBy;
 
     private LocalDateTime processedAt;
